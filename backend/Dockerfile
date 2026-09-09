@@ -1,18 +1,13 @@
 FROM node:20-alpine
 
-WORKDIR /app/backend
+WORKDIR /app
 
-# Copiar package files
 COPY package*.json ./
 
-# Instalar dependencias en producción
-RUN npm ci --omit=dev
+RUN npm install
 
-# Copiar código fuente
-COPY src/ ./src/
+COPY . .
 
-# Puerto donde escucha Express
 EXPOSE 5000
 
-# Comando de inicio
-CMD ["node", "src/index.js"]
+CMD ["npm", "run", "dev"]
