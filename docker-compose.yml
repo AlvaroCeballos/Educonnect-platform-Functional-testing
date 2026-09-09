@@ -1,0 +1,88 @@
+version: '3.9'
+
+services:
+  # Base de datos MySQL 8.0
+  db:
+    image: mysql:8.0
+    container_name: educonnect_db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "3306:3306"
+    volumes:
+      # Script de inicialización (Isai lo crea)
+      - ./backend/init.sql:/docker-entrypoint-initdb.d/init.sql
+      # Persistencia de datos
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - educonnect_network
+
+  # Backend Node/Express
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: educonnect_backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: ${NODE_ENV}
+      BACKEND_PORT: ${BACKEND_PORT}
+      DB_HOST: db
+      DB_PORT: ${DB_PORT}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN}
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASS: ${SMTP_PASS}
+      SMTP_FROM: ${SMTP_FROM}
+    ports:
+      - "5000:5000"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      # Hot-reload en desarrollo (opcional)
+      - ./backend/src:/app/backend/src
+    networks:
+      - educonnect_network
+
+  # Frontend React + Vite
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: educonnect_frontend
+    restart: unless-stopped
+    environment:
+      VITE_API_URL: http://backend:5000/api
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    volumes:
+      # Hot-reload en desarrollo
+      - ./frontend/src:/app/frontend/src
+      - ./frontend/public:/app/frontend/public
+    networks:
+      - educonnect_network
+
+volumes:
+  mysql_data:
+    driver: local
+
+networks:
+  educonnect_network:
+    driver: bridge
