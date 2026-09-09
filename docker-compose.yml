@@ -1,5 +1,3 @@
-version: '3.9'
-
 services:
   # Base de datos MySQL 8.0
   db:
@@ -29,8 +27,8 @@ services:
   # Backend Node/Express
   backend:
     build:
-      context: .
-      dockerfile: backend/Dockerfile
+      context: ./backend
+      dockerfile: Dockerfile
     container_name: educonnect_backend
     restart: unless-stopped
     environment:
@@ -62,8 +60,8 @@ services:
   # Frontend React + Vite
   frontend:
     build:
-      context: .
-      dockerfile: frontend/Dockerfile
+      context: ./frontend
+      dockerfile: Dockerfile
     container_name: educonnect_frontend
     restart: unless-stopped
     environment:
