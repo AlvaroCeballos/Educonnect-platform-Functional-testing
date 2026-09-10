@@ -54,7 +54,9 @@ services:
         condition: service_healthy
     volumes:
       # Hot-reload en desarrollo (opcional)
-      - ./backend/src:/app/backend/src
+      - ./backend/src:/app/src
+      # Fotografías de tutores persistentes
+      - tutor_uploads:/app/uploads
     networks:
       - educonnect_network
 
@@ -80,6 +82,8 @@ services:
 
 volumes:
   mysql_data:
+    driver: local
+  tutor_uploads:
     driver: local
 
 networks:
