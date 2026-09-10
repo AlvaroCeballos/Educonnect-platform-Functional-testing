@@ -12,15 +12,16 @@ services:
     ports:
       - "3306:3306"
     volumes:
-      # Script de inicialización (Isai lo crea)
-      - ./backend/init.sql:/docker-entrypoint-initdb.d/init.sql
+      # Esquema inicial de la Fase 0. Se ejecuta al crear el volumen por primera vez.
+      - ./backend/init.sql:/docker-entrypoint-initdb.d/001-init.sql:ro
       # Persistencia de datos
       - mysql_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p$${MYSQL_ROOT_PASSWORD} --silent"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 20s
     networks:
       - educonnect_network
 
