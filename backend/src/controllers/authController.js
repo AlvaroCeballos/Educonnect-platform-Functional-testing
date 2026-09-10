@@ -102,4 +102,58 @@ const loginAdmin = async (req, res) => {
   }
 };
 
-module.exports = { registerStudent, loginAdmin };
+
+ //HU-003 Fase 2: Validación del archivo 2FA
+
+const loginAdmin2FA = async (req, res) => {
+  const { adminId } = req.body;
+  
+  if (!adminId)
+    return res.status(400).json({ message: 'adminId requerido' });
+  
+  if (!req.file)
+    return res.status(400).json({ message: 'Archivo auth2-ayd1.txt requerido' });
+
+  // Validar nombre de archivo
+  if (req.file.originalname !== 'auth2-ayd1.txt')
+    return res.status(400).json({ message: 'El archivo debe llamarse auth2-ayd1.txt' });
+
+  // Validar contenido: archivo no debe estar vacío
+  if (!req.file.buffer || req.file.buffer.length === 0)
+    return res.status(400).json({ message: 'El archivo no puede estar vacío' });
+
+  const conn = await pool.getConnection();
+  try {
+    // Verificar que el usuario admin existe
+    const [rows] = await conn.execute(
+      'SELECT id, email FROM users WHERE id = ? AND role = "admin"',
+      [adminId]
+    );
+
+    if (rows.length === 0)
+      return res.status(401).json({ message: 'Usuario admin no encontrado' });
+
+    const user = rows[0];
+
+    // Generar JWT con toda la información
+    const token = jwt.sign(
+      { id: user.id, email: user.email, role: 'admin' },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
+    );
+
+    return res.status(200).json({
+      message: 'Autenticación 2FA completada',
+      token,
+      phase: 2,
+      user: { id: user.id, email: user.email },
+    });
+  } catch (err) {
+    console.error('Error en login admin fase 2:', err);
+    return res.status(500).json({ message: 'Error interno del servidor' });
+  } finally {
+    conn.release();
+  }
+};
+
+module.exports = { registerStudent, loginAdmin, loginAdmin2FA };
