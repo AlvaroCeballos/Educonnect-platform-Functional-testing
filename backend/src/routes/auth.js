@@ -25,3 +25,18 @@ router.post('/login/admin', loginAdmin); // HU-003 login admin
 router.post('/login/admin/2fa', upload.single('auth2fa'), loginAdmin2FA); //HU-003 Validacion del archivo 2FA
 
 module.exports = router;
+const { authenticateJWT, authorizeAdmin } = require('../middlewares/authJWT');
+
+// HU-003 T-003.3: Verificar acceso admin (ruta protegida)
+router.get('/admin/profile', authenticateJWT, authorizeAdmin, async (req, res) => {
+  try {
+    return res.status(200).json({
+      message: 'Acceso autorizado a admin',
+      user: req.user,
+    });
+  } catch (err) {
+    console.error('Error en admin profile:', err);
+    return res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
