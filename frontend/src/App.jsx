@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import api from './utils/api';
 import TutorLogin from './TutorLogin';
+import ScheduleForm from './ScheduleForm';
 
 const initialForm = {
   nombre: '', apellido: '', carnet: '', identificacion: '', fecha_nacimiento: '',
@@ -23,6 +24,7 @@ const fields = [
 
 function App() {
   if (window.location.pathname === '/login' || window.location.pathname === '/tutor/login') return <TutorLogin />;
+  if (window.location.pathname === '/schedule' || window.location.pathname === '/tutor/schedule') return <ScheduleForm />;
   const [form, setForm] = useState(initialForm);
   const [photo, setPhoto] = useState(null);
   const [status, setStatus] = useState({ type: '', message: '' });
