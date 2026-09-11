@@ -25,6 +25,7 @@ const fields = [
 function App() {
   if (window.location.pathname === '/login' || window.location.pathname === '/tutor/login') return <TutorLogin />;
   if (window.location.pathname === '/schedule' || window.location.pathname === '/tutor/schedule') return <ScheduleForm />;
+  if (window.location.pathname === '/schedule/edit' || window.location.pathname === '/tutor/schedule/edit') return <ScheduleForm editing />;
   const [form, setForm] = useState(initialForm);
   const [photo, setPhoto] = useState(null);
   const [status, setStatus] = useState({ type: '', message: '' });
