@@ -2,6 +2,7 @@ import { Routes, Route } from 'react-router-dom';
 import RegisterStudent from './pages/student/RegisterStudent';
 import RegisterSuccess from './pages/student/RegisterSuccess';
 import LoginAdmin from './pages/admin/LoginAdmin';
+import Login2FA from './pages/admin/Login2FA';
 
 function App() {
   return (
@@ -10,6 +11,7 @@ function App() {
       <Route path="/registro"          element={<RegisterStudent />} />
       <Route path="/registro-exitoso"  element={<RegisterSuccess />} />
       <Route path="/login/admin"       element={<LoginAdmin />} />
+      <Route path="/login/admin/2fa"   element={<Login2FA />} />
     </Routes>
   );
 }
