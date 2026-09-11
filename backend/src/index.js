@@ -5,6 +5,7 @@ const path    = require('path');
 const multer  = require('multer');
 
 const authRoutes = require('./routes/auth');
+const tutorRoutes = require('./routes/tutors');
 
 const app  = express();
 const PORT = process.env.BACKEND_PORT || process.env.PORT || 5000;
@@ -21,6 +22,7 @@ app.get('/api/health', (_req, res) => {
 });
 
 app.use('/api/auth', authRoutes);
+app.use('/api/tutors', tutorRoutes);
 
 app.use((error, _req, res, _next) => {
   if (error instanceof multer.MulterError) {

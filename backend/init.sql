@@ -69,6 +69,34 @@ CREATE TABLE IF NOT EXISTS tutor_profiles (
     ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Catalogo normalizado de materias. Una materia puede ser impartida por
+-- varios tutores y cada tutor puede impartir varias materias.
+CREATE TABLE IF NOT EXISTS subjects (
+  id         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  nombre     VARCHAR(150) NOT NULL,
+  is_active  BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+             ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT uq_subjects_nombre UNIQUE (nombre)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS tutor_subjects (
+  tutor_id   INT UNSIGNED NOT NULL,
+  subject_id INT UNSIGNED NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (tutor_id, subject_id),
+  CONSTRAINT fk_tutor_subjects_tutor
+    FOREIGN KEY (tutor_id) REFERENCES tutor_profiles(id)
+    ON UPDATE CASCADE
+    ON DELETE CASCADE,
+  CONSTRAINT fk_tutor_subjects_subject
+    FOREIGN KEY (subject_id) REFERENCES subjects(id)
+    ON UPDATE CASCADE
+    ON DELETE CASCADE,
+  INDEX idx_tutor_subjects_subject (subject_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- ISO-8601: 1 = lunes y 7 = domingo. Cada tutor utiliza el mismo rango
 -- para todos los dias seleccionados, como exige HU-008.
 CREATE TABLE IF NOT EXISTS schedules (
@@ -97,7 +125,7 @@ CREATE TABLE IF NOT EXISTS sessions (
   session_date    DATE NOT NULL,
   start_time      TIME NOT NULL,
   end_time        TIME NOT NULL,
-  subject         VARCHAR(150) NOT NULL,
+  subject_id      INT UNSIGNED NOT NULL,
   reason          TEXT NOT NULL,
   status          ENUM(
                     'PENDING',
@@ -119,8 +147,13 @@ CREATE TABLE IF NOT EXISTS sessions (
     FOREIGN KEY (tutor_id) REFERENCES tutor_profiles(id)
     ON UPDATE CASCADE
     ON DELETE RESTRICT,
+  CONSTRAINT fk_sessions_subject
+    FOREIGN KEY (subject_id) REFERENCES subjects(id)
+    ON UPDATE CASCADE
+    ON DELETE RESTRICT,
   INDEX idx_sessions_tutor_schedule (tutor_id, session_date, start_time, status),
   INDEX idx_sessions_student_schedule (student_id, session_date, start_time, status),
+  INDEX idx_sessions_subject (subject_id),
   INDEX idx_sessions_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
