@@ -50,6 +50,11 @@ button, input, select { font: inherit; }
 .form-heading h2 { font-size: clamp(30px, 4vw, 46px); margin: 8px 0; color: #14233c; }
 .form-heading > p:last-child { color: #6a768c; }
 form { max-width: 820px; margin: auto; }
+.auth-form { max-width: 520px; display: grid; gap: 18px; }
+.auth-form label { display: grid; gap: 8px; }
+.auth-form label span { color: #354159; font-size: 13px; font-weight: 750; }
+.form-link { color: #6a768c; font-size: 14px; text-align: center; }
+.form-link a { color: #167963; font-weight: 750; }
 
 .photo-row { display: flex; align-items: center; gap: 18px; padding: 20px; margin-bottom: 24px; border: 1px solid #dfe6ee; border-radius: 18px; background: white; }
 .photo-row p { color: #758097; margin: 6px 0 0; font-size: 13px; }
