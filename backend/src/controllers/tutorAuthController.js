@@ -128,7 +128,7 @@ const registerTutor = async (req, res) => {
       [tutor.email, passwordHash, 'tutor', 'PENDING'],
     );
 
-    await connection.execute(
+    const [tutorProfileResult] = await connection.execute(
       `INSERT INTO tutor_profiles (
          user_id, nombre, apellido, carnet, identificacion, fecha_nacimiento,
          genero, fotografia_url, especialidad, direccion_tutoria,
@@ -148,6 +148,19 @@ const registerTutor = async (req, res) => {
         tutor.anio_inicio_experiencia,
         tutor.universidad,
       ],
+    );
+
+    // La especialidad declarada durante el registro es la primera materia
+    // asociada al tutor. HU-008 podrá agregar materias adicionales después.
+    const [subjectResult] = await connection.execute(
+      `INSERT INTO subjects (nombre) VALUES (?)
+       ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id)`,
+      [tutor.especialidad],
+    );
+
+    await connection.execute(
+      'INSERT INTO tutor_subjects (tutor_id, subject_id) VALUES (?, ?)',
+      [tutorProfileResult.insertId, subjectResult.insertId],
     );
 
     await connection.commit();
