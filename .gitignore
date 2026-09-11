@@ -24,6 +24,7 @@ yarn-debug.log*
 
 # Datos de Docker persistidos localmente 
 mysql_data/
+backend/uploads/
 
 #  OS 
 .DS_Store
