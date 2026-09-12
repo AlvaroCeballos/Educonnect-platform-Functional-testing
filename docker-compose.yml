@@ -75,8 +75,8 @@ services:
       - backend
     volumes:
       # Hot-reload en desarrollo
-      - ./frontend/src:/app/frontend/src
-      - ./frontend/public:/app/frontend/public
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
     networks:
       - educonnect_network
 
