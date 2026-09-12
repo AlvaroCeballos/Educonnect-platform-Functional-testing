@@ -9,6 +9,7 @@ import LoginAdmin from './pages/admin/LoginAdmin';
 import Login2FA from './pages/admin/Login2FA';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import BookSession from './pages/student/BookSession';
+import MySessions from './pages/student/MySessions';
 
 function Home() {
   return (
@@ -17,6 +18,7 @@ function Home() {
       <Link to="/register" className="submit-button">Registro tutor</Link>
       <Link to="/login/admin" className="submit-button">Login admin</Link>
       <Link to="/reservar" className="submit-button">Programar sesión</Link>
+      <Link to="/mis-sesiones" className="submit-button">Mis sesiones</Link>
     </div>
   );
 }
@@ -31,6 +33,7 @@ function App() {
       <Route path="/login" element={<TutorLogin />} />
       <Route path="/schedule" element={<ScheduleForm />} />
       <Route path="/reservar" element={<BookSession />} />
+      <Route path="/mis-sesiones" element={<MySessions />} />
       <Route path="/profile" element={<TutorProfile />} />
       <Route path="/login/admin" element={<LoginAdmin />} />
       <Route path="/login/admin/2fa" element={<Login2FA />} />
