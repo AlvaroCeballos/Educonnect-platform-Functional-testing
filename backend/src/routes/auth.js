@@ -1,6 +1,6 @@
 const router = require('express').Router();
 const multer = require('multer');
-const { registerStudent, loginAdmin, loginAdmin2FA } = require('../controllers/authController');
+const { registerStudent, loginAdmin, loginAdmin2FA, loginStudent } = require('../controllers/authController');
 const { registerTutor } = require('../controllers/tutorAuthController');
 const { loginTutor } = require('../controllers/tutorLoginController');
 const { uploadTutorPhoto } = require('../middlewares/tutorPhoto');
@@ -25,6 +25,9 @@ router.post('/register/student', registerStudent);
 // HU-003 Fase 1: Login de administrador
 router.post('/login/admin', loginAdmin);
 
+// HU-006: Login de estudiante (T-006.1, T-006.2)
+router.post('/login/student', loginStudent);
+
 // HU-003 Fase 2: Validación del archivo 2FA
 router.post('/login/admin/2fa', upload.single('auth2fa'), loginAdmin2FA);
 
@@ -41,7 +44,7 @@ router.get('/admin/profile', authenticateJWT, authorizeAdmin, async (req, res) =
   }
 });
 
-//  HU-002: Registro de tutor
+// HU-002: Registro de tutor
 router.post('/register/tutor', uploadTutorPhoto.single('foto'), registerTutor);
 
 // HU-007: Login de tutor
