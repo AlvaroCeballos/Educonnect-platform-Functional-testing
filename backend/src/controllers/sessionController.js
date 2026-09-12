@@ -39,6 +39,17 @@ const createSession = async (req, res, next) => {
     connection = await pool.getConnection();
     await connection.beginTransaction();
 
+    // HU-012: no se permite duplicar una cita con el mismo tutor mientras
+    // siga PENDING, sin importar si el horario nuevo traslapa o no.
+    const [duplicateTutorSessions] = await connection.execute(
+      `SELECT id FROM sessions WHERE student_id = ? AND tutor_id = ? AND status = 'PENDING' FOR UPDATE`,
+      [studentId, tutorId],
+    );
+    if (duplicateTutorSessions.length > 0) {
+      await connection.rollback();
+      return res.status(409).json({ message: 'Ya tienes una sesión pendiente con este tutor' });
+    }
+
     // Bloquea la fila de horario del tutor: además de validar el rango,
     // sirve para serializar reservas concurrentes del mismo tutor/día
     // (una sesión nueva no tiene fila propia que bloquear con FOR UPDATE).
@@ -76,6 +87,24 @@ const createSession = async (req, res, next) => {
     if (hasConflict) {
       await connection.rollback();
       return res.status(409).json({ message: 'El tutor ya tiene una sesión programada en ese horario' });
+    }
+
+    // HU-012: el estudiante tampoco puede tener otra cita a esa hora,
+    // así sea con un tutor distinto.
+    const [studentSessions] = await connection.execute(
+      `SELECT start_time AS startTime, end_time AS endTime
+         FROM sessions
+        WHERE student_id = ? AND session_date = ? AND status = 'PENDING'
+        FOR UPDATE`,
+      [studentId, sessionDate],
+    );
+    const hasStudentConflict = studentSessions.some((existing) => sessionsOverlap(
+      { startTime, endTime },
+      { startTime: asTime(existing.startTime), endTime: asTime(existing.endTime) },
+    ));
+    if (hasStudentConflict) {
+      await connection.rollback();
+      return res.status(409).json({ message: 'Ya tienes otra sesión programada en ese horario' });
     }
 
     const [result] = await connection.execute(
