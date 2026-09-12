@@ -32,6 +32,12 @@ Reglas mínimas:
 3. Una sesión activa (`PENDING`) traslapa otra cuando:
    `nuevo_inicio < existente_fin` y `nuevo_fin > existente_inicio`.
 4. Una sesión cancelada o atendida no bloquea nuevamente el horario.
+5. El traslape del punto 3 también se valida contra las sesiones `PENDING`
+   **del estudiante** (no solo las del tutor): un estudiante no puede tener
+   dos citas a la misma hora, así sea con tutores distintos.
+6. Un estudiante no puede tener más de una sesión `PENDING` con el **mismo
+   tutor** al mismo tiempo, aunque el nuevo horario no traslape con la
+   existente.
 
 El endpoint de creación debe recibir:
 
@@ -40,9 +46,12 @@ El endpoint de creación debe recibir:
   "tutor_id": 1,
   "session_date": "2026-09-15",
   "start_time": "10:00:00",
-  "end_time": "11:00:00",
   "subject_id": 3,
   "reason": "Repaso para examen parcial"
 }
 ```
+
+`end_time` no se envía: el servicio siempre lo deriva de `start_time` más la
+duración estándar (60 minutos, ver arriba). Un `end_time` en el cuerpo de la
+petición se ignora.
 
