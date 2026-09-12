@@ -14,6 +14,8 @@ app.get('/api/health', (_req, res) => {
 });
 
 app.use('/api/auth', require('./routes/auth'));
+app.use('/api/tutors', require('./routes/tutors'));
+app.use('/api/sessions', require('./routes/sessions'));
 
 app.listen(PORT, () => {
   console.log(` EduConnect API corriendo en http://localhost:${PORT}`);

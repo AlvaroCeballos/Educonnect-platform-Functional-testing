@@ -8,6 +8,7 @@ import RegisterSuccess from './pages/student/RegisterSuccess';
 import LoginAdmin from './pages/admin/LoginAdmin';
 import Login2FA from './pages/admin/Login2FA';
 import AdminDashboard from './pages/admin/AdminDashboard';
+import BookSession from './pages/student/BookSession';
 
 function Home() {
   return (
@@ -15,6 +16,7 @@ function Home() {
       <Link to="/registro" className="submit-button">Registro estudiante</Link>
       <Link to="/register" className="submit-button">Registro tutor</Link>
       <Link to="/login/admin" className="submit-button">Login admin</Link>
+      <Link to="/reservar" className="submit-button">Programar sesión</Link>
     </div>
   );
 }
@@ -28,6 +30,7 @@ function App() {
       <Route path="/register" element={<TutorRegistration />} />
       <Route path="/login" element={<TutorLogin />} />
       <Route path="/schedule" element={<ScheduleForm />} />
+      <Route path="/reservar" element={<BookSession />} />
       <Route path="/profile" element={<TutorProfile />} />
       <Route path="/login/admin" element={<LoginAdmin />} />
       <Route path="/login/admin/2fa" element={<Login2FA />} />
