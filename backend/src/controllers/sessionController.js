@@ -150,4 +150,50 @@ const getMySessions = async (req, res, next) => {
   }
 };
 
-module.exports = { createSession, getMySessions, resolveStudentProfileId };
+const cancelSession = async (req, res, next) => {
+  const sessionId = Number(req.params.id);
+  if (!Number.isInteger(sessionId) || sessionId < 1) {
+    return res.status(400).json({ message: 'El identificador de la sesión no es válido' });
+  }
+
+  let connection;
+  try {
+    const studentId = await resolveStudentProfileId(req);
+    if (!studentId) return res.status(401).json({ message: 'La sesión no identifica al estudiante' });
+
+    connection = await pool.getConnection();
+    await connection.beginTransaction();
+
+    const [rows] = await connection.execute(
+      'SELECT id, student_id AS studentId, status FROM sessions WHERE id = ? FOR UPDATE',
+      [sessionId],
+    );
+    const session = rows[0];
+    if (!session || session.studentId !== studentId) {
+      await connection.rollback();
+      return res.status(404).json({ message: 'Sesión no encontrada' });
+    }
+    if (session.status !== 'PENDING') {
+      await connection.rollback();
+      return res.status(409).json({ message: 'Solo se pueden cancelar sesiones pendientes' });
+    }
+
+    // HU-016: liberar el horario es automático — la disponibilidad del tutor
+    // (validateSessionPayload/createSession) solo cuenta sesiones PENDING,
+    // así que cambiar el estado ya libera el slot sin ningún paso extra.
+    await connection.execute(
+      "UPDATE sessions SET status = 'CANCELLED_BY_STUDENT' WHERE id = ?",
+      [sessionId],
+    );
+
+    await connection.commit();
+    return res.json({ message: 'Sesión cancelada correctamente', session: { id: sessionId, status: 'CANCELLED_BY_STUDENT' } });
+  } catch (error) {
+    if (connection) await connection.rollback();
+    return next(error);
+  } finally {
+    if (connection) connection.release();
+  }
+};
+
+module.exports = { createSession, getMySessions, cancelSession, resolveStudentProfileId };
