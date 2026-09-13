@@ -9,6 +9,7 @@ import LoginStudent from './pages/student/LoginStudent';
 import LoginAdmin from './pages/admin/LoginAdmin';
 import Login2FA from './pages/admin/Login2FA';
 import AdminDashboard from './pages/admin/AdminDashboard';
+import StudentDashboard from './pages/student/StudentDashboard';
 import BookSession from './pages/student/BookSession';
 import MySessions from './pages/student/MySessions';
 
@@ -30,6 +31,7 @@ function App() {
       <Route path="/registro" element={<RegisterStudent />} />
       <Route path="/registro-exitoso" element={<RegisterSuccess />} />
       <Route path="/login/student" element={<LoginStudent />} />
+      <Route path="/dashboard/student" element={<StudentDashboard />} />
       <Route path="/register" element={<TutorRegistration />} />
       <Route path="/login" element={<TutorLogin />} />
       <Route path="/schedule" element={<ScheduleForm />} />
