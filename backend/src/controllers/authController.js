@@ -157,4 +157,57 @@ const loginAdmin2FA = async (req, res) => {
   }
 };
 
-module.exports = { registerStudent, loginAdmin, loginAdmin2FA };
+
+ // HU-006: Login de estudiante
+ // POST /api/auth/login/student
+
+const loginStudent = async (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password)
+    return res.status(400).json({ message: 'Email y contraseña requeridos' });
+
+  const conn = await pool.getConnection();
+  try {
+    // Query que trae tanto users como student_profiles
+    const [rows] = await conn.execute(`
+      SELECT u.id, u.email, u.password_hash, u.status, sp.id as student_id, sp.nombre, sp.apellido, sp.carnet
+      FROM users u
+      LEFT JOIN student_profiles sp ON u.id = sp.user_id
+      WHERE u.email = ? AND u.role = 'student'
+    `, [email]);
+
+    if (rows.length === 0)
+      return res.status(401).json({ message: 'Credenciales inválidas' });
+
+    const student = rows[0];
+
+    // Solo estudiantes aprobados
+    if (student.status !== 'APPROVED')
+      return res.status(403).json({ message: 'Tu cuenta aún no ha sido aprobada por el administrador' });
+
+    const passwordMatch = await comparePassword(password, student.password_hash);
+    if (!passwordMatch)
+      return res.status(401).json({ message: 'Credenciales inválidas' });
+
+    // JWT con studentId (igual que tutorId en tutorLoginController)
+    const token = jwt.sign(
+      { id: student.id, studentId: student.student_id, role: 'student', email: student.email, status: student.status },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
+    );
+
+    return res.status(200).json({
+      message: 'Inicio de sesión exitoso',
+      token,
+      student: { id: student.student_id, userId: student.id, nombre: student.nombre, apellido: student.apellido, email: student.email },
+    });
+  } catch (err) {
+    console.error('Error en login estudiante:', err);
+    return res.status(500).json({ message: 'Error interno del servidor' });
+  } finally {
+    conn.release();
+  }
+};
+
+module.exports = { registerStudent, loginAdmin, loginAdmin2FA, loginStudent };
