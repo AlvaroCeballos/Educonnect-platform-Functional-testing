@@ -45,7 +45,7 @@ router.get('/admin/profile', authenticateJWT, authorizeAdmin, async (req, res) =
 });
 
 // HU-002: Registro de tutor
-router.post('/register/tutor', uploadTutorPhoto.single('foto'), registerTutor);
+router.post('/register/tutor', uploadTutorPhoto.single('fotografia'), registerTutor);
 
 // HU-007: Login de tutor
 router.post('/login/tutor', loginTutor);
