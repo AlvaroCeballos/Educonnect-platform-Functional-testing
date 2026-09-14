@@ -135,4 +135,101 @@ test('HU-025: rechaza ID inválido al dar de baja a un tutor', () => {
   assert.match(result.message, /identificador/);
 });
 
+// Lógica de cálculo y ordenamiento del reporte de demanda de tutores (HU-026)
+const processTutorDemandReport = (tutors = [], sessions = []) => {
+  const attendedByTutor = new Map();
+  const studentsByTutor = new Map();
+
+  sessions.forEach((s) => {
+    if (s.status === 'ATTENDED') {
+      attendedByTutor.set(s.tutorId, (attendedByTutor.get(s.tutorId) || 0) + 1);
+      const studentSet = studentsByTutor.get(s.tutorId) || new Set();
+      studentSet.add(s.studentId);
+      studentsByTutor.set(s.tutorId, studentSet);
+    }
+  });
+
+  const ranked = tutors.map((t) => {
+    const totalAtendidos = attendedByTutor.get(t.id) || 0;
+    const estudiantesDistintos = (studentsByTutor.get(t.id) || new Set()).size;
+    return {
+      tutorId: t.id,
+      nombre: t.nombre,
+      totalAtendidos,
+      estudiantesDistintos,
+    };
+  });
+
+  ranked.sort((a, b) => b.totalAtendidos - a.totalAtendidos || b.estudiantesDistintos - a.estudiantesDistintos);
+
+  const maxAttended = ranked.length > 0 ? ranked[0].totalAtendidos : 0;
+
+  return ranked.map((r, index) => ({
+    ranking: index + 1,
+    ...r,
+    demandPercentage: maxAttended > 0 ? Math.round((r.totalAtendidos / maxAttended) * 100) : 0,
+  }));
+};
+
+test('HU-026: calcula ranking de tutores ordenado por sesiones ATTENDED descendente', () => {
+  const tutors = [
+    { id: 1, nombre: 'Mario Gómez' },
+    { id: 2, nombre: 'Jose Perez' },
+    { id: 3, nombre: 'Ana Diaz' },
+  ];
+  const sessions = [
+    { tutorId: 2, studentId: 10, status: 'ATTENDED' },
+    { tutorId: 2, studentId: 11, status: 'ATTENDED' },
+    { tutorId: 2, studentId: 12, status: 'ATTENDED' },
+    { tutorId: 1, studentId: 10, status: 'ATTENDED' },
+    { tutorId: 3, studentId: 10, status: 'PENDING' }, // No cuenta
+    { tutorId: 3, studentId: 11, status: 'CANCELLED_BY_STUDENT' }, // No cuenta
+  ];
+
+  const report = processTutorDemandReport(tutors, sessions);
+  assert.equal(report[0].tutorId, 2);
+  assert.equal(report[0].totalAtendidos, 3);
+  assert.equal(report[0].ranking, 1);
+  assert.equal(report[0].demandPercentage, 100);
+
+  assert.equal(report[1].tutorId, 1);
+  assert.equal(report[1].totalAtendidos, 1);
+  assert.equal(report[1].ranking, 2);
+  assert.equal(report[1].demandPercentage, 33);
+
+  assert.equal(report[2].tutorId, 3);
+  assert.equal(report[2].totalAtendidos, 0); // PENDING y CANCELLED no se cuentan
+  assert.equal(report[2].ranking, 3);
+});
+
+test('HU-026: excluye sesiones PENDING o CANCELLED del conteo de atendidos', () => {
+  const tutors = [{ id: 1, nombre: 'Mario' }];
+  const sessions = [
+    { tutorId: 1, studentId: 10, status: 'PENDING' },
+    { tutorId: 1, studentId: 11, status: 'CANCELLED_BY_TUTOR' },
+  ];
+  const report = processTutorDemandReport(tutors, sessions);
+  assert.equal(report[0].totalAtendidos, 0);
+  assert.equal(report[0].estudiantesDistintos, 0);
+});
+
+test('HU-026: desempata por cantidad de estudiantes distintos atendidos', () => {
+  const tutors = [
+    { id: 1, nombre: 'Tutor 1' },
+    { id: 2, nombre: 'Tutor 2' },
+  ];
+  const sessions = [
+    { tutorId: 1, studentId: 10, status: 'ATTENDED' },
+    { tutorId: 1, studentId: 11, status: 'ATTENDED' },
+    { tutorId: 2, studentId: 20, status: 'ATTENDED' },
+    { tutorId: 2, studentId: 20, status: 'ATTENDED' },
+  ];
+  const report = processTutorDemandReport(tutors, sessions);
+  assert.equal(report[0].tutorId, 1);
+  assert.equal(report[0].estudiantesDistintos, 2);
+  assert.equal(report[1].tutorId, 2);
+  assert.equal(report[1].estudiantesDistintos, 1);
+});
+
+
 
