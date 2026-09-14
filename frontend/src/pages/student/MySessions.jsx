@@ -16,7 +16,7 @@ export default function MySessions() {
 
   const loadSessions = () => {
     setLoading(true);
-    api.get('/sessions/me').then(({ data }) => setSessions(data.sessions)).finally(() => setLoading(false));
+    api.get('/sessions/me?status=PENDING').then(({ data }) => setSessions(data.sessions)).finally(() => setLoading(false));
   };
 
   useEffect(() => { loadSessions(); }, []);
@@ -65,9 +65,9 @@ export default function MySessions() {
         ← Volver a tutores disponibles
       </Link>
     </div>
-    <div className="form-heading"><p className="eyebrow">MIS SESIONES</p><h2>Sesiones programadas</h2><p>Consulta y cancela tus sesiones pendientes.</p></div>
+    <div className="form-heading"><p className="eyebrow">MIS SESIONES ACTIVAS</p><h2>Sesiones activas</h2><p>Tus próximas sesiones pendientes, ordenadas por fecha más cercana.</p></div>
     {loading && <p>Cargando…</p>}
-    {!loading && sessions.length === 0 && <p>Todavía no tienes sesiones programadas.</p>}
+    {!loading && sessions.length === 0 && <p>No tienes sesiones activas en este momento.</p>}
     <div className="session-list">
       {sessions.map((session) => (
         <div key={session.id} className="session-card">

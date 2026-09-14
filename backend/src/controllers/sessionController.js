@@ -128,10 +128,24 @@ const createSession = async (req, res, next) => {
   }
 };
 
+const VALID_SESSION_STATUSES = new Set(['PENDING', 'ATTENDED', 'CANCELLED_BY_STUDENT', 'CANCELLED_BY_TUTOR']);
+
 const getMySessions = async (req, res, next) => {
   try {
     const studentId = await resolveStudentProfileId(req);
     if (!studentId) return res.status(401).json({ message: 'La sesión no identifica al estudiante' });
+
+    // HU-013: ?status=PENDING filtra a las sesiones activas del estudiante.
+    const { status } = req.query;
+    const params = [studentId];
+    let statusFilter = '';
+    if (status) {
+      if (!VALID_SESSION_STATUSES.has(status)) {
+        return res.status(400).json({ message: 'El estado solicitado no es válido' });
+      }
+      statusFilter = 'AND s.status = ?';
+      params.push(status);
+    }
 
     const [rows] = await pool.execute(
       `SELECT s.id, s.tutor_id AS tutorId, tp.nombre AS tutorNombre, tp.apellido AS tutorApellido,
@@ -140,9 +154,9 @@ const getMySessions = async (req, res, next) => {
          FROM sessions s
          JOIN tutor_profiles tp ON tp.id = s.tutor_id
          JOIN subjects sub ON sub.id = s.subject_id
-        WHERE s.student_id = ?
+        WHERE s.student_id = ? ${statusFilter}
         ORDER BY s.session_date, s.start_time`,
-      [studentId],
+      params,
     );
     return res.json({ sessions: rows });
   } catch (error) {
