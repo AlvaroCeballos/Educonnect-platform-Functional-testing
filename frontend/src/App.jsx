@@ -66,6 +66,8 @@ export default function App() {
       {/* Rutas Públicas */}
       <Route path="/" element={<Home />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/login/student" element={<Navigate to="/login" replace />} />
+      <Route path="/login/admin" element={<Navigate to="/login" replace />} />
       <Route path="/registro" element={<RegisterStudent />} />
       <Route path="/register" element={<TutorRegistration />} />
       <Route path="/registro-exitoso" element={<RegisterSuccess />} />
@@ -74,7 +76,9 @@ export default function App() {
       {/* Rutas Protegidas */}
       <Route path="/dashboard/student" element={<ProtectedRoute><StudentDashboard /></ProtectedRoute>} />
       <Route path="/reservar" element={<ProtectedRoute><BookSession /></ProtectedRoute>} />
+      <Route path="/book-session" element={<ProtectedRoute><BookSession /></ProtectedRoute>} />
       <Route path="/mis-sesiones" element={<ProtectedRoute><MySessions /></ProtectedRoute>} />
+      <Route path="/my-sessions" element={<ProtectedRoute><MySessions /></ProtectedRoute>} />
       <Route path="/schedule" element={<ProtectedRoute><ScheduleForm /></ProtectedRoute>} />
       <Route path="/profile" element={<ProtectedRoute><TutorProfile /></ProtectedRoute>} />
       <Route path="/admin/dashboard" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />

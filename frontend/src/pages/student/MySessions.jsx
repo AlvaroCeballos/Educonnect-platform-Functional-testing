@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import api from '../../utils/api';
 
@@ -48,6 +49,22 @@ export default function MySessions() {
   };
 
   return <main className="single-panel"><section className="form-panel schedule-panel">
+    <div style={{ marginBottom: '14px' }}>
+      <Link
+        to="/dashboard/student"
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '6px',
+          fontSize: '13px',
+          fontWeight: 600,
+          color: '#0f766e',
+          textDecoration: 'none',
+        }}
+      >
+        ← Volver a tutores disponibles
+      </Link>
+    </div>
     <div className="form-heading"><p className="eyebrow">MIS SESIONES</p><h2>Sesiones programadas</h2><p>Consulta y cancela tus sesiones pendientes.</p></div>
     {loading && <p>Cargando…</p>}
     {!loading && sessions.length === 0 && <p>Todavía no tienes sesiones programadas.</p>}
