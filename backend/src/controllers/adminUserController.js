@@ -1,16 +1,23 @@
 const pool = require('../config/db');
+const { sendAccountDecisionEmail } = require('../utils/mailer');
 
 const ALLOWED_STATUS = new Set(['APPROVED', 'REJECTED']);
 
 const listUsers = async (req, res) => {
   const status = String(req.query.status || 'PENDING').toUpperCase();
+  const role = req.query.role ? String(req.query.role).toLowerCase() : null;
+
   const validStatuses = new Set(['PENDING', 'APPROVED', 'REJECTED', 'DISABLED']);
   if (!validStatuses.has(status)) {
     return res.status(400).json({ message: 'Estado de usuario no válido' });
   }
 
+  if (role && !['student', 'tutor'].includes(role)) {
+    return res.status(400).json({ message: 'Rol de usuario no válido' });
+  }
+
   try {
-    const [rows] = await pool.execute(`
+    let query = `
       SELECT
         u.id,
         u.email,
@@ -20,14 +27,33 @@ const listUsers = async (req, res) => {
         COALESCE(sp.nombre, tp.nombre) AS nombre,
         COALESCE(sp.apellido, tp.apellido) AS apellido,
         COALESCE(sp.carnet, tp.carnet) AS carnet,
+        COALESCE(sp.genero, tp.genero) AS genero,
+        COALESCE(sp.fecha_nacimiento, tp.fecha_nacimiento) AS fecha_nacimiento,
+        COALESCE(sp.fotografia_url, tp.fotografia_url) AS fotografia_url,
+        sp.carrera,
+        COALESCE(sp.universidad, tp.universidad) AS universidad,
+        tp.identificacion,
         tp.especialidad,
-        tp.fotografia_url
+        tp.direccion_tutoria,
+        tp.anio_inicio_experiencia
       FROM users u
       LEFT JOIN student_profiles sp ON sp.user_id = u.id
       LEFT JOIN tutor_profiles tp ON tp.user_id = u.id
-      WHERE u.status = ? AND u.role IN ('student', 'tutor')
-      ORDER BY u.created_at ASC, u.id ASC
-    `, [status]);
+      WHERE u.status = ?
+    `;
+
+    const params = [status];
+
+    if (role) {
+      query += ` AND u.role = ?`;
+      params.push(role);
+    } else {
+      query += ` AND u.role IN ('student', 'tutor')`;
+    }
+
+    query += ` ORDER BY u.created_at ASC, u.id ASC`;
+
+    const [rows] = await pool.execute(query, params);
 
     return res.json({ users: rows });
   } catch (error) {
@@ -39,6 +65,7 @@ const listUsers = async (req, res) => {
 const updateUserStatus = async (req, res) => {
   const userId = Number(req.params.id);
   const status = String(req.body?.status || '').toUpperCase();
+  const reason = String(req.body?.reason || '').trim();
 
   if (!Number.isInteger(userId) || userId < 1) {
     return res.status(400).json({ message: 'El identificador de usuario no es válido' });
@@ -48,23 +75,55 @@ const updateUserStatus = async (req, res) => {
   }
 
   try {
-    const [result] = await pool.execute(`
-      UPDATE users
-      SET status = ?
-      WHERE id = ? AND status = 'PENDING' AND role IN ('student', 'tutor')
-    `, [status, userId]);
+    // 1. Obtener datos previos del usuario para la notificación
+    const [userRows] = await pool.execute(`
+      SELECT 
+        u.id, 
+        u.email, 
+        u.role, 
+        u.status,
+        COALESCE(sp.nombre, tp.nombre) AS nombre,
+        COALESCE(sp.apellido, tp.apellido) AS apellido
+      FROM users u
+      LEFT JOIN student_profiles sp ON sp.user_id = u.id
+      LEFT JOIN tutor_profiles tp ON tp.user_id = u.id
+      WHERE u.id = ? AND u.status = 'PENDING' AND u.role IN ('student', 'tutor')
+    `, [userId]);
 
-    if (result.affectedRows === 0) {
+    if (userRows.length === 0) {
       return res.status(404).json({ message: 'Solicitud pendiente no encontrada' });
     }
 
-    const [rows] = await pool.execute(`
-      SELECT id, email, role, status
-      FROM users
-      WHERE id = ?
-    `, [userId]);
+    const targetUser = userRows[0];
 
-    return res.json({ message: `Solicitud ${status === 'APPROVED' ? 'aprobada' : 'rechazada'}`, user: rows[0] });
+    // 2. Actualizar estado
+    await pool.execute(`
+      UPDATE users
+      SET status = ?
+      WHERE id = ? AND status = 'PENDING'
+    `, [status, userId]);
+
+    // 3. Enviar correo de notificación (HU-004 / HU-005)
+    const nombreCompleto = [targetUser.nombre, targetUser.apellido].filter(Boolean).join(' ') || 'Usuario';
+    sendAccountDecisionEmail({
+      to: targetUser.email,
+      nombre: nombreCompleto,
+      role: targetUser.role,
+      status,
+      reason,
+    }).catch((mailErr) => {
+      console.error('Error enviando notificación por correo:', mailErr);
+    });
+
+    return res.json({
+      message: `Solicitud ${status === 'APPROVED' ? 'aprobada' : 'rechazada'} exitosamente`,
+      user: {
+        id: targetUser.id,
+        email: targetUser.email,
+        role: targetUser.role,
+        status,
+      },
+    });
   } catch (error) {
     console.error('Error actualizando estado de usuario:', error);
     return res.status(500).json({ message: 'No fue posible actualizar la solicitud' });
@@ -72,3 +131,4 @@ const updateUserStatus = async (req, res) => {
 };
 
 module.exports = { listUsers, updateUserStatus };
+

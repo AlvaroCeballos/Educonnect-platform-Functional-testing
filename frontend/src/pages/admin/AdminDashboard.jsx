@@ -1,19 +1,23 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Swal from 'sweetalert2';
 import api from '../../utils/api';
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const [admin, setAdmin] = useState(null);
   const [users, setUsers] = useState([]);
+  const [activeTab, setActiveTab] = useState('students'); // 'students' | 'tutors'
   const [loading, setLoading] = useState(true);
   const [actionId, setActionId] = useState(null);
-  const [error, setError] = useState('');
-  const [feedback, setFeedback] = useState('');
 
   const loadUsers = useCallback(async () => {
-    const response = await api.get('/admin/users', { params: { status: 'PENDING' } });
-    setUsers(response.data.users || []);
+    try {
+      const response = await api.get('/admin/users', { params: { status: 'PENDING' } });
+      setUsers(response.data.users || []);
+    } catch (err) {
+      console.error('Error cargando usuarios:', err);
+    }
   }, []);
 
   useEffect(() => {
@@ -42,76 +46,352 @@ export default function AdminDashboard() {
     verifyAccess();
   }, [loadUsers, navigate]);
 
-  const updateStatus = async (user, status) => {
+  const handleApprove = async (user) => {
+    const roleLabel = user.role === 'tutor' ? 'tutor' : 'estudiante';
+    const nombre = [user.nombre, user.apellido].filter(Boolean).join(' ') || 'el usuario';
+
+    const confirm = await Swal.fire({
+      icon: 'question',
+      title: `¿Aprobar ${roleLabel}?`,
+      html: `¿Estás seguro de que deseas aprobar la cuenta de <strong>${nombre}</strong>?<br><br><span style="font-size: 13px; color: #64748b;">Se habilitará el acceso y se enviará un correo automático a <strong>${user.email}</strong>.</span>`,
+      showCancelButton: true,
+      confirmButtonText: 'Sí, aprobar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#167963',
+      cancelButtonColor: '#64748b',
+    });
+
+    if (!confirm.isConfirmed) return;
+
     setActionId(user.id);
-    setError('');
-    setFeedback('');
     try {
-      const response = await api.patch(`/admin/users/${user.id}/status`, { status });
-      setFeedback(response.data.message);
+      const res = await api.patch(`/admin/users/${user.id}/status`, { status: 'APPROVED' });
+      await Swal.fire({
+        icon: 'success',
+        title: '¡Solicitud aprobada!',
+        text: res.data.message || `La cuenta ha sido aprobada y se notificó al usuario.`,
+        confirmButtonColor: '#167963',
+      });
       await loadUsers();
     } catch (err) {
-      setError(err.response?.data?.message || 'No fue posible actualizar la solicitud.');
+      await Swal.fire({
+        icon: 'error',
+        title: 'Error al aprobar',
+        text: err.response?.data?.message || 'No fue posible actualizar la solicitud.',
+        confirmButtonColor: '#167963',
+      });
     } finally {
       setActionId(null);
     }
   };
 
-  if (loading)
-    return <div className="flex min-h-screen items-center justify-center">Cargando...</div>;
+  const handleReject = async (user) => {
+    const roleLabel = user.role === 'tutor' ? 'tutor' : 'estudiante';
+    const nombre = [user.nombre, user.apellido].filter(Boolean).join(' ') || 'el usuario';
+
+    const { value: reason, isConfirmed } = await Swal.fire({
+      icon: 'warning',
+      title: `¿Rechazar ${roleLabel}?`,
+      html: `Indica el motivo del rechazo para <strong>${nombre}</strong> (se incluirá en el correo):`,
+      input: 'textarea',
+      inputPlaceholder: 'Ej: Datos ilegibles, carnet no coincide con registros...',
+      showCancelButton: true,
+      confirmButtonText: 'Confirmar rechazo',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#a42e3a',
+      cancelButtonColor: '#64748b',
+      inputValidator: (value) => {
+        if (!value || !value.trim()) {
+          return 'Debes ingresar un motivo de rechazo';
+        }
+      },
+    });
+
+    if (!isConfirmed) return;
+
+    setActionId(user.id);
+    try {
+      const res = await api.patch(`/admin/users/${user.id}/status`, {
+        status: 'REJECTED',
+        reason: reason.trim(),
+      });
+      await Swal.fire({
+        icon: 'info',
+        title: 'Solicitud rechazada',
+        text: res.data.message || `La solicitud ha sido rechazada y se notificó al usuario.`,
+        confirmButtonColor: '#167963',
+      });
+      await loadUsers();
+    } catch (err) {
+      await Swal.fire({
+        icon: 'error',
+        title: 'Error al rechazar',
+        text: err.response?.data?.message || 'No fue posible actualizar la solicitud.',
+        confirmButtonColor: '#167963',
+      });
+    } finally {
+      setActionId(null);
+    }
+  };
+
+  const students = users.filter((u) => u.role === 'student');
+  const tutors = users.filter((u) => u.role === 'tutor');
+
+  const formatGender = (gender) => {
+    if (gender === 'M') return 'Masculino';
+    if (gender === 'F') return 'Femenino';
+    if (gender === 'OTHER') return 'Otro';
+    return 'No especificado';
+  };
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '—';
+    try {
+      const d = new Date(dateStr);
+      return d.toLocaleDateString('es-GT', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    } catch {
+      return dateStr.slice(0, 10);
+    }
+  };
+
+  if (loading) {
+    return <div className="flex min-h-screen items-center justify-center font-bold text-teal-800">Cargando solicitudes...</div>;
+  }
 
   return (
     <div className="admin-shell">
       <header className="admin-header">
         <div>
           <p className="eyebrow">EDUCONNECT · ADMINISTRACIÓN</p>
-          <h1>Panel administrativo</h1>
+          <h1>Panel Administrativo</h1>
           <p>Bienvenido, {admin?.email}</p>
         </div>
-        <button className="admin-logout" onClick={() => {
-          localStorage.removeItem('token');
-          localStorage.removeItem('admin');
-          navigate('/login');
-        }}>Cerrar sesión</button>
+        <button
+          className="admin-logout"
+          onClick={() => {
+            localStorage.removeItem('token');
+            localStorage.removeItem('admin');
+            navigate('/login');
+          }}
+        >
+          Cerrar sesión
+        </button>
       </header>
 
       <main className="admin-content">
         <section className="admin-section-heading">
           <div>
-            <p className="eyebrow">HU-004 · HU-005</p>
-            <h2>Solicitudes pendientes</h2>
-            <p>Revisa cada registro y decide si puede acceder a la plataforma.</p>
+            <p className="eyebrow">CONTROL DE ACCESO</p>
+            <h2>Solicitudes Pendientes de Aprobación</h2>
+            <p>Revisa la información de cada postulante y aprueba o rechaza el acceso al sistema.</p>
           </div>
-          <span className="admin-count">{users.length} pendientes</span>
+          <span className="admin-count">{users.length} pendientes en total</span>
         </section>
 
-        {error && <div className="feedback error">{error}</div>}
-        {feedback && <div className="feedback success">{feedback}</div>}
+        {/* Pestañas para separar Estudiantes y Tutores */}
+        <div className="admin-tabs">
+          <button
+            type="button"
+            className={`admin-tab ${activeTab === 'students' ? 'active' : ''}`}
+            onClick={() => setActiveTab('students')}
+          >
+            Estudiantes
+            <span className="admin-tab-count">{students.length}</span>
+          </button>
+          <button
+            type="button"
+            className={`admin-tab ${activeTab === 'tutors' ? 'active' : ''}`}
+            onClick={() => setActiveTab('tutors')}
+          >
+            Tutores
+            <span className="admin-tab-count">{tutors.length}</span>
+          </button>
+        </div>
 
-        <section className="admin-table-card">
-          {users.length === 0 ? (
-            <div className="admin-empty">No hay solicitudes pendientes.</div>
-          ) : (
-            <div className="admin-table-wrap">
-              <table className="admin-table">
-                <thead><tr><th>Usuario</th><th>Rol</th><th>Identificación</th><th>Detalle</th><th>Acciones</th></tr></thead>
-                <tbody>{users.map((user) => (
-                  <tr key={user.id}>
-                    <td><strong>{[user.nombre, user.apellido].filter(Boolean).join(' ') || 'Sin nombre'}</strong><span>{user.email}</span></td>
-                    <td><span className={`role-badge ${user.role}`}>{user.role === 'tutor' ? 'Tutor' : 'Estudiante'}</span></td>
-                    <td>{user.carnet || '—'}</td>
-                    <td>{user.especialidad || 'Registro académico'}</td>
-                    <td><div className="admin-actions">
-                      <button className="approve-button" disabled={actionId === user.id} onClick={() => updateStatus(user, 'APPROVED')}>Aprobar</button>
-                      <button className="reject-button" disabled={actionId === user.id} onClick={() => updateStatus(user, 'REJECTED')}>Rechazar</button>
-                    </div></td>
-                  </tr>
-                ))}</tbody>
-              </table>
+        {/* TAB 1: ESTUDIANTES PENDIENTES (HU-004) */}
+        {activeTab === 'students' && (
+          <section className="admin-table-card">
+            <div className="admin-tab-header">
+              <h3>Solicitudes de Registro de Estudiantes (HU-004)</h3>
+              <p>Valida la información académica y decide la admisión a la plataforma.</p>
             </div>
-          )}
-        </section>
+
+            {students.length === 0 ? (
+              <div className="admin-empty">No hay solicitudes de estudiantes pendientes de aprobación.</div>
+            ) : (
+              <div className="admin-table-wrap">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Estudiante</th>
+                      <th>Carnet</th>
+                      <th>Género</th>
+                      <th>Fecha Nacimiento</th>
+                      <th>Fecha Solicitud</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {students.map((student) => (
+                      <tr key={student.id}>
+                        <td>
+                          <div className="admin-user-info">
+                            {student.fotografia_url ? (
+                              <img
+                                src={student.fotografia_url}
+                                alt="Foto Estudiante"
+                                className="admin-user-avatar"
+                              />
+                            ) : (
+                              <div className="admin-avatar-placeholder" title="Fotografía por defecto">
+                                {(student.nombre?.[0] || 'E').toUpperCase()}
+                              </div>
+                            )}
+                            <div>
+                              <strong>
+                                {[student.nombre, student.apellido].filter(Boolean).join(' ') || 'Sin nombre'}
+                              </strong>
+                              <span>{student.email}</span>
+                              {student.universidad && (
+                                <span style={{ fontSize: '11px', color: '#0f766e' }}>{student.universidad}</span>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                        <td>
+                          <span className="font-mono font-bold text-slate-700">{student.carnet || '—'}</span>
+                        </td>
+                        <td>
+                          <span className="badge-gender">{formatGender(student.genero)}</span>
+                        </td>
+                        <td>{formatDate(student.fecha_nacimiento)}</td>
+                        <td>{formatDate(student.created_at)}</td>
+                        <td>
+                          <div className="admin-actions">
+                            <button
+                              type="button"
+                              className="approve-button"
+                              disabled={actionId === student.id}
+                              onClick={() => handleApprove(student)}
+                            >
+                              {actionId === student.id ? '...' : 'Aceptar'}
+                            </button>
+                            <button
+                              type="button"
+                              className="reject-button"
+                              disabled={actionId === student.id}
+                              onClick={() => handleReject(student)}
+                            >
+                              {actionId === student.id ? '...' : 'Rechazar'}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* TAB 2: TUTORES PENDIENTES (HU-005) */}
+        {activeTab === 'tutors' && (
+          <section className="admin-table-card">
+            <div className="admin-tab-header">
+              <h3>Solicitudes de Registro de Tutores (HU-005)</h3>
+              <p>Revisa la fotografía obligatoria, especialidad y credenciales profesionales del tutor.</p>
+            </div>
+
+            {tutors.length === 0 ? (
+              <div className="admin-empty">No hay solicitudes de tutores pendientes de aprobación.</div>
+            ) : (
+              <div className="admin-table-wrap">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Tutor</th>
+                      <th>Carnet / Identificación</th>
+                      <th>Especialidad</th>
+                      <th>Modalidad</th>
+                      <th>Fecha Solicitud</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {tutors.map((tutor) => (
+                      <tr key={tutor.id}>
+                        <td>
+                          <div className="admin-user-info">
+                            {tutor.fotografia_url ? (
+                              <img
+                                src={tutor.fotografia_url}
+                                alt="Foto Tutor"
+                                className="admin-user-avatar"
+                              />
+                            ) : (
+                              <div className="admin-avatar-placeholder tutor">
+                                {(tutor.nombre?.[0] || 'T').toUpperCase()}
+                              </div>
+                            )}
+                            <div>
+                              <strong>
+                                {[tutor.nombre, tutor.apellido].filter(Boolean).join(' ') || 'Sin nombre'}
+                              </strong>
+                              <span>{tutor.email}</span>
+                              <span style={{ fontSize: '11px', color: '#64748b' }}>
+                                {formatGender(tutor.genero)} · {tutor.universidad || 'Universidad'}
+                              </span>
+                            </div>
+                          </div>
+                        </td>
+                        <td>
+                          <div>
+                            <strong>Carnet: {tutor.carnet || '—'}</strong>
+                            <span style={{ fontSize: '11px', color: '#64748b' }}>
+                              ID: {tutor.identificacion || '—'}
+                            </span>
+                          </div>
+                        </td>
+                        <td>
+                          <span className="badge-specialty">{tutor.especialidad || 'General'}</span>
+                        </td>
+                        <td>
+                          <span style={{ fontSize: '13px', color: '#334155' }}>
+                            {tutor.direccion_tutoria || 'Online'}
+                          </span>
+                        </td>
+                        <td>{formatDate(tutor.created_at)}</td>
+                        <td>
+                          <div className="admin-actions">
+                            <button
+                              type="button"
+                              className="approve-button"
+                              disabled={actionId === tutor.id}
+                              onClick={() => handleApprove(tutor)}
+                            >
+                              {actionId === tutor.id ? '...' : 'Aceptar'}
+                            </button>
+                            <button
+                              type="button"
+                              className="reject-button"
+                              disabled={actionId === tutor.id}
+                              onClick={() => handleReject(tutor)}
+                            >
+                              {actionId === tutor.id ? '...' : 'Rechazar'}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+        )}
       </main>
     </div>
   );
 }
+
