@@ -57,3 +57,54 @@ test('HU-005: rechaza roles que no sean student o tutor', () => {
   assert.equal(result.valid, false);
   assert.match(result.message, /Rol/);
 });
+
+// Validaciones de baja lógica de usuarios aprobados (HU-024 / HU-025)
+const validateDisableUser = (userId, currentStatus, role) => {
+  const numericId = Number(userId);
+  if (!Number.isInteger(numericId) || numericId < 1) {
+    return { valid: false, message: 'El identificador de usuario no es válido' };
+  }
+
+  const normalizedRole = String(role || '').toLowerCase();
+  if (!['student', 'tutor'].includes(normalizedRole)) {
+    return { valid: false, message: 'Rol de usuario no válido' };
+  }
+
+  if (currentStatus === 'DISABLED') {
+    return { valid: false, statusCode: 409, message: 'El usuario ya se encuentra dado de baja' };
+  }
+
+  if (currentStatus !== 'APPROVED') {
+    return { valid: false, statusCode: 400, message: 'Solo es posible dar de baja a usuarios aprobados' };
+  }
+
+  return { valid: true, userId: numericId, status: 'DISABLED', role: normalizedRole };
+};
+
+test('HU-024: da de baja exitosamente a un estudiante aprobado', () => {
+  const result = validateDisableUser(10, 'APPROVED', 'student');
+  assert.equal(result.valid, true);
+  assert.equal(result.status, 'DISABLED');
+  assert.equal(result.role, 'student');
+});
+
+test('HU-024: rechaza dar de baja a un estudiante que ya está DISABLED (409)', () => {
+  const result = validateDisableUser(10, 'DISABLED', 'student');
+  assert.equal(result.valid, false);
+  assert.equal(result.statusCode, 409);
+  assert.match(result.message, /ya se encuentra dado de baja/);
+});
+
+test('HU-024: rechaza dar de baja a un estudiante con estado PENDING (400)', () => {
+  const result = validateDisableUser(10, 'PENDING', 'student');
+  assert.equal(result.valid, false);
+  assert.equal(result.statusCode, 400);
+  assert.match(result.message, /usuarios aprobados/);
+});
+
+test('HU-024: rechaza ID inválido al dar de baja a un estudiante', () => {
+  const result = validateDisableUser('invalido', 'APPROVED', 'student');
+  assert.equal(result.valid, false);
+  assert.match(result.message, /identificador/);
+});
+

@@ -29,11 +29,15 @@ const createTransporter = () => {
 const sendAccountDecisionEmail = async ({ to, nombre, role, status, reason = '' }) => {
   const roleLabel = role === 'tutor' ? 'Tutor' : 'Estudiante';
   const isApproved = status === 'APPROVED';
+  const isDisabled = status === 'DISABLED';
   const from = process.env.SMTP_FROM || 'noreply@educonnect.local';
 
-  const subject = isApproved
-    ? `¡Tu cuenta de ${roleLabel} ha sido aprobada! — EduConnect`
-    : `Actualización sobre tu solicitud de ${roleLabel} — EduConnect`;
+  let subject = `Actualización sobre tu solicitud de ${roleLabel} — EduConnect`;
+  if (isApproved) {
+    subject = `¡Tu cuenta de ${roleLabel} ha sido aprobada! — EduConnect`;
+  } else if (isDisabled) {
+    subject = `Notificación: Tu cuenta de ${roleLabel} ha sido dada de baja — EduConnect`;
+  }
 
   const htmlContent = `
     <!DOCTYPE html>
@@ -63,11 +67,13 @@ const sendAccountDecisionEmail = async ({ to, nombre, role, status, reason = '' 
         </div>
         <div class="content">
           <p>Hola <strong>${nombre || 'Usuario'}</strong>,</p>
-          <p>Te informamos que la administración ha revisado tu solicitud de registro como <strong>${roleLabel}</strong>.</p>
+          <p>Te informamos sobre una actualización de tu cuenta de <strong>${roleLabel}</strong> en EduConnect.</p>
           
           <div class="status-box ${isApproved ? 'approved' : 'rejected'}">
             ${isApproved
               ? '<strong>¡Felicidades!</strong> Tu cuenta ha sido <strong>APROBADA</strong> exitosamente. Ya puedes iniciar sesión y acceder a todas las funcionalidades del sistema.'
+              : isDisabled
+              ? `<strong>Estado de la cuenta: DADA DE BAJA</strong>.<br>Te informamos que tu cuenta de ${roleLabel} ha sido desactivada por el administrador.${reason ? `<br><br><strong>Motivo:</strong> ${reason}` : ''}`
               : `<strong>Estado de la solicitud: RECHAZADA</strong>.<br>Lamentablemente tu solicitud no ha sido aceptada en esta ocasión.${reason ? `<br><br><strong>Motivo:</strong> ${reason}` : ''}`}
           </div>
 

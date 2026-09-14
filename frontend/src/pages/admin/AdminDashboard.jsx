@@ -6,15 +6,22 @@ import api from '../../utils/api';
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const [admin, setAdmin] = useState(null);
-  const [users, setUsers] = useState([]);
+  const [pendingUsers, setPendingUsers] = useState([]);
+  const [approvedUsers, setApprovedUsers] = useState([]);
   const [activeTab, setActiveTab] = useState('students'); // 'students' | 'tutors'
+  const [studentView, setStudentView] = useState('pending'); // 'pending' | 'approved'
+  const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [actionId, setActionId] = useState(null);
 
   const loadUsers = useCallback(async () => {
     try {
-      const response = await api.get('/admin/users', { params: { status: 'PENDING' } });
-      setUsers(response.data.users || []);
+      const [pendingRes, approvedRes] = await Promise.all([
+        api.get('/admin/users', { params: { status: 'PENDING' } }),
+        api.get('/admin/users', { params: { status: 'APPROVED' } }),
+      ]);
+      setPendingUsers(pendingRes.data.users || []);
+      setApprovedUsers(approvedRes.data.users || []);
     } catch (err) {
       console.error('Error cargando usuarios:', err);
     }
@@ -200,8 +207,63 @@ export default function AdminDashboard() {
     }
   };
 
-  const students = users.filter((u) => u.role === 'student');
-  const tutors = users.filter((u) => u.role === 'tutor');
+  const handleDisableStudent = async (student) => {
+    const nombre = [student.nombre, student.apellido].filter(Boolean).join(' ') || 'el estudiante';
+
+    const confirm = await Swal.fire({
+      icon: 'warning',
+      title: '¿Dar de baja al estudiante?',
+      html: `
+        ¿Estás seguro de que deseas dar de baja a <strong>${nombre}</strong>?<br>
+        <span style="font-size: 13px; color: #64748b;">Carnet: ${student.carnet || '—'} · Correo: ${student.email}</span><br><br>
+        <span style="font-size: 13px; color: #a42e3a; font-weight: 600;">
+          ⚠️ Esta acción es una baja lógica: el estudiante no podrá volver a iniciar sesión en la plataforma.
+        </span>
+      `,
+      showCancelButton: true,
+      confirmButtonText: 'Sí, dar de baja',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#a42e3a',
+      cancelButtonColor: '#64748b',
+    });
+
+    if (!confirm.isConfirmed) return;
+
+    setActionId(student.id);
+    try {
+      const res = await api.patch(`/admin/users/${student.id}/disable`);
+      await Swal.fire({
+        icon: 'success',
+        title: 'Estudiante dado de baja',
+        text: res.data.message || 'La cuenta del estudiante ha sido desactivada.',
+        confirmButtonColor: '#167963',
+      });
+      await loadUsers();
+    } catch (err) {
+      await Swal.fire({
+        icon: 'error',
+        title: 'Error al dar de baja',
+        text: err.response?.data?.message || 'No fue posible dar de baja al estudiante.',
+        confirmButtonColor: '#167963',
+      });
+    } finally {
+      setActionId(null);
+    }
+  };
+
+  const pendingStudents = pendingUsers.filter((u) => u.role === 'student');
+  const approvedStudents = approvedUsers.filter((u) => u.role === 'student');
+  const pendingTutors = pendingUsers.filter((u) => u.role === 'tutor');
+  const approvedTutors = approvedUsers.filter((u) => u.role === 'tutor');
+
+  const filteredApprovedStudents = approvedStudents.filter((u) => {
+    if (!searchTerm.trim()) return true;
+    const term = searchTerm.toLowerCase();
+    const fullName = `${u.nombre || ''} ${u.apellido || ''}`.toLowerCase();
+    const carnet = String(u.carnet || '').toLowerCase();
+    const email = String(u.email || '').toLowerCase();
+    return fullName.includes(term) || carnet.includes(term) || email.includes(term);
+  });
 
   const formatGender = (gender) => {
     if (gender === 'M') return 'Masculino';
@@ -247,11 +309,13 @@ export default function AdminDashboard() {
       <main className="admin-content">
         <section className="admin-section-heading">
           <div>
-            <p className="eyebrow">CONTROL DE ACCESO</p>
-            <h2>Solicitudes Pendientes de Aprobación</h2>
-            <p>Revisa la información de cada postulante y aprueba o rechaza el acceso al sistema.</p>
+            <p className="eyebrow">CONTROL DE ACCESO Y ADMINISTRACIÓN</p>
+            <h2>Gestión de Usuarios y Solicitudes</h2>
+            <p>Supervisa las solicitudes de ingreso y administra los usuarios activos en la plataforma.</p>
           </div>
-          <span className="admin-count">{users.length} pendientes en total</span>
+          <span className="admin-count">
+            {pendingStudents.length + pendingTutors.length} solicitudes pendientes
+          </span>
         </section>
 
         {/* Pestañas para separar Estudiantes y Tutores */}
@@ -262,7 +326,7 @@ export default function AdminDashboard() {
             onClick={() => setActiveTab('students')}
           >
             Estudiantes
-            <span className="admin-tab-count">{students.length}</span>
+            <span className="admin-tab-count">{pendingStudents.length + approvedStudents.length}</span>
           </button>
           <button
             type="button"
@@ -270,95 +334,233 @@ export default function AdminDashboard() {
             onClick={() => setActiveTab('tutors')}
           >
             Tutores
-            <span className="admin-tab-count">{tutors.length}</span>
+            <span className="admin-tab-count">{pendingTutors.length + approvedTutors.length}</span>
           </button>
         </div>
 
-        {/* TAB 1: ESTUDIANTES PENDIENTES (HU-004) */}
+        {/* TAB 1: MÓDULO DE ESTUDIANTES (HU-004 y HU-024) */}
         {activeTab === 'students' && (
-          <section className="admin-table-card">
-            <div className="admin-tab-header">
-              <h3>Solicitudes de Registro de Estudiantes (HU-004)</h3>
-              <p>Valida la información académica y decide la admisión a la plataforma.</p>
+          <div>
+            {/* Subpestañas para separar Pendientes y Aprobados */}
+            <div className="admin-subtabs">
+              <button
+                type="button"
+                className={`admin-subtab ${studentView === 'pending' ? 'active' : ''}`}
+                onClick={() => setStudentView('pending')}
+              >
+                Solicitudes Pendientes (HU-004)
+                <span className="badge-sub">{pendingStudents.length}</span>
+              </button>
+              <button
+                type="button"
+                className={`admin-subtab ${studentView === 'approved' ? 'active' : ''}`}
+                onClick={() => setStudentView('approved')}
+              >
+                Estudiantes Aprobados / Activos (HU-024)
+                <span className="badge-sub">{approvedStudents.length}</span>
+              </button>
             </div>
 
-            {students.length === 0 ? (
-              <div className="admin-empty">No hay solicitudes de estudiantes pendientes de aprobación.</div>
-            ) : (
-              <div className="admin-table-wrap">
-                <table className="admin-table">
-                  <thead>
-                    <tr>
-                      <th>Estudiante</th>
-                      <th>Carnet</th>
-                      <th>Género</th>
-                      <th>Fecha Nacimiento</th>
-                      <th>Fecha Solicitud</th>
-                      <th>Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {students.map((student) => (
-                      <tr key={student.id}>
-                        <td>
-                          <div className="admin-user-info">
-                            {student.fotografia_url ? (
-                              <img
-                                src={resolveMediaUrl(student.fotografia_url)}
-                                alt="Foto Estudiante"
-                                className="admin-user-avatar"
-                              />
-                            ) : (
-                              <div className="admin-avatar-placeholder" title="Fotografía por defecto">
-                                {(student.nombre?.[0] || 'E').toUpperCase()}
+            {/* Vista 1.1: Solicitudes Pendientes (HU-004) */}
+            {studentView === 'pending' && (
+              <section className="admin-table-card">
+                <div className="admin-tab-header">
+                  <h3>Solicitudes de Registro de Estudiantes (HU-004)</h3>
+                  <p>Valida la información académica y decide la admisión a la plataforma.</p>
+                </div>
+
+                {pendingStudents.length === 0 ? (
+                  <div className="admin-empty">No hay solicitudes de estudiantes pendientes de aprobación.</div>
+                ) : (
+                  <div className="admin-table-wrap">
+                    <table className="admin-table">
+                      <thead>
+                        <tr>
+                          <th>Estudiante</th>
+                          <th>Carnet</th>
+                          <th>Género</th>
+                          <th>Fecha Nacimiento</th>
+                          <th>Fecha Solicitud</th>
+                          <th>Acciones</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {pendingStudents.map((student) => (
+                          <tr key={student.id}>
+                            <td>
+                              <div className="admin-user-info">
+                                {student.fotografia_url ? (
+                                  <img
+                                    src={resolveMediaUrl(student.fotografia_url)}
+                                    alt="Foto Estudiante"
+                                    className="admin-user-avatar"
+                                  />
+                                ) : (
+                                  <div className="admin-avatar-placeholder" title="Fotografía por defecto">
+                                    {(student.nombre?.[0] || 'E').toUpperCase()}
+                                  </div>
+                                )}
+                                <div>
+                                  <strong>
+                                    {[student.nombre, student.apellido].filter(Boolean).join(' ') || 'Sin nombre'}
+                                  </strong>
+                                  <span>{student.email}</span>
+                                  {student.universidad && (
+                                    <span style={{ fontSize: '11px', color: '#0f766e' }}>{student.universidad}</span>
+                                  )}
+                                </div>
                               </div>
-                            )}
-                            <div>
-                              <strong>
-                                {[student.nombre, student.apellido].filter(Boolean).join(' ') || 'Sin nombre'}
-                              </strong>
-                              <span>{student.email}</span>
-                              {student.universidad && (
-                                <span style={{ fontSize: '11px', color: '#0f766e' }}>{student.universidad}</span>
-                              )}
-                            </div>
-                          </div>
-                        </td>
-                        <td>
-                          <span className="font-mono font-bold text-slate-700">{student.carnet || '—'}</span>
-                        </td>
-                        <td>
-                          <span className="badge-gender">{formatGender(student.genero)}</span>
-                        </td>
-                        <td>{formatDate(student.fecha_nacimiento)}</td>
-                        <td>{formatDate(student.created_at)}</td>
-                        <td>
-                          <div className="admin-actions">
-                            <button
-                              type="button"
-                              className="approve-button"
-                              disabled={actionId === student.id}
-                              onClick={() => handleApprove(student)}
-                            >
-                              {actionId === student.id ? '...' : 'Aceptar'}
-                            </button>
-                            <button
-                              type="button"
-                              className="reject-button"
-                              disabled={actionId === student.id}
-                              onClick={() => handleReject(student)}
-                            >
-                              {actionId === student.id ? '...' : 'Rechazar'}
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                            </td>
+                            <td>
+                              <span className="font-mono font-bold text-slate-700">{student.carnet || '—'}</span>
+                            </td>
+                            <td>
+                              <span className="badge-gender">{formatGender(student.genero)}</span>
+                            </td>
+                            <td>{formatDate(student.fecha_nacimiento)}</td>
+                            <td>{formatDate(student.created_at)}</td>
+                            <td>
+                              <div className="admin-actions">
+                                <button
+                                  type="button"
+                                  className="approve-button"
+                                  disabled={actionId === student.id}
+                                  onClick={() => handleApprove(student)}
+                                >
+                                  {actionId === student.id ? '...' : 'Aceptar'}
+                                </button>
+                                <button
+                                  type="button"
+                                  className="reject-button"
+                                  disabled={actionId === student.id}
+                                  onClick={() => handleReject(student)}
+                                >
+                                  {actionId === student.id ? '...' : 'Rechazar'}
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </section>
             )}
-          </section>
+
+            {/* Vista 1.2: Estudiantes Aprobados / Activos (HU-024) */}
+            {studentView === 'approved' && (
+              <section className="admin-table-card">
+                <div className="admin-tab-header">
+                  <h3>Administración de Estudiantes Aprobados (HU-024)</h3>
+                  <p>Consulta a los estudiantes activos. Puedes dar de baja a una cuenta para revocar su acceso.</p>
+                </div>
+
+                {/* Barra de búsqueda por Carnet, Nombre o Correo */}
+                <div className="admin-search-bar">
+                  <input
+                    type="text"
+                    className="admin-search-input"
+                    placeholder="🔍 Buscar por carnet, nombre o correo..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                  {searchTerm && (
+                    <button
+                      type="button"
+                      className="admin-clear-search"
+                      onClick={() => setSearchTerm('')}
+                    >
+                      Limpiar
+                    </button>
+                  )}
+                  <span style={{ fontSize: '13px', color: '#64748b', marginLeft: 'auto' }}>
+                    {filteredApprovedStudents.length} de {approvedStudents.length} estudiantes
+                  </span>
+                </div>
+
+                {approvedStudents.length === 0 ? (
+                  <div className="admin-empty">Aún no hay estudiantes en estado aprobado.</div>
+                ) : filteredApprovedStudents.length === 0 ? (
+                  <div className="admin-empty">No se encontraron estudiantes que coincidan con la búsqueda.</div>
+                ) : (
+                  <div className="admin-table-wrap">
+                    <table className="admin-table">
+                      <thead>
+                        <tr>
+                          <th>Estudiante</th>
+                          <th>Carnet</th>
+                          <th>Universidad / Carrera</th>
+                          <th>Género</th>
+                          <th>Estado</th>
+                          <th>Fecha Registro</th>
+                          <th>Acciones</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredApprovedStudents.map((student) => (
+                          <tr key={student.id}>
+                            <td>
+                              <div className="admin-user-info">
+                                {student.fotografia_url ? (
+                                  <img
+                                    src={resolveMediaUrl(student.fotografia_url)}
+                                    alt="Foto Estudiante"
+                                    className="admin-user-avatar"
+                                  />
+                                ) : (
+                                  <div className="admin-avatar-placeholder" title="Fotografía por defecto">
+                                    {(student.nombre?.[0] || 'E').toUpperCase()}
+                                  </div>
+                                )}
+                                <div>
+                                  <strong>
+                                    {[student.nombre, student.apellido].filter(Boolean).join(' ') || 'Sin nombre'}
+                                  </strong>
+                                  <span>{student.email}</span>
+                                </div>
+                              </div>
+                            </td>
+                            <td>
+                              <span className="font-mono font-bold text-slate-800" style={{ fontSize: '14px' }}>
+                                {student.carnet || '—'}
+                              </span>
+                            </td>
+                            <td>
+                              <strong style={{ fontSize: '13px', color: '#0f766e' }}>
+                                {student.universidad || 'USAC'}
+                              </strong>
+                              <span style={{ fontSize: '11px', color: '#64748b' }}>
+                                {student.carrera || 'Ingeniería en Sistemas'}
+                              </span>
+                            </td>
+                            <td>
+                              <span className="badge-gender">{formatGender(student.genero)}</span>
+                            </td>
+                            <td>
+                              <span className="badge-status-active">ACTIVO</span>
+                            </td>
+                            <td>{formatDate(student.created_at)}</td>
+                            <td>
+                              <button
+                                type="button"
+                                className="disable-button"
+                                disabled={actionId === student.id}
+                                title="Dar de baja lógica a este estudiante"
+                                onClick={() => handleDisableStudent(student)}
+                              >
+                                {actionId === student.id ? 'Procesando...' : 'Dar de baja'}
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </section>
+            )}
+          </div>
         )}
 
         {/* TAB 2: TUTORES PENDIENTES (HU-005) */}
