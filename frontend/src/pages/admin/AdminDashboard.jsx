@@ -10,7 +10,9 @@ export default function AdminDashboard() {
   const [approvedUsers, setApprovedUsers] = useState([]);
   const [activeTab, setActiveTab] = useState('students'); // 'students' | 'tutors'
   const [studentView, setStudentView] = useState('pending'); // 'pending' | 'approved'
-  const [searchTerm, setSearchTerm] = useState('');
+  const [tutorView, setTutorView] = useState('pending'); // 'pending' | 'approved'
+  const [studentSearchTerm, setStudentSearchTerm] = useState('');
+  const [tutorSearchTerm, setTutorSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [actionId, setActionId] = useState(null);
 
@@ -138,10 +140,12 @@ export default function AdminDashboard() {
           <div><strong>Género:</strong> ${formatGender(tutor.genero)}</div>
           <div><strong>Fecha de Nacimiento:</strong> ${formatDate(tutor.fecha_nacimiento)}</div>
           <div><strong>Fecha de Solicitud:</strong> ${formatDate(tutor.created_at)}</div>
+          <div><strong>Estado actual:</strong> <span style="font-weight:700; color:${tutor.status === 'APPROVED' ? '#167963' : '#b45309'};">${tutor.status === 'APPROVED' ? 'Aprobado / Activo' : 'Pendiente'}</span></div>
         </div>
       `,
       showCancelButton: true,
-      showDenyButton: true,
+      showConfirmButton: tutor.status !== 'APPROVED',
+      showDenyButton: tutor.status !== 'APPROVED',
       confirmButtonText: 'Aceptar Tutor',
       denyButtonText: 'Rechazar Tutor',
       cancelButtonText: 'Cerrar',
@@ -149,10 +153,12 @@ export default function AdminDashboard() {
       denyButtonColor: '#a42e3a',
       cancelButtonColor: '#64748b',
     }).then((result) => {
-      if (result.isConfirmed) {
-        handleApprove(tutor);
-      } else if (result.isDenied) {
-        handleReject(tutor);
+      if (tutor.status !== 'APPROVED') {
+        if (result.isConfirmed) {
+          handleApprove(tutor);
+        } else if (result.isDenied) {
+          handleReject(tutor);
+        }
       }
     });
   };
@@ -251,18 +257,84 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleDisableTutor = async (tutor) => {
+    const nombre = [tutor.nombre, tutor.apellido].filter(Boolean).join(' ') || 'el tutor';
+
+    const { value: reason, isConfirmed } = await Swal.fire({
+      icon: 'warning',
+      title: '¿Dar de baja al tutor?',
+      html: `
+        ¿Estás seguro de que deseas dar de baja a <strong>${nombre}</strong>?<br>
+        <span style="font-size: 13px; color: #64748b;">Especialidad: ${tutor.especialidad || 'General'} · Correo: ${tutor.email}</span><br><br>
+        <span style="font-size: 13px; color: #a42e3a; font-weight: 600;">
+          ⚠️ Esta acción es una baja lógica: el tutor no podrá iniciar sesión, no aparecerá en el catálogo de estudiantes y se enviará una notificación por correo a <strong>${tutor.email}</strong>.
+        </span><br><br>
+        <label style="display:block; text-align:left; font-size:12px; font-weight:600; color:#475569; margin-bottom:4px;">Motivo de la baja (opcional, para el correo):</label>
+      `,
+      input: 'textarea',
+      inputPlaceholder: 'Ej: Inactividad prolongada, solicitud voluntaria o incumplimiento de normativas...',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, dar de baja',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#a42e3a',
+      cancelButtonColor: '#64748b',
+    });
+
+    if (!isConfirmed) return;
+
+    setActionId(tutor.id);
+    try {
+      const res = await api.patch(`/admin/users/${tutor.id}/disable`, { reason: reason || '' });
+      await Swal.fire({
+        icon: 'success',
+        title: 'Tutor dado de baja',
+        text: res.data.message || 'La cuenta del tutor ha sido desactivada y se notificó por correo.',
+        confirmButtonColor: '#167963',
+      });
+      await loadUsers();
+    } catch (err) {
+      await Swal.fire({
+        icon: 'error',
+        title: 'Error al dar de baja',
+        text: err.response?.data?.message || 'No fue posible dar de baja al tutor.',
+        confirmButtonColor: '#167963',
+      });
+    } finally {
+      setActionId(null);
+    }
+  };
+
   const pendingStudents = pendingUsers.filter((u) => u.role === 'student');
   const approvedStudents = approvedUsers.filter((u) => u.role === 'student');
   const pendingTutors = pendingUsers.filter((u) => u.role === 'tutor');
   const approvedTutors = approvedUsers.filter((u) => u.role === 'tutor');
 
   const filteredApprovedStudents = approvedStudents.filter((u) => {
-    if (!searchTerm.trim()) return true;
-    const term = searchTerm.toLowerCase();
+    if (!studentSearchTerm.trim()) return true;
+    const term = studentSearchTerm.toLowerCase();
     const fullName = `${u.nombre || ''} ${u.apellido || ''}`.toLowerCase();
     const carnet = String(u.carnet || '').toLowerCase();
     const email = String(u.email || '').toLowerCase();
     return fullName.includes(term) || carnet.includes(term) || email.includes(term);
+  });
+
+  const filteredApprovedTutors = approvedTutors.filter((u) => {
+    if (!tutorSearchTerm.trim()) return true;
+    const term = tutorSearchTerm.toLowerCase();
+    const fullName = `${u.nombre || ''} ${u.apellido || ''}`.toLowerCase();
+    const carnet = String(u.carnet || '').toLowerCase();
+    const email = String(u.email || '').toLowerCase();
+    const especialidad = String(u.especialidad || '').toLowerCase();
+    const universidad = String(u.universidad || '').toLowerCase();
+    const identificacion = String(u.identificacion || '').toLowerCase();
+    return (
+      fullName.includes(term) ||
+      carnet.includes(term) ||
+      email.includes(term) ||
+      especialidad.includes(term) ||
+      universidad.includes(term) ||
+      identificacion.includes(term)
+    );
   });
 
   const formatGender = (gender) => {
@@ -462,14 +534,14 @@ export default function AdminDashboard() {
                     type="text"
                     className="admin-search-input"
                     placeholder="🔍 Buscar por carnet, nombre o correo..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
+                    value={studentSearchTerm}
+                    onChange={(e) => setStudentSearchTerm(e.target.value)}
                   />
-                  {searchTerm && (
+                  {studentSearchTerm && (
                     <button
                       type="button"
                       className="admin-clear-search"
-                      onClick={() => setSearchTerm('')}
+                      onClick={() => setStudentSearchTerm('')}
                     >
                       Limpiar
                     </button>
@@ -563,126 +635,296 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* TAB 2: TUTORES PENDIENTES (HU-005) */}
+        {/* TAB 2: MÓDULO DE TUTORES (HU-005 y HU-025) */}
         {activeTab === 'tutors' && (
-          <section className="admin-table-card">
-            <div className="admin-tab-header">
-              <h3>Solicitudes de Registro de Tutores (HU-005)</h3>
-              <p>Revisa la fotografía obligatoria, especialidad y credenciales profesionales del tutor.</p>
+          <div>
+            {/* Subpestañas para separar Pendientes y Aprobados */}
+            <div className="admin-subtabs">
+              <button
+                type="button"
+                className={`admin-subtab ${tutorView === 'pending' ? 'active' : ''}`}
+                onClick={() => setTutorView('pending')}
+              >
+                Solicitudes Pendientes (HU-005)
+                <span className="badge-sub">{pendingTutors.length}</span>
+              </button>
+              <button
+                type="button"
+                className={`admin-subtab ${tutorView === 'approved' ? 'active' : ''}`}
+                onClick={() => setTutorView('approved')}
+              >
+                Tutores Aprobados / Activos (HU-025)
+                <span className="badge-sub">{approvedTutors.length}</span>
+              </button>
             </div>
 
-            {tutors.length === 0 ? (
-              <div className="admin-empty">No hay solicitudes de tutores pendientes de aprobación.</div>
-            ) : (
-              <div className="admin-table-wrap">
-                <table className="admin-table">
-                  <thead>
-                    <tr>
-                      <th>Tutor</th>
-                      <th>Carnet / Identificación</th>
-                      <th>Especialidad / Exp.</th>
-                      <th>Universidad / Modalidad</th>
-                      <th>Fecha Solicitud</th>
-                      <th>Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {tutors.map((tutor) => (
-                      <tr key={tutor.id}>
-                        <td>
-                          <div className="admin-user-info">
-                            <div
-                              className="admin-avatar-wrapper"
-                              onClick={() => handleViewTutorDetails(tutor)}
-                              title="Ver expediente del tutor"
-                            >
-                              {tutor.fotografia_url ? (
-                                <img
-                                  src={resolveMediaUrl(tutor.fotografia_url)}
-                                  alt="Foto Tutor"
-                                  className="admin-user-avatar tutor-avatar"
-                                  onError={(e) => {
-                                    e.target.style.display = 'none';
-                                    if (e.target.nextSibling) e.target.nextSibling.style.display = 'flex';
-                                  }}
-                                />
-                              ) : null}
-                              <div
-                                className="admin-avatar-placeholder tutor"
-                                style={{ display: tutor.fotografia_url ? 'none' : 'flex' }}
-                              >
-                                {(tutor.nombre?.[0] || 'T').toUpperCase()}
+            {/* Vista 2.1: Solicitudes Pendientes (HU-005) */}
+            {tutorView === 'pending' && (
+              <section className="admin-table-card">
+                <div className="admin-tab-header">
+                  <h3>Solicitudes de Registro de Tutores (HU-005)</h3>
+                  <p>Revisa la fotografía obligatoria, especialidad y credenciales profesionales del tutor.</p>
+                </div>
+
+                {pendingTutors.length === 0 ? (
+                  <div className="admin-empty">No hay solicitudes de tutores pendientes de aprobación.</div>
+                ) : (
+                  <div className="admin-table-wrap">
+                    <table className="admin-table">
+                      <thead>
+                        <tr>
+                          <th>Tutor</th>
+                          <th>Carnet / Identificación</th>
+                          <th>Especialidad / Exp.</th>
+                          <th>Universidad / Modalidad</th>
+                          <th>Fecha Solicitud</th>
+                          <th>Acciones</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {pendingTutors.map((tutor) => (
+                          <tr key={tutor.id}>
+                            <td>
+                              <div className="admin-user-info">
+                                <div
+                                  className="admin-avatar-wrapper"
+                                  onClick={() => handleViewTutorDetails(tutor)}
+                                  title="Ver expediente del tutor"
+                                >
+                                  {tutor.fotografia_url ? (
+                                    <img
+                                      src={resolveMediaUrl(tutor.fotografia_url)}
+                                      alt="Foto Tutor"
+                                      className="admin-user-avatar tutor-avatar"
+                                      onError={(e) => {
+                                        e.target.style.display = 'none';
+                                        if (e.target.nextSibling) e.target.nextSibling.style.display = 'flex';
+                                      }}
+                                    />
+                                  ) : null}
+                                  <div
+                                    className="admin-avatar-placeholder tutor"
+                                    style={{ display: tutor.fotografia_url ? 'none' : 'flex' }}
+                                  >
+                                    {(tutor.nombre?.[0] || 'T').toUpperCase()}
+                                  </div>
+                                </div>
+                                <div>
+                                  <strong>
+                                    {[tutor.nombre, tutor.apellido].filter(Boolean).join(' ') || 'Sin nombre'}
+                                  </strong>
+                                  <span>{tutor.email}</span>
+                                  <span style={{ fontSize: '11px', color: '#64748b' }}>
+                                    {formatGender(tutor.genero)}
+                                  </span>
+                                </div>
                               </div>
-                            </div>
-                            <div>
-                              <strong>
-                                {[tutor.nombre, tutor.apellido].filter(Boolean).join(' ') || 'Sin nombre'}
-                              </strong>
-                              <span>{tutor.email}</span>
-                              <span style={{ fontSize: '11px', color: '#64748b' }}>
-                                {formatGender(tutor.genero)}
+                            </td>
+                            <td>
+                              <div>
+                                <strong>Carnet: {tutor.carnet || '—'}</strong>
+                                <span style={{ fontSize: '11px', color: '#64748b' }}>
+                                  DPI: {tutor.identificacion || '—'}
+                                </span>
+                              </div>
+                            </td>
+                            <td>
+                              <span className="badge-specialty">{tutor.especialidad || 'General'}</span>
+                              {tutor.anio_inicio_experiencia && (
+                                <span style={{ fontSize: '11px', color: '#475569', marginTop: '4px' }}>
+                                  Desde {tutor.anio_inicio_experiencia} ({new Date().getFullYear() - Number(tutor.anio_inicio_experiencia)} años exp.)
+                                </span>
+                              )}
+                            </td>
+                            <td>
+                              <strong style={{ fontSize: '13px', color: '#0f766e' }}>{tutor.universidad || '—'}</strong>
+                              <span style={{ fontSize: '12px', color: '#334155' }}>
+                                {tutor.direccion_tutoria || 'Online'}
                               </span>
-                            </div>
-                          </div>
-                        </td>
-                        <td>
-                          <div>
-                            <strong>Carnet: {tutor.carnet || '—'}</strong>
-                            <span style={{ fontSize: '11px', color: '#64748b' }}>
-                              DPI: {tutor.identificacion || '—'}
-                            </span>
-                          </div>
-                        </td>
-                        <td>
-                          <span className="badge-specialty">{tutor.especialidad || 'General'}</span>
-                          {tutor.anio_inicio_experiencia && (
-                            <span style={{ fontSize: '11px', color: '#475569', marginTop: '4px' }}>
-                              Desde {tutor.anio_inicio_experiencia} ({new Date().getFullYear() - Number(tutor.anio_inicio_experiencia)} años exp.)
-                            </span>
-                          )}
-                        </td>
-                        <td>
-                          <strong style={{ fontSize: '13px', color: '#0f766e' }}>{tutor.universidad || '—'}</strong>
-                          <span style={{ fontSize: '12px', color: '#334155' }}>
-                            {tutor.direccion_tutoria || 'Online'}
-                          </span>
-                        </td>
-                        <td>{formatDate(tutor.created_at)}</td>
-                        <td>
-                          <div className="admin-actions">
-                            <button
-                              type="button"
-                              className="detail-button"
-                              title="Ver expediente completo"
-                              onClick={() => handleViewTutorDetails(tutor)}
-                            >
-                              Detalle
-                            </button>
-                            <button
-                              type="button"
-                              className="approve-button"
-                              disabled={actionId === tutor.id}
-                              onClick={() => handleApprove(tutor)}
-                            >
-                              {actionId === tutor.id ? '...' : 'Aceptar'}
-                            </button>
-                            <button
-                              type="button"
-                              className="reject-button"
-                              disabled={actionId === tutor.id}
-                              onClick={() => handleReject(tutor)}
-                            >
-                              {actionId === tutor.id ? '...' : 'Rechazar'}
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                            </td>
+                            <td>{formatDate(tutor.created_at)}</td>
+                            <td>
+                              <div className="admin-actions">
+                                <button
+                                  type="button"
+                                  className="detail-button"
+                                  title="Ver expediente completo"
+                                  onClick={() => handleViewTutorDetails(tutor)}
+                                >
+                                  Detalle
+                                </button>
+                                <button
+                                  type="button"
+                                  className="approve-button"
+                                  disabled={actionId === tutor.id}
+                                  onClick={() => handleApprove(tutor)}
+                                >
+                                  {actionId === tutor.id ? '...' : 'Aceptar'}
+                                </button>
+                                <button
+                                  type="button"
+                                  className="reject-button"
+                                  disabled={actionId === tutor.id}
+                                  onClick={() => handleReject(tutor)}
+                                >
+                                  {actionId === tutor.id ? '...' : 'Rechazar'}
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </section>
             )}
-          </section>
+
+            {/* Vista 2.2: Tutores Aprobados / Activos (HU-025) */}
+            {tutorView === 'approved' && (
+              <section className="admin-table-card">
+                <div className="admin-tab-header">
+                  <h3>Administración de Tutores Aprobados (HU-025)</h3>
+                  <p>Consulta los tutores acreditados en el sistema y gestiona la baja lógica con notificación por correo.</p>
+                </div>
+
+                {/* Barra de búsqueda para tutores */}
+                <div className="admin-search-bar">
+                  <input
+                    type="text"
+                    className="admin-search-input"
+                    placeholder="🔍 Buscar por nombre, carnet, especialidad o correo..."
+                    value={tutorSearchTerm}
+                    onChange={(e) => setTutorSearchTerm(e.target.value)}
+                  />
+                  {tutorSearchTerm && (
+                    <button
+                      type="button"
+                      className="admin-clear-search"
+                      onClick={() => setTutorSearchTerm('')}
+                    >
+                      Limpiar
+                    </button>
+                  )}
+                  <span style={{ fontSize: '13px', color: '#64748b', marginLeft: 'auto' }}>
+                    Mostrando <strong>{filteredApprovedTutors.length}</strong> de {approvedTutors.length} tutores
+                  </span>
+                </div>
+
+                {approvedTutors.length === 0 ? (
+                  <div className="admin-empty">Aún no hay tutores en estado aprobado.</div>
+                ) : filteredApprovedTutors.length === 0 ? (
+                  <div className="admin-empty">
+                    No se encontraron tutores que coincidan con "{tutorSearchTerm}".
+                  </div>
+                ) : (
+                  <div className="admin-table-wrap">
+                    <table className="admin-table">
+                      <thead>
+                        <tr>
+                          <th>Tutor</th>
+                          <th>Carnet / DPI</th>
+                          <th>Especialidad / Exp.</th>
+                          <th>Universidad / Modalidad</th>
+                          <th>Estado</th>
+                          <th>Fecha Registro</th>
+                          <th>Acciones</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredApprovedTutors.map((tutor) => (
+                          <tr key={tutor.id}>
+                            <td>
+                              <div className="admin-user-info">
+                                <div
+                                  className="admin-avatar-wrapper"
+                                  onClick={() => handleViewTutorDetails(tutor)}
+                                  title="Ver expediente del tutor"
+                                >
+                                  {tutor.fotografia_url ? (
+                                    <img
+                                      src={resolveMediaUrl(tutor.fotografia_url)}
+                                      alt="Foto Tutor"
+                                      className="admin-user-avatar tutor-avatar"
+                                      onError={(e) => {
+                                        e.target.style.display = 'none';
+                                        if (e.target.nextSibling) e.target.nextSibling.style.display = 'flex';
+                                      }}
+                                    />
+                                  ) : null}
+                                  <div
+                                    className="admin-avatar-placeholder tutor"
+                                    style={{ display: tutor.fotografia_url ? 'none' : 'flex' }}
+                                  >
+                                    {(tutor.nombre?.[0] || 'T').toUpperCase()}
+                                  </div>
+                                </div>
+                                <div>
+                                  <strong>
+                                    {[tutor.nombre, tutor.apellido].filter(Boolean).join(' ') || 'Sin nombre'}
+                                  </strong>
+                                  <span>{tutor.email}</span>
+                                </div>
+                              </div>
+                            </td>
+                            <td>
+                              <div>
+                                <span className="font-mono font-bold text-slate-800" style={{ fontSize: '14px' }}>
+                                  {tutor.carnet || '—'}
+                                </span>
+                                <span style={{ fontSize: '11px', color: '#64748b', display: 'block' }}>
+                                  DPI: {tutor.identificacion || '—'}
+                                </span>
+                              </div>
+                            </td>
+                            <td>
+                              <span className="badge-specialty">{tutor.especialidad || 'General'}</span>
+                              {tutor.anio_inicio_experiencia && (
+                                <span style={{ fontSize: '11px', color: '#475569', display: 'block', marginTop: '3px' }}>
+                                  Desde {tutor.anio_inicio_experiencia} ({new Date().getFullYear() - Number(tutor.anio_inicio_experiencia)} años exp.)
+                                </span>
+                              )}
+                            </td>
+                            <td>
+                              <strong style={{ fontSize: '13px', color: '#0f766e' }}>{tutor.universidad || '—'}</strong>
+                              <span style={{ fontSize: '12px', color: '#334155', display: 'block' }}>
+                                {tutor.direccion_tutoria || 'Online'}
+                              </span>
+                            </td>
+                            <td>
+                              <span className="badge-status-active">ACTIVO</span>
+                            </td>
+                            <td>{formatDate(tutor.created_at)}</td>
+                            <td>
+                              <div className="admin-actions">
+                                <button
+                                  type="button"
+                                  className="detail-button"
+                                  title="Ver expediente completo"
+                                  onClick={() => handleViewTutorDetails(tutor)}
+                                >
+                                  Detalle
+                                </button>
+                                <button
+                                  type="button"
+                                  className="disable-button"
+                                  disabled={actionId === tutor.id}
+                                  title="Dar de baja lógica a este tutor"
+                                  onClick={() => handleDisableTutor(tutor)}
+                                >
+                                  {actionId === tutor.id ? 'Procesando...' : 'Dar de baja'}
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </section>
+            )}
+          </div>
         )}
       </main>
     </div>
