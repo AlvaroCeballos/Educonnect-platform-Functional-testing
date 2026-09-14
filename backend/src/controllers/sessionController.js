@@ -196,4 +196,68 @@ const cancelSession = async (req, res, next) => {
   }
 };
 
-module.exports = { createSession, getMySessions, cancelSession, resolveStudentProfileId };
+// Función para resolver el ID del perfil del tutor (similar a resolveStudentProfileId)
+const resolveTutorProfileId = async (req) => {
+  if (req.user?.tutorId) return Number(req.user.tutorId);
+  const [rows] = await pool.execute('SELECT id FROM tutor_profiles WHERE user_id = ?', [req.user.id]);
+  return rows[0]?.id ?? null;
+};
+
+// Controlador principal de HU-017
+const cancelSessionByTutor = async (req, res, next) => {
+  const sessionId = Number(req.params.id);
+  if (!Number.isInteger(sessionId) || sessionId < 1) {
+    return res.status(400).json({ message: 'El identificador de la sesión no es válido' });
+  }
+
+  let connection;
+  try {
+    const tutorId = await resolveTutorProfileId(req);
+    if (!tutorId) return res.status(401).json({ message: 'La sesión no identifica al tutor' });
+
+    connection = await pool.getConnection();
+    await connection.beginTransaction();
+
+    // Bloqueo pesimista para evitar concurrencia
+    const [rows] = await connection.execute(
+      'SELECT id, tutor_id AS tutorId, status FROM sessions WHERE id = ? FOR UPDATE',
+      [sessionId],
+    );
+    const session = rows[0];
+    
+    if (!session || session.tutorId !== tutorId) {
+      await connection.rollback();
+      return res.status(404).json({ message: 'Sesión no encontrada' });
+    }
+    if (session.status !== 'PENDING') {
+      await connection.rollback();
+      return res.status(409).json({ message: 'Solo se pueden cancelar sesiones pendientes' });
+    }
+
+    // El cambio de estado libera la franja horaria automáticamente
+    await connection.execute(
+      "UPDATE sessions SET status = 'CANCELLED_BY_TUTOR' WHERE id = ?",
+      [sessionId],
+    );
+
+    await connection.commit();
+    return res.json({ 
+      message: 'Sesión cancelada correctamente', 
+      session: { id: sessionId, status: 'CANCELLED_BY_TUTOR' } 
+    });
+  } catch (error) {
+    if (connection) await connection.rollback();
+    return next(error);
+  } finally {
+    if (connection) connection.release();
+  }
+};
+
+module.exports = { 
+  createSession, 
+  getMySessions, 
+  cancelSession, 
+  resolveStudentProfileId,
+  resolveTutorProfileId,
+  cancelSessionByTutor
+};

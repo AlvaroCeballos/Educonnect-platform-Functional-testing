@@ -1,11 +1,10 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: '/api',   // el proxy de Vite redirige al backend
+  baseURL: '/api',
   headers: { 'Content-Type': 'application/json' },
 });
 
-// Adjunta el JWT automáticamente si existe en localStorage
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) config.headers.Authorization = `Bearer ${token}`;
@@ -13,11 +12,13 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Manejo global de 401 (token expirado - logout)
 api.interceptors.response.use(
   (res) => res,
   (err) => {
-    if (err.response?.status === 401) {
+    // Excluimos las rutas de login para que el frontend pueda atrapar el 401
+    const isAuthRoute = err.config?.url?.includes('/auth/login');
+    
+    if (err.response?.status === 401 && !isAuthRoute) {
       localStorage.removeItem('token');
       window.location.href = '/login';
     }
