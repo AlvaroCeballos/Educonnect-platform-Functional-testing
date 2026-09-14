@@ -9,6 +9,8 @@ const PORT = process.env.PORT || 5000;
 app.use(cors({ origin: process.env.CORS_ORIGIN || 'http://localhost:3000' }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+
 
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', service: 'EduConnect API', timestamp: new Date().toISOString() });

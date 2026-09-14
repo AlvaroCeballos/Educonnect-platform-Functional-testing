@@ -47,13 +47,23 @@ export default function AdminDashboard() {
   }, [loadUsers, navigate]);
 
   const handleApprove = async (user) => {
-    const roleLabel = user.role === 'tutor' ? 'tutor' : 'estudiante';
+    const isTutor = user.role === 'tutor';
+    const roleLabel = isTutor ? 'tutor' : 'estudiante';
     const nombre = [user.nombre, user.apellido].filter(Boolean).join(' ') || 'el usuario';
 
     const confirm = await Swal.fire({
       icon: 'question',
       title: `¿Aprobar ${roleLabel}?`,
-      html: `¿Estás seguro de que deseas aprobar la cuenta de <strong>${nombre}</strong>?<br><br><span style="font-size: 13px; color: #64748b;">Se habilitará el acceso y se enviará un correo automático a <strong>${user.email}</strong>.</span>`,
+      html: isTutor ? `
+        <div style="text-align: left; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 16px; margin: 12px 0; font-size: 13px; color: #334155;">
+          <p style="margin: 0 0 6px;"><strong>Tutor:</strong> ${nombre}</p>
+          <p style="margin: 0 0 6px;"><strong>Especialidad:</strong> ${user.especialidad || 'General'}</p>
+          <p style="margin: 0 0 6px;"><strong>Universidad:</strong> ${user.universidad || '—'}</p>
+          <p style="margin: 0;"><strong>Correo:</strong> ${user.email}</p>
+        </div>
+        ¿Confirmas la habilitación de este tutor?<br>
+        <span style="font-size: 13px; color: #64748b;">Podrá iniciar sesión, gestionar horarios y se enviará la notificación por correo.</span>
+      ` : `¿Estás seguro de que deseas aprobar la cuenta de <strong>${nombre}</strong>?<br><br><span style="font-size: 13px; color: #64748b;">Se habilitará el acceso y se enviará un correo automático a <strong>${user.email}</strong>.</span>`,
       showCancelButton: true,
       confirmButtonText: 'Sí, aprobar',
       cancelButtonText: 'Cancelar',
@@ -84,6 +94,62 @@ export default function AdminDashboard() {
       setActionId(null);
     }
   };
+
+  const resolveMediaUrl = (url) => {
+    if (!url) return '';
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    return `http://localhost:5000${url}`;
+  };
+
+  const handleViewTutorDetails = (tutor) => {
+    const currentYear = new Date().getFullYear();
+    const expYears = tutor.anio_inicio_experiencia ? currentYear - Number(tutor.anio_inicio_experiencia) : null;
+    const nombre = [tutor.nombre, tutor.apellido].filter(Boolean).join(' ') || 'Sin nombre';
+    const photoUrl = resolveMediaUrl(tutor.fotografia_url);
+
+    Swal.fire({
+      title: `<span style="font-size: 20px; font-weight: 800; color: #102c46;">Dossier del Tutor</span>`,
+      html: `
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 10px; margin: 12px 0;">
+          ${photoUrl ? `
+            <img src="${photoUrl}" alt="${nombre}" style="width: 90px; height: 90px; border-radius: 50%; object-fit: cover; border: 3px solid #167963; box-shadow: 0 4px 12px rgba(0,0,0,0.12);" onerror="this.style.display='none'" />
+          ` : `
+            <div style="width: 90px; height: 90px; border-radius: 50%; background: #167963; color: white; display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: bold;">
+              ${(tutor.nombre?.[0] || 'T').toUpperCase()}
+            </div>
+          `}
+          <h3 style="margin: 0; font-size: 18px; color: #0f172a;">${nombre}</h3>
+          <span style="font-size: 13px; color: #64748b;">${tutor.email}</span>
+        </div>
+        <div style="text-align: left; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; font-size: 13px; line-height: 1.8; color: #334155;">
+          <div><strong>Carnet:</strong> ${tutor.carnet || '—'}</div>
+          <div><strong>DPI / Identificación:</strong> ${tutor.identificacion || '—'}</div>
+          <div><strong>Especialidad:</strong> <span style="background: #eaf9f4; color: #14735e; padding: 2px 8px; border-radius: 6px; font-weight: 700;">${tutor.especialidad || '—'}</span></div>
+          <div><strong>Universidad:</strong> ${tutor.universidad || '—'}</div>
+          <div><strong>Experiencia:</strong> Desde ${tutor.anio_inicio_experiencia || '—'} ${expYears !== null ? `(${expYears} años)` : ''}</div>
+          <div><strong>Modalidad / Dirección:</strong> ${tutor.direccion_tutoria || '—'}</div>
+          <div><strong>Género:</strong> ${formatGender(tutor.genero)}</div>
+          <div><strong>Fecha de Nacimiento:</strong> ${formatDate(tutor.fecha_nacimiento)}</div>
+          <div><strong>Fecha de Solicitud:</strong> ${formatDate(tutor.created_at)}</div>
+        </div>
+      `,
+      showCancelButton: true,
+      showDenyButton: true,
+      confirmButtonText: 'Aceptar Tutor',
+      denyButtonText: 'Rechazar Tutor',
+      cancelButtonText: 'Cerrar',
+      confirmButtonColor: '#167963',
+      denyButtonColor: '#a42e3a',
+      cancelButtonColor: '#64748b',
+    }).then((result) => {
+      if (result.isConfirmed) {
+        handleApprove(tutor);
+      } else if (result.isDenied) {
+        handleReject(tutor);
+      }
+    });
+  };
+
 
   const handleReject = async (user) => {
     const roleLabel = user.role === 'tutor' ? 'tutor' : 'estudiante';
@@ -238,7 +304,7 @@ export default function AdminDashboard() {
                           <div className="admin-user-info">
                             {student.fotografia_url ? (
                               <img
-                                src={student.fotografia_url}
+                                src={resolveMediaUrl(student.fotografia_url)}
                                 alt="Foto Estudiante"
                                 className="admin-user-avatar"
                               />
@@ -312,8 +378,8 @@ export default function AdminDashboard() {
                     <tr>
                       <th>Tutor</th>
                       <th>Carnet / Identificación</th>
-                      <th>Especialidad</th>
-                      <th>Modalidad</th>
+                      <th>Especialidad / Exp.</th>
+                      <th>Universidad / Modalidad</th>
                       <th>Fecha Solicitud</th>
                       <th>Acciones</th>
                     </tr>
@@ -323,24 +389,36 @@ export default function AdminDashboard() {
                       <tr key={tutor.id}>
                         <td>
                           <div className="admin-user-info">
-                            {tutor.fotografia_url ? (
-                              <img
-                                src={tutor.fotografia_url}
-                                alt="Foto Tutor"
-                                className="admin-user-avatar"
-                              />
-                            ) : (
-                              <div className="admin-avatar-placeholder tutor">
+                            <div
+                              className="admin-avatar-wrapper"
+                              onClick={() => handleViewTutorDetails(tutor)}
+                              title="Ver expediente del tutor"
+                            >
+                              {tutor.fotografia_url ? (
+                                <img
+                                  src={resolveMediaUrl(tutor.fotografia_url)}
+                                  alt="Foto Tutor"
+                                  className="admin-user-avatar tutor-avatar"
+                                  onError={(e) => {
+                                    e.target.style.display = 'none';
+                                    if (e.target.nextSibling) e.target.nextSibling.style.display = 'flex';
+                                  }}
+                                />
+                              ) : null}
+                              <div
+                                className="admin-avatar-placeholder tutor"
+                                style={{ display: tutor.fotografia_url ? 'none' : 'flex' }}
+                              >
                                 {(tutor.nombre?.[0] || 'T').toUpperCase()}
                               </div>
-                            )}
+                            </div>
                             <div>
                               <strong>
                                 {[tutor.nombre, tutor.apellido].filter(Boolean).join(' ') || 'Sin nombre'}
                               </strong>
                               <span>{tutor.email}</span>
                               <span style={{ fontSize: '11px', color: '#64748b' }}>
-                                {formatGender(tutor.genero)} · {tutor.universidad || 'Universidad'}
+                                {formatGender(tutor.genero)}
                               </span>
                             </div>
                           </div>
@@ -349,21 +427,35 @@ export default function AdminDashboard() {
                           <div>
                             <strong>Carnet: {tutor.carnet || '—'}</strong>
                             <span style={{ fontSize: '11px', color: '#64748b' }}>
-                              ID: {tutor.identificacion || '—'}
+                              DPI: {tutor.identificacion || '—'}
                             </span>
                           </div>
                         </td>
                         <td>
                           <span className="badge-specialty">{tutor.especialidad || 'General'}</span>
+                          {tutor.anio_inicio_experiencia && (
+                            <span style={{ fontSize: '11px', color: '#475569', marginTop: '4px' }}>
+                              Desde {tutor.anio_inicio_experiencia} ({new Date().getFullYear() - Number(tutor.anio_inicio_experiencia)} años exp.)
+                            </span>
+                          )}
                         </td>
                         <td>
-                          <span style={{ fontSize: '13px', color: '#334155' }}>
+                          <strong style={{ fontSize: '13px', color: '#0f766e' }}>{tutor.universidad || '—'}</strong>
+                          <span style={{ fontSize: '12px', color: '#334155' }}>
                             {tutor.direccion_tutoria || 'Online'}
                           </span>
                         </td>
                         <td>{formatDate(tutor.created_at)}</td>
                         <td>
                           <div className="admin-actions">
+                            <button
+                              type="button"
+                              className="detail-button"
+                              title="Ver expediente completo"
+                              onClick={() => handleViewTutorDetails(tutor)}
+                            >
+                              Detalle
+                            </button>
                             <button
                               type="button"
                               className="approve-button"
