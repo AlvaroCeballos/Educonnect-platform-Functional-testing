@@ -9,7 +9,7 @@ const getTutors = async (_req, res, next) => {
   try {
     const [tutors] = await pool.execute(
       `SELECT tp.id, tp.user_id, tp.nombre, tp.apellido, tp.especialidad,
-              tp.universidad, tp.fotografia_url
+              tp.universidad, tp.fotografia_url, tp.direccion_tutoria
          FROM tutor_profiles tp
          JOIN users u ON u.id = tp.user_id
         WHERE u.role = 'tutor' AND u.status = 'APPROVED'
