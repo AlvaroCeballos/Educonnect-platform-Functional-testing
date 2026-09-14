@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../../utils/api';
+import TutorScheduleModal from '../../components/TutorScheduleModal';
 
 export default function StudentDashboard() {
   const navigate = useNavigate();
@@ -8,6 +9,7 @@ export default function StudentDashboard() {
   const [tutors, setTutors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [selectedTutorForSchedule, setSelectedTutorForSchedule] = useState(null);
 
   useEffect(() => {
     const studentData = localStorage.getItem('student');
@@ -185,7 +187,7 @@ export default function StudentDashboard() {
             </Link>
           </div>
         ) : (
-          /* Cuadrícula de tutores (HU-009) */
+          /* Cuadrícula de tutores */
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {tutors.map((tutor) => (
               <article
@@ -258,13 +260,20 @@ export default function StudentDashboard() {
                   </div>
                 </div>
 
-                {/* Acción de agendamiento (Enlaza hacia HU-011 / HU-012) */}
-                <div className="pt-3 border-t border-slate-100">
+                {/* Acciones de la tarjeta: Ver Horarios (HU-011) y Programar (HU-012) */}
+                <div className="pt-3 border-t border-slate-100 flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedTutorForSchedule(tutor)}
+                    className="flex-1 text-center bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 text-xs font-semibold py-2.5 px-3 rounded-lg transition-colors border border-slate-200 shadow-sm"
+                  >
+                    Ver Horarios
+                  </button>
                   <Link
                     to={`/book-session?tutorId=${tutor.id}`}
-                    className="w-full text-center block bg-emerald-700 hover:bg-emerald-800 active:bg-emerald-900 text-white text-sm font-semibold py-2 px-4 rounded-lg transition-colors shadow-sm"
+                    className="flex-1 text-center bg-emerald-700 hover:bg-emerald-800 active:bg-emerald-900 text-white text-xs font-semibold py-2.5 px-3 rounded-lg transition-colors shadow-sm flex items-center justify-center"
                   >
-                    Programar Sesión
+                    Programar
                   </Link>
                 </div>
               </article>
@@ -272,6 +281,14 @@ export default function StudentDashboard() {
           </div>
         )}
       </main>
+
+      {/* Modal de consulta de disponibilidad por fecha (HU-011) */}
+      {selectedTutorForSchedule && (
+        <TutorScheduleModal
+          tutor={selectedTutorForSchedule}
+          onClose={() => setSelectedTutorForSchedule(null)}
+        />
+      )}
     </div>
   );
 }
