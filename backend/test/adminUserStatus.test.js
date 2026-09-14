@@ -108,3 +108,31 @@ test('HU-024: rechaza ID inválido al dar de baja a un estudiante', () => {
   assert.match(result.message, /identificador/);
 });
 
+test('HU-025: da de baja exitosamente a un tutor aprobado', () => {
+  const result = validateDisableUser(4, 'APPROVED', 'tutor');
+  assert.equal(result.valid, true);
+  assert.equal(result.status, 'DISABLED');
+  assert.equal(result.role, 'tutor');
+});
+
+test('HU-025: rechaza dar de baja a un tutor que ya está DISABLED (409)', () => {
+  const result = validateDisableUser(4, 'DISABLED', 'tutor');
+  assert.equal(result.valid, false);
+  assert.equal(result.statusCode, 409);
+  assert.match(result.message, /ya se encuentra dado de baja/);
+});
+
+test('HU-025: rechaza dar de baja a un tutor con estado PENDING (400)', () => {
+  const result = validateDisableUser(4, 'PENDING', 'tutor');
+  assert.equal(result.valid, false);
+  assert.equal(result.statusCode, 400);
+  assert.match(result.message, /usuarios aprobados/);
+});
+
+test('HU-025: rechaza ID inválido al dar de baja a un tutor', () => {
+  const result = validateDisableUser('tutor-invalido', 'APPROVED', 'tutor');
+  assert.equal(result.valid, false);
+  assert.match(result.message, /identificador/);
+});
+
+

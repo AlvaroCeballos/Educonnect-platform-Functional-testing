@@ -25,14 +25,14 @@ const loginTutor = async (req, res) => {
     if (!tutor || !(await bcrypt.compare(password, tutor.password_hash))) {
       return res.status(401).json({ message: 'Correo o contraseña incorrectos' });
     }
-    if (tutor.status !== 'APPROVED') {
-      const messages = {
-        PENDING: 'Tu cuenta está pendiente de aprobación por el administrador',
-        REJECTED: 'Tu solicitud de tutor fue rechazada',
-        DISABLED: 'Tu cuenta de tutor está dada de baja',
-      };
-      return res.status(403).json({ message: messages[tutor.status] || 'Tu cuenta no está habilitada' });
-    }
+      if (tutor.status !== 'APPROVED') {
+        const messages = {
+          PENDING: 'Tu cuenta está pendiente de aprobación por el administrador',
+          REJECTED: 'Tu solicitud de tutor fue rechazada',
+          DISABLED: 'Tu cuenta de tutor ha sido dada de baja por el administrador',
+        };
+        return res.status(403).json({ message: messages[tutor.status] || 'Tu cuenta no está habilitada' });
+      }
 
     const token = jwt.sign(
       { id: tutor.user_id, tutorId: tutor.tutor_id, role: 'tutor', email: tutor.email, status: tutor.status },
