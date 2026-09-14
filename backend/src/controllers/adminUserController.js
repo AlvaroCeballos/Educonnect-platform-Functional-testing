@@ -209,6 +209,68 @@ const disableUser = async (req, res) => {
   }
 };
 
-module.exports = { listUsers, updateUserStatus, disableUser };
+/**
+ * HU-026: Reporte de tutores con más estudiantes atendidos
+ * GET /api/admin/reports/top-tutors
+ * GET /api/reports/tutors-demand
+ */
+const getTopTutorsReport = async (req, res) => {
+  try {
+    const query = `
+      SELECT 
+        tp.id AS tutor_id,
+        u.id AS user_id,
+        tp.nombre,
+        tp.apellido,
+        tp.carnet,
+        tp.especialidad,
+        tp.universidad,
+        tp.fotografia_url,
+        u.email,
+        u.status AS user_status,
+        COUNT(CASE WHEN s.status = 'ATTENDED' THEN 1 ELSE NULL END) AS total_atendidos,
+        COUNT(DISTINCT CASE WHEN s.status = 'ATTENDED' THEN s.student_id ELSE NULL END) AS estudiantes_distintos,
+        COUNT(s.id) AS total_sesiones_historicas
+      FROM tutor_profiles tp
+      JOIN users u ON u.id = tp.user_id
+      LEFT JOIN sessions s ON s.tutor_id = tp.id
+      GROUP BY tp.id, u.id, tp.nombre, tp.apellido, tp.carnet, tp.especialidad, tp.universidad, tp.fotografia_url, u.email, u.status
+      ORDER BY total_atendidos DESC, estudiantes_distintos DESC, tp.apellido ASC, tp.nombre ASC
+    `;
+
+    const [rows] = await pool.execute(query);
+
+    const formatted = rows.map((row, index) => ({
+      ranking: index + 1,
+      tutorId: row.tutor_id,
+      userId: row.user_id,
+      nombre: row.nombre,
+      apellido: row.apellido,
+      nombreCompleto: [row.nombre, row.apellido].filter(Boolean).join(' ') || 'Sin nombre',
+      email: row.email,
+      carnet: row.carnet || '—',
+      especialidad: row.especialidad || 'General',
+      universidad: row.universidad || '—',
+      fotografiaUrl: row.fotografia_url,
+      userStatus: row.user_status,
+      totalAtendidos: Number(row.total_atendidos) || 0,
+      estudiantesDistintos: Number(row.estudiantes_distintos) || 0,
+      totalSesiones: Number(row.total_sesiones_historicas) || 0,
+    }));
+
+    return res.json({
+      reportTitle: 'Reporte de Tutores con Más Estudiantes Atendidos (HU-026)',
+      generatedAt: new Date().toISOString(),
+      totalTutors: formatted.length,
+      topTutors: formatted,
+    });
+  } catch (error) {
+    console.error('Error generando reporte de tutores por demanda:', error);
+    return res.status(500).json({ message: 'Error interno al generar el reporte' });
+  }
+};
+
+module.exports = { listUsers, updateUserStatus, disableUser, getTopTutorsReport };
+
 
 
