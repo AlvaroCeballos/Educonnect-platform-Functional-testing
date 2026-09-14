@@ -38,3 +38,12 @@ coverage/
 # Docker
 .dockerignore
 docker-compose.override.yml
+
+# Material de Apoyo y Enunciados
+MaterialApoyo/
+Enunciado.md
+
+# Archivos locales de pnpm (para no causar conflictos con el equipo)
+pnpm-lock.yaml
+pnpm-workspace.yaml
+
