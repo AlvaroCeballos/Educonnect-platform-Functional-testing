@@ -1,10 +1,15 @@
 const router = require('express').Router();
 const { authenticateJWT, authorizeAdmin } = require('../middlewares/authJWT');
-const { getTopTutorsReport } = require('../controllers/adminUserController');
+const { getTopTutorsReport, getSubjectsDemandReport } = require('../controllers/adminUserController');
 
-// CU-ADM-07: Endpoint para reporte de tutores por demanda
 router.use(authenticateJWT, authorizeAdmin);
+
+// HU-026: Reporte de tutores con más estudiantes
 router.get('/tutors-demand', getTopTutorsReport);
 router.get('/top-tutors', getTopTutorsReport);
+
+// HU-027: Reporte de materias con mayor demanda
+router.get('/subjects-demand', getSubjectsDemandReport);
+router.get('/top-subjects', getSubjectsDemandReport);
 
 module.exports = router;

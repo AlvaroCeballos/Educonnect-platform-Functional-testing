@@ -79,7 +79,6 @@ const updateUserStatus = async (req, res) => {
   }
 
   try {
-    // 1. Obtener datos previos del usuario para la notificación
     const [userRows] = await pool.execute(`
       SELECT 
         u.id, 
@@ -100,14 +99,12 @@ const updateUserStatus = async (req, res) => {
 
     const targetUser = userRows[0];
 
-    // 2. Actualizar estado
     await pool.execute(`
       UPDATE users
       SET status = ?
       WHERE id = ? AND status = 'PENDING'
     `, [status, userId]);
 
-    // 3. Enviar correo de notificación (HU-004 / HU-005)
     const nombreCompleto = [targetUser.nombre, targetUser.apellido].filter(Boolean).join(' ') || 'Usuario';
     sendAccountDecisionEmail({
       to: targetUser.email,
@@ -134,10 +131,6 @@ const updateUserStatus = async (req, res) => {
   }
 };
 
-/**
- * HU-024 / HU-025: Dar de baja lógica a un usuario aprobado (estudiante o tutor)
- * PATCH /api/admin/users/:id/disable
- */
 const disableUser = async (req, res) => {
   const userId = Number(req.params.id);
   const reason = String(req.body?.reason || '').trim();
@@ -181,7 +174,6 @@ const disableUser = async (req, res) => {
       WHERE id = ? AND status = 'APPROVED'
     `, [userId]);
 
-    // Notificación por correo al dar de baja
     const nombreCompleto = [targetUser.nombre, targetUser.apellido].filter(Boolean).join(' ') || 'Usuario';
     sendAccountDecisionEmail({
       to: targetUser.email,
@@ -209,11 +201,6 @@ const disableUser = async (req, res) => {
   }
 };
 
-/**
- * HU-026: Reporte de tutores con más estudiantes atendidos
- * GET /api/admin/reports/top-tutors
- * GET /api/reports/tutors-demand
- */
 const getTopTutorsReport = async (req, res) => {
   try {
     const query = `
@@ -270,7 +257,69 @@ const getTopTutorsReport = async (req, res) => {
   }
 };
 
-module.exports = { listUsers, updateUserStatus, disableUser, getTopTutorsReport };
+/**
+ * HU-027: Reporte de materias con mayor demanda
+ * GET /api/admin/reports/top-subjects
+ * GET /api/admin/reports/subjects-demand
+ */
+const getSubjectsDemandReport = async (_req, res) => {
+  try {
+    const query = `
+      SELECT 
+        sub.id AS subject_id,
+        sub.nombre AS materia,
+        COUNT(s.id) AS total_sesiones,
+        COUNT(CASE WHEN s.status = 'ATTENDED' THEN 1 ELSE NULL END) AS sesiones_atendidas,
+        COUNT(CASE WHEN s.status = 'PENDING' THEN 1 ELSE NULL END) AS sesiones_pendientes,
+        COUNT(CASE WHEN s.status LIKE 'CANCELLED%' THEN 1 ELSE NULL END) AS sesiones_canceladas,
+        COUNT(DISTINCT s.student_id) AS estudiantes_unicos
+      FROM subjects sub
+      LEFT JOIN sessions s ON s.subject_id = sub.id
+      WHERE sub.is_active = TRUE
+      GROUP BY sub.id, sub.nombre
+      ORDER BY total_sesiones DESC, sesiones_atendidas DESC, sub.nombre ASC
+    `;
 
+    const [rows] = await pool.execute(query);
 
+    const totalSessionsAll = rows.reduce((acc, row) => acc + Number(row.total_sesiones), 0);
 
+    const formatted = rows.map((row, index) => {
+      const totalSesiones = Number(row.total_sesiones) || 0;
+      const porcentaje = totalSessionsAll > 0 
+        ? Math.round((totalSesiones / totalSessionsAll) * 100) 
+        : 0;
+
+      return {
+        ranking: index + 1,
+        subjectId: row.subject_id,
+        materia: row.materia,
+        totalSesiones,
+        sesionesAtendidas: Number(row.sesiones_atendidas) || 0,
+        sesionesPendientes: Number(row.sesiones_pendientes) || 0,
+        sesionesCanceladas: Number(row.sesiones_canceladas) || 0,
+        estudiantesUnicos: Number(row.estudiantes_unicos) || 0,
+        porcentaje,
+      };
+    });
+
+    return res.json({
+      reportTitle: 'Reporte de Materias con Mayor Demanda (HU-027)',
+      generatedAt: new Date().toISOString(),
+      totalSessionsAll,
+      topSubject: formatted[0] || null,
+      subjectsReport: formatted,
+    });
+  } catch (error) {
+    console.error('Error generando reporte de materias con mayor demanda:', error);
+    return res.status(500).json({ message: 'Error interno al generar el reporte de materias' });
+  }
+};
+
+module.exports = {
+  listUsers,
+  updateUserStatus,
+  disableUser,
+  getTopTutorsReport,
+  getSubjectsDemandReport,
+};

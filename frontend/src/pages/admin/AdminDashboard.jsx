@@ -10,28 +10,33 @@ export default function AdminDashboard() {
   const [pendingUsers, setPendingUsers] = useState([]);
   const [approvedUsers, setApprovedUsers] = useState([]);
   const [reportTutors, setReportTutors] = useState([]);
-  const [activeTab, setActiveTab] = useState('students'); // 'students' | 'tutors' | 'reports'
+  const [reportSubjects, setReportSubjects] = useState([]);
+  const [activeTab, setActiveTab] = useState('students'); // 'students' | 'tutors' | 'reports' | 'subjects-report'
   const [studentView, setStudentView] = useState('pending'); // 'pending' | 'approved'
   const [tutorView, setTutorView] = useState('pending'); // 'pending' | 'approved'
   const [studentSearchTerm, setStudentSearchTerm] = useState('');
   const [tutorSearchTerm, setTutorSearchTerm] = useState('');
   const [reportSearchTerm, setReportSearchTerm] = useState('');
+  const [subjectSearchTerm, setSubjectSearchTerm] = useState('');
   const [reportFilterMode, setReportFilterMode] = useState('all'); // 'all' | 'attendedOnly'
+  const [subjectFilterMode, setSubjectFilterMode] = useState('all'); // 'all' | 'withSessionsOnly'
   const [loading, setLoading] = useState(true);
   const [actionId, setActionId] = useState(null);
 
   const loadUsers = useCallback(async () => {
     try {
-      const [pendingRes, approvedRes, reportRes] = await Promise.all([
+      const [pendingRes, approvedRes, reportRes, subjectsReportRes] = await Promise.all([
         api.get('/admin/users', { params: { status: 'PENDING' } }),
         api.get('/admin/users', { params: { status: 'APPROVED' } }),
         api.get('/admin/reports/top-tutors').catch(() => ({ data: { topTutors: [] } })),
+        api.get('/admin/reports/top-subjects').catch(() => ({ data: { subjectsReport: [] } })),
       ]);
       setPendingUsers(pendingRes.data.users || []);
       setApprovedUsers(approvedRes.data.users || []);
       setReportTutors(reportRes.data?.topTutors || []);
+      setReportSubjects(subjectsReportRes.data?.subjectsReport || []);
     } catch (err) {
-      console.error('Error cargando usuarios o reporte:', err);
+      console.error('Error cargando usuarios o reportes:', err);
     }
   }, []);
 
@@ -168,7 +173,6 @@ export default function AdminDashboard() {
       }
     });
   };
-
 
   const handleReject = async (user) => {
     const roleLabel = user.role === 'tutor' ? 'tutor' : 'estudiante';
@@ -343,6 +347,7 @@ export default function AdminDashboard() {
     );
   });
 
+  // Cálculos para HU-026: Tutores
   const maxAttended = reportTutors.length > 0 ? Math.max(...reportTutors.map((t) => t.totalAtendidos)) : 0;
   const totalAttendedAll = reportTutors.reduce((acc, t) => acc + t.totalAtendidos, 0);
   const totalDistinctStudents = reportTutors.reduce((acc, t) => acc + t.estudiantesDistintos, 0);
@@ -359,6 +364,17 @@ export default function AdminDashboard() {
       t.especialidad.toLowerCase().includes(term) ||
       t.universidad.toLowerCase().includes(term)
     );
+  });
+
+  // Cálculos para HU-027: Materias
+  const totalSessionsAllSubjects = reportSubjects.reduce((acc, s) => acc + s.totalSesiones, 0);
+  const maxSubjectSessions = reportSubjects.length > 0 ? Math.max(...reportSubjects.map((s) => s.totalSesiones)) : 0;
+  const topSubject = reportSubjects.length > 0 && reportSubjects[0].totalSesiones > 0 ? reportSubjects[0] : null;
+
+  const filteredReportSubjects = reportSubjects.filter((s) => {
+    if (subjectFilterMode === 'withSessionsOnly' && s.totalSesiones === 0) return false;
+    if (!subjectSearchTerm.trim()) return true;
+    return s.materia.toLowerCase().includes(subjectSearchTerm.toLowerCase());
   });
 
   const downloadCSV = () => {
@@ -383,6 +399,31 @@ export default function AdminDashboard() {
     const csvLink = document.createElement('a');
     csvLink.href = csvUrl;
     csvLink.download = `reporte_tutores_demanda_${dateStr}.csv`;
+    document.body.appendChild(csvLink);
+    csvLink.click();
+    document.body.removeChild(csvLink);
+    setTimeout(() => URL.revokeObjectURL(csvUrl), 2000);
+  };
+
+  const downloadSubjectsCSV = () => {
+    if (reportSubjects.length === 0) return;
+    const dateStr = new Date().toISOString().slice(0, 10);
+    const headers = ['Ranking', 'Materia', 'Total Sesiones', 'Sesiones Atendidas', 'Sesiones Pendientes', 'Porcentaje Demanda'];
+    const rows = reportSubjects.map((s) => [
+      s.ranking,
+      `"${s.materia}"`,
+      s.totalSesiones,
+      s.sesionesAtendidas,
+      s.sesionesPendientes,
+      `${s.porcentaje}%`,
+    ]);
+
+    const csvContent = '\uFEFF' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    const csvBlob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const csvUrl = URL.createObjectURL(csvBlob);
+    const csvLink = document.createElement('a');
+    csvLink.href = csvUrl;
+    csvLink.download = `reporte_materias_demanda_${dateStr}.csv`;
     document.body.appendChild(csvLink);
     csvLink.click();
     document.body.removeChild(csvLink);
@@ -434,7 +475,6 @@ export default function AdminDashboard() {
       return;
     }
 
-    // Iniciar descargas de ambos archivos
     downloadCSV();
     setTimeout(() => {
       downloadPDF();
@@ -517,7 +557,7 @@ export default function AdminDashboard() {
           </span>
         </section>
 
-        {/* Pestañas para separar Estudiantes, Tutores y Reportes */}
+        {/* Pestañas para separar Estudiantes, Tutores y los dos Reportes */}
         <div className="admin-tabs">
           <button
             type="button"
@@ -540,15 +580,22 @@ export default function AdminDashboard() {
             className={`admin-tab ${activeTab === 'reports' ? 'active' : ''}`}
             onClick={() => setActiveTab('reports')}
           >
-            Reporte de Demanda (HU-026)
+            Reporte Tutores (HU-026)
             <span className="admin-tab-count">{totalAttendedAll}</span>
+          </button>
+          <button
+            type="button"
+            className={`admin-tab ${activeTab === 'subjects-report' ? 'active' : ''}`}
+            onClick={() => setActiveTab('subjects-report')}
+          >
+            Reporte Materias (HU-027)
+            <span className="admin-tab-count">{totalSessionsAllSubjects}</span>
           </button>
         </div>
 
         {/* TAB 1: MÓDULO DE ESTUDIANTES (HU-004 y HU-024) */}
         {activeTab === 'students' && (
           <div>
-            {/* Subpestañas para separar Pendientes y Aprobados */}
             <div className="admin-subtabs">
               <button
                 type="button"
@@ -568,7 +615,6 @@ export default function AdminDashboard() {
               </button>
             </div>
 
-            {/* Vista 1.1: Solicitudes Pendientes (HU-004) */}
             {studentView === 'pending' && (
               <section className="admin-table-card">
                 <div className="admin-tab-header">
@@ -655,7 +701,6 @@ export default function AdminDashboard() {
               </section>
             )}
 
-            {/* Vista 1.2: Estudiantes Aprobados / Activos (HU-024) */}
             {studentView === 'approved' && (
               <section className="admin-table-card">
                 <div className="admin-tab-header">
@@ -663,7 +708,6 @@ export default function AdminDashboard() {
                   <p>Consulta a los estudiantes activos. Puedes dar de baja a una cuenta para revocar su acceso.</p>
                 </div>
 
-                {/* Barra de búsqueda por Carnet, Nombre o Correo */}
                 <div className="admin-search-bar">
                   <input
                     type="text"
@@ -737,7 +781,7 @@ export default function AdminDashboard() {
                               <strong style={{ fontSize: '13px', color: '#0f766e' }}>
                                 {student.universidad || 'USAC'}
                               </strong>
-                              <span style={{ fontSize: '11px', color: '#64748b' }}>
+                              <span style={{ fontSize: '11px', color: '#64748b', display: 'block' }}>
                                 {student.carrera || 'Ingeniería en Sistemas'}
                               </span>
                             </td>
@@ -773,7 +817,6 @@ export default function AdminDashboard() {
         {/* TAB 2: MÓDULO DE TUTORES (HU-005 y HU-025) */}
         {activeTab === 'tutors' && (
           <div>
-            {/* Subpestañas para separar Pendientes y Aprobados */}
             <div className="admin-subtabs">
               <button
                 type="button"
@@ -793,7 +836,6 @@ export default function AdminDashboard() {
               </button>
             </div>
 
-            {/* Vista 2.1: Solicitudes Pendientes (HU-005) */}
             {tutorView === 'pending' && (
               <section className="admin-table-card">
                 <div className="admin-tab-header">
@@ -858,7 +900,7 @@ export default function AdminDashboard() {
                             <td>
                               <div>
                                 <strong>Carnet: {tutor.carnet || '—'}</strong>
-                                <span style={{ fontSize: '11px', color: '#64748b' }}>
+                                <span style={{ fontSize: '11px', color: '#64748b', display: 'block' }}>
                                   DPI: {tutor.identificacion || '—'}
                                 </span>
                               </div>
@@ -866,14 +908,14 @@ export default function AdminDashboard() {
                             <td>
                               <span className="badge-specialty">{tutor.especialidad || 'General'}</span>
                               {tutor.anio_inicio_experiencia && (
-                                <span style={{ fontSize: '11px', color: '#475569', marginTop: '4px' }}>
+                                <span style={{ fontSize: '11px', color: '#475569', display: 'block', marginTop: '4px' }}>
                                   Desde {tutor.anio_inicio_experiencia} ({new Date().getFullYear() - Number(tutor.anio_inicio_experiencia)} años exp.)
                                 </span>
                               )}
                             </td>
                             <td>
                               <strong style={{ fontSize: '13px', color: '#0f766e' }}>{tutor.universidad || '—'}</strong>
-                              <span style={{ fontSize: '12px', color: '#334155' }}>
+                              <span style={{ fontSize: '12px', color: '#334155', display: 'block' }}>
                                 {tutor.direccion_tutoria || 'Online'}
                               </span>
                             </td>
@@ -915,7 +957,6 @@ export default function AdminDashboard() {
               </section>
             )}
 
-            {/* Vista 2.2: Tutores Aprobados / Activos (HU-025) */}
             {tutorView === 'approved' && (
               <section className="admin-table-card">
                 <div className="admin-tab-header">
@@ -923,7 +964,6 @@ export default function AdminDashboard() {
                   <p>Consulta los tutores acreditados en el sistema y gestiona la baja lógica con notificación por correo.</p>
                 </div>
 
-                {/* Barra de búsqueda para tutores */}
                 <div className="admin-search-bar">
                   <input
                     type="text"
@@ -1102,7 +1142,7 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            {/* Tarjetas KPI de Resumen */}
+            {/* Tarjetas KPI */}
             <div className="report-metrics-grid">
               <div className="metric-card success">
                 <span className="metric-title">Sesiones Atendidas</span>
@@ -1125,7 +1165,7 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            {/* Barra de Filtros y Búsqueda */}
+            {/* Filtros */}
             <div className="admin-search-bar" style={{ flexWrap: 'wrap', gap: '12px' }}>
               <input
                 type="text"
@@ -1281,8 +1321,167 @@ export default function AdminDashboard() {
             )}
           </section>
         )}
+
+        {/* TAB 4: REPORTE DE MATERIAS CON MAYOR DEMANDA (HU-027) */}
+        {activeTab === 'subjects-report' && (
+          <section className="admin-table-card">
+            <div className="admin-tab-header">
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+                <div>
+                  <h3>Reporte: Materias con Mayor Demanda (HU-027)</h3>
+                  <p>Análisis de materias que más sesiones han generado en la plataforma.</p>
+                </div>
+                <div>
+                  <button
+                    type="button"
+                    className="export-csv-button"
+                    onClick={downloadSubjectsCSV}
+                    title="Descargar reporte de materias en formato CSV"
+                  >
+                    Descargar CSV
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Tarjetas KPI de Resumen */}
+            <div className="report-metrics-grid">
+              <div className="metric-card success">
+                <span className="metric-title">Total Sesiones Generadas</span>
+                <span className="metric-value">{totalSessionsAllSubjects}</span>
+                <span className="metric-desc">Sesiones totales registradas</span>
+              </div>
+              <div className="metric-card">
+                <span className="metric-title">Materias Ofertadas</span>
+                <span className="metric-value">{reportSubjects.length}</span>
+                <span className="metric-desc">Materias activas en catálogo</span>
+              </div>
+              <div className="metric-card accent">
+                <span className="metric-title">Materia #1 en Demanda</span>
+                <span className="metric-value" style={{ fontSize: '18px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {topSubject ? `#1 ${topSubject.materia}` : '— Sin sesiones'}
+                </span>
+                <span className="metric-desc">
+                  {topSubject ? `${topSubject.totalSesiones} sesiones (${topSubject.porcentaje}% del total)` : 'No hay reservas registradas'}
+                </span>
+              </div>
+            </div>
+
+            {/* Barra de Búsqueda y Filtro */}
+            <div className="admin-search-bar" style={{ flexWrap: 'wrap', gap: '12px' }}>
+              <input
+                type="text"
+                className="admin-search-input"
+                placeholder="Buscar materia en el ranking..."
+                value={subjectSearchTerm}
+                onChange={(e) => setSubjectSearchTerm(e.target.value)}
+              />
+              {subjectSearchTerm && (
+                <button
+                  type="button"
+                  className="admin-clear-search"
+                  onClick={() => setSubjectSearchTerm('')}
+                >
+                  Limpiar
+                </button>
+              )}
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <button
+                  type="button"
+                  className={`report-filter-toggle ${subjectFilterMode === 'all' ? 'active' : ''}`}
+                  onClick={() => setSubjectFilterMode('all')}
+                >
+                  Todas ({reportSubjects.length})
+                </button>
+                <button
+                  type="button"
+                  className={`report-filter-toggle ${subjectFilterMode === 'withSessionsOnly' ? 'active' : ''}`}
+                  onClick={() => setSubjectFilterMode('withSessionsOnly')}
+                >
+                  Con Sesiones ({reportSubjects.filter((s) => s.totalSesiones > 0).length})
+                </button>
+              </div>
+              <span style={{ fontSize: '13px', color: '#64748b', marginLeft: 'auto' }}>
+                Mostrando <strong>{filteredReportSubjects.length}</strong> materias
+              </span>
+            </div>
+
+            {/* Tabla de Ranking */}
+            {filteredReportSubjects.length === 0 ? (
+              <div className="admin-empty">No se encontraron materias con el criterio seleccionado.</div>
+            ) : (
+              <div className="admin-table-wrap">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th style={{ width: '70px', textAlign: 'center' }}>Ranking</th>
+                      <th>Materia</th>
+                      <th style={{ textAlign: 'center' }}>Estudiantes Únicos</th>
+                      <th style={{ textAlign: 'center' }}>Sesiones Atendidas</th>
+                      <th style={{ textAlign: 'center' }}>Sesiones Pendientes</th>
+                      <th style={{ textAlign: 'center' }}>Total Sesiones</th>
+                      <th style={{ minWidth: '170px' }}>Distribución de Demanda</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredReportSubjects.map((sub) => {
+                      const barPercent = maxSubjectSessions > 0 ? Math.round((sub.totalSesiones / maxSubjectSessions) * 100) : 0;
+                      return (
+                        <tr key={sub.subjectId}>
+                          <td style={{ textAlign: 'center' }}>
+                            {sub.ranking === 1 && sub.totalSesiones > 0 ? (
+                              <span className="ranking-medal medal-1" title="Materia más demandada">#1</span>
+                            ) : sub.ranking === 2 && sub.totalSesiones > 0 ? (
+                              <span className="ranking-medal medal-2" title="2do Lugar">#2</span>
+                            ) : sub.ranking === 3 && sub.totalSesiones > 0 ? (
+                              <span className="ranking-medal medal-3" title="3er Lugar">#3</span>
+                            ) : (
+                              <span className="ranking-medal medal-other">#{sub.ranking}</span>
+                            )}
+                          </td>
+                          <td>
+                            <strong style={{ fontSize: '14px', color: '#0f172a' }}>{sub.materia}</strong>
+                          </td>
+                          <td style={{ textAlign: 'center' }}>
+                            <span style={{ fontSize: '14px', fontWeight: 600, color: '#334155' }}>
+                              {sub.estudiantesUnicos}
+                            </span>
+                          </td>
+                          <td style={{ textAlign: 'center' }}>
+                            <span style={{ fontSize: '14px', fontWeight: 600, color: '#0f766e' }}>
+                              {sub.sesionesAtendidas}
+                            </span>
+                          </td>
+                          <td style={{ textAlign: 'center' }}>
+                            <span style={{ fontSize: '14px', fontWeight: 600, color: '#b45309' }}>
+                              {sub.sesionesPendientes}
+                            </span>
+                          </td>
+                          <td style={{ textAlign: 'center' }}>
+                            <strong style={{ fontSize: '15px', color: '#0f766e' }}>
+                              {sub.totalSesiones}
+                            </strong>
+                          </td>
+                          <td>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <div className="demand-bar-wrap">
+                                <div className="demand-bar-fill" style={{ width: `${barPercent}%` }} />
+                              </div>
+                              <span style={{ fontSize: '12px', fontWeight: 700, color: '#475569', minWidth: '35px' }}>
+                                {sub.porcentaje}%
+                              </span>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+        )}
       </main>
     </div>
   );
 }
-
