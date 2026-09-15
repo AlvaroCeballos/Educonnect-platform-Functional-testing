@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../../utils/api';
 import TutorScheduleModal from '../../components/TutorScheduleModal';
+import AdvancedFilters from '../../components/AdvancedFilters';
 
 export default function StudentDashboard() {
   const navigate = useNavigate();
@@ -10,6 +11,7 @@ export default function StudentDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedTutorForSchedule, setSelectedTutorForSchedule] = useState(null);
+  const [currentFilters, setCurrentFilters] = useState(null);
 
   useEffect(() => {
     const studentData = localStorage.getItem('student');
@@ -24,13 +26,32 @@ export default function StudentDashboard() {
     fetchDashboardData();
   }, [navigate]);
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = async (appliedFilters = null) => {
     setLoading(true);
     setError('');
+    setCurrentFilters(appliedFilters);
+
     try {
-      // Peticiones concurrentes a tutores aprobados y sesiones del estudiante
+      // Construir query params con los 5 filtros de HU-010 si existen
+      let endpoint = '/tutors';
+      if (appliedFilters) {
+        const params = new URLSearchParams();
+        if (appliedFilters.materia) params.append('materia', appliedFilters.materia);
+        if (appliedFilters.genero) params.append('genero', appliedFilters.genero);
+        if (appliedFilters.universidad) params.append('universidad', appliedFilters.universidad);
+        if (appliedFilters.minExp > 0) params.append('minExp', appliedFilters.minExp);
+        if (appliedFilters.minEdad) params.append('minEdad', appliedFilters.minEdad);
+        if (appliedFilters.maxEdad) params.append('maxEdad', appliedFilters.maxEdad);
+
+        const queryString = params.toString();
+        if (queryString) {
+          endpoint += `?${queryString}`;
+        }
+      }
+
+      // Peticiones concurrentes: tutores filtrados y sesiones del estudiante
       const [tutorsRes, sessionsRes] = await Promise.all([
-        api.get('/tutors'),
+        api.get(endpoint),
         api.get('/sessions/me'),
       ]);
 
@@ -100,7 +121,7 @@ export default function StudentDashboard() {
       {/* Contenido principal */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Banner de bienvenida */}
-        <section className="bg-gradient-to-r from-emerald-800 to-teal-700 rounded-2xl p-6 sm:p-8 text-white shadow-md mb-10">
+        <section className="bg-gradient-to-r from-emerald-800 to-teal-700 rounded-2xl p-6 sm:p-8 text-white shadow-md mb-8">
           <div className="max-w-3xl">
             <span className="inline-block px-3 py-1 bg-emerald-900/60 text-emerald-200 text-xs font-semibold uppercase tracking-wider rounded-full mb-3">
               Portal Estudiantil
@@ -115,18 +136,26 @@ export default function StudentDashboard() {
           </div>
         </section>
 
+        {/* Panel de Búsqueda Avanzada (HU-010) */}
+        <AdvancedFilters
+          onFilter={(filters) => fetchDashboardData(filters)}
+          onReset={() => fetchDashboardData(null)}
+        />
+
         {/* Encabezado del catálogo */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
             <h2 className="text-xl font-bold text-slate-900">
-              Tutores Disponibles
+              {currentFilters ? 'Resultados de Búsqueda' : 'Tutores Disponibles'}
             </h2>
             <p className="text-sm text-slate-500">
-              Mostrando tutores con disponibilidad inmediata sin citas previas en curso.
+              {currentFilters
+                ? 'Mostrando tutores que coinciden con los criterios seleccionados.'
+                : 'Mostrando tutores con disponibilidad inmediata sin citas previas en curso.'}
             </p>
           </div>
           <button
-            onClick={fetchDashboardData}
+            onClick={() => fetchDashboardData(currentFilters)}
             disabled={loading}
             className="self-start sm:self-auto text-xs font-medium text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-2 rounded-md transition-colors"
           >
@@ -139,7 +168,7 @@ export default function StudentDashboard() {
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm flex items-center justify-between">
             <span>{error}</span>
             <button
-              onClick={fetchDashboardData}
+              onClick={() => fetchDashboardData(currentFilters)}
               className="underline font-semibold ml-4 hover:text-red-900"
             >
               Reintentar
@@ -171,20 +200,28 @@ export default function StudentDashboard() {
           /* Estado vacío */
           <div className="text-center py-16 bg-white border border-dashed border-slate-300 rounded-2xl px-4">
             <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-400 mx-auto flex items-center justify-center text-xl mb-3">
-              📚
+              🔍
             </div>
             <h3 className="text-base font-semibold text-slate-800">
-              No hay tutores disponibles por ahora
+              No se encontraron tutores con esos criterios
             </h3>
             <p className="text-sm text-slate-500 max-w-md mx-auto mt-1">
-              No se encontraron nuevos tutores o ya tienes sesiones activas pendientes de atención con ellos.
+              Prueba cambiando o limpiando los filtros en el panel de búsqueda, o revisa si ya tienes sesiones activas con ellos.
             </p>
-            <Link
-              to="/mis-sesiones"
-              className="mt-5 inline-block text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 px-4 py-2 rounded-lg transition-colors"
-            >
-              Revisar mis sesiones activas
-            </Link>
+            <div className="mt-5 flex gap-3 justify-center">
+              <button
+                onClick={() => fetchDashboardData(null)}
+                className="text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 px-4 py-2 rounded-lg transition-colors"
+              >
+                Limpiar filtros
+              </button>
+              <Link
+                to="/mis-sesiones"
+                className="text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 px-4 py-2 rounded-lg transition-colors"
+              >
+                Revisar mis sesiones activas
+              </Link>
+            </div>
           </div>
         ) : (
           /* Cuadrícula de tutores */
@@ -219,10 +256,17 @@ export default function StudentDashboard() {
                       <p className="text-xs text-slate-500 truncate mt-0.5">
                         {tutor.universidad || 'Universidad de San Carlos de Guatemala'}
                       </p>
-                      <span className="inline-flex items-center gap-1.5 mt-2 px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-medium rounded-full">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                        Disponible
-                      </span>
+                      <div className="flex items-center gap-2 mt-2">
+                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-medium rounded-full">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                          Disponible
+                        </span>
+                        {tutor.experiencia_anios !== undefined && (
+                          <span className="text-[11px] text-slate-500 font-medium">
+                            • {tutor.experiencia_anios} años exp.
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
 
