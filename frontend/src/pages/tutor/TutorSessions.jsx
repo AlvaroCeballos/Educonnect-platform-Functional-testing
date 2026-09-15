@@ -1,29 +1,35 @@
 import { useState, useEffect } from 'react';
+import api from '../../utils/api';
 
 export default function TutorSessions() {
   const [sessions, setSessions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   
-  // Estados para controlar el Modal (T-015.2)
+  // Estados para controlar el Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeSession, setActiveSession] = useState(null);
   const [summary, setSummary] = useState('');
   const [recommendations, setRecommendations] = useState('');
   const [submitError, setSubmitError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  // T-015.4: Conexión con el backend para obtener sesiones reales
+  const fetchSessions = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const response = await api.get('/sessions/tutor/me');
+      setSessions(response.data.sessions);
+    } catch (err) {
+      setError('No se pudieron cargar tus sesiones.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    // Seguimos usando la data simulada temporalmente
-    setSessions([
-      { 
-        id: 1, 
-        sessionDate: '2026-09-20', 
-        startTime: '10:00:00', 
-        endTime: '11:00:00', 
-        materia: 'Física Avanzada', 
-        status: 'PENDING', 
-        studentNombre: 'Juan', 
-        studentApellido: 'Pérez' 
-      }
-    ]);
+    fetchSessions();
   }, []);
 
   const openModal = (session) => {
@@ -34,52 +40,103 @@ export default function TutorSessions() {
     setIsModalOpen(true);
   };
 
-  // T-015.2: Lógica de validación del formulario
-  const handleAttend = (e) => {
+  // T-015.4: Enviar datos reales al backend y actualizar el historial
+  const handleAttend = async (e) => {
     e.preventDefault();
     if (!summary.trim()) {
         setSubmitError('El resumen es obligatorio para poder cerrar la sesión.');
         return;
     }
     
-    // Por ahora solo imprimimos en consola, en T-015.4 lo conectaremos al backend
-    console.log('Datos validados listos para enviar:', { summary, recommendations });
-    setIsModalOpen(false);
+    setSubmitting(true);
+    setSubmitError('');
+    
+    try {
+      await api.patch(`/sessions/${activeSession.id}/attend`, {
+        summary,
+        recommendations
+      });
+      setIsModalOpen(false);
+      fetchSessions(); // Recargamos para que la sesión pase a estado ATTENDED en la UI
+    } catch (err) {
+      setSubmitError(err.response?.data?.message || 'Error al procesar la solicitud.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
     <div className="p-8 max-w-5xl mx-auto font-sans">
       <h2 className="text-3xl font-extrabold text-gray-900 mb-8">Mis Sesiones</h2>
       
-      <div className="grid gap-5">
-        {sessions.map(session => (
-          <div key={session.id} className="p-5 border border-slate-200 rounded-xl shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center bg-white">
-            <div>
-              <p className="font-bold text-xl text-slate-800">{session.materia}</p>
-              <p className="text-sm font-medium text-slate-600 mt-1">
-                Estudiante: <span className="text-slate-900">{session.studentNombre} {session.studentApellido}</span>
-              </p>
-              <p className="text-sm text-slate-500 mt-1">
-                📅 {session.sessionDate} | ⏰ {session.startTime} - {session.endTime}
-              </p>
-              <span className="inline-block mt-3 px-2.5 py-1 text-xs font-bold rounded-full bg-amber-100 text-amber-800 uppercase">
-                {session.status}
-              </span>
-            </div>
-            
-            {session.status === 'PENDING' && (
-              <button
-                onClick={() => openModal(session)}
-                className="mt-4 md:mt-0 bg-emerald-600 text-white font-semibold px-5 py-2.5 rounded-lg hover:bg-emerald-700 transition-colors shadow-sm"
-              >
-                Marcar como Atendida
-              </button>
-            )}
-          </div>
-        ))}
-      </div>
+      {loading ? (
+        <div className="flex justify-center p-12">
+          <p className="text-slate-500 font-medium animate-pulse">Cargando sesiones...</p>
+        </div>
+      ) : error ? (
+        <div className="p-4 bg-red-50 text-red-700 rounded-xl border border-red-200">
+          {error}
+        </div>
+      ) : sessions.length === 0 ? (
+        <div className="text-center py-16 bg-white border border-slate-200 rounded-2xl shadow-sm">
+          <p className="text-slate-500 italic text-lg">No tienes sesiones programadas.</p>
+        </div>
+      ) : (
+        <div className="grid gap-5">
+          {sessions.map(session => (
+            <div key={session.id} className="p-5 border border-slate-200 rounded-xl shadow-sm bg-white hover:shadow-md transition-shadow">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
+                <div>
+                  <p className="font-bold text-xl text-slate-800">{session.materia}</p>
+                  <p className="text-sm font-medium text-slate-600 mt-1">
+                    Estudiante: <span className="text-slate-900">{session.studentNombre} {session.studentApellido}</span>
+                  </p>
+                  <p className="text-sm text-slate-500 mt-1">
+                    📅 {String(session.sessionDate).slice(0, 10)} | ⏰ {session.startTime} - {session.endTime}
+                  </p>
+                  <span className={`inline-block mt-3 px-2.5 py-1 text-xs font-bold rounded-full uppercase ${
+                    session.status === 'PENDING' ? 'bg-amber-100 text-amber-800' : 
+                    session.status === 'ATTENDED' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'
+                  }`}>
+                    {session.status === 'PENDING' ? 'Pendiente' : 
+                     session.status === 'ATTENDED' ? 'Atendida' : 'Cancelada'}
+                  </span>
+                </div>
+                
+                {session.status === 'PENDING' && (
+                  <button
+                    onClick={() => openModal(session)}
+                    className="mt-4 md:mt-0 bg-emerald-600 text-white font-semibold px-5 py-2.5 rounded-lg hover:bg-emerald-700 transition-colors shadow-sm"
+                  >
+                    Marcar como Atendida
+                  </button>
+                )}
+              </div>
 
-      {/* T-015.2: Maquetación del Modal con el formulario de cierre */}
+              {/* T-015.4: Renderizado del historial de atención */}
+              {session.status === 'ATTENDED' && session.summary && (
+                <div className="mt-5 pt-4 border-t border-slate-100 bg-slate-50 p-4 rounded-xl">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Detalles de atención</h4>
+                  
+                  <div className="mb-3">
+                    <p className="text-sm font-bold text-slate-700 mb-1">Resumen:</p>
+                    <p className="text-sm text-slate-600 whitespace-pre-wrap">{session.summary}</p>
+                  </div>
+                  
+                  {session.recommendations && (
+                    <div>
+                      <p className="text-sm font-bold text-slate-700 mb-1">Recomendaciones:</p>
+                      <p className="text-sm text-slate-600 whitespace-pre-wrap">{session.recommendations}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Modal del formulario */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden zoom-in-95">
@@ -121,7 +178,6 @@ export default function TutorSessions() {
                 ></textarea>
               </div>
               
-              {/* Mensaje de error de validación */}
               {submitError && (
                 <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-2">
                   {submitError}
@@ -132,15 +188,17 @@ export default function TutorSessions() {
                 <button 
                   type="button" 
                   onClick={() => setIsModalOpen(false)} 
-                  className="px-5 py-2 border border-slate-300 text-slate-700 font-semibold rounded-lg hover:bg-slate-50 transition-colors"
+                  disabled={submitting}
+                  className="px-5 py-2 border border-slate-300 text-slate-700 font-semibold rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50"
                 >
                   Cancelar
                 </button>
                 <button 
                   type="submit" 
-                  className="px-5 py-2 bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700 transition-colors shadow-sm"
+                  disabled={submitting}
+                  className="px-5 py-2 bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700 transition-colors shadow-sm flex items-center gap-2 disabled:opacity-50"
                 >
-                  Guardar y Atender
+                  {submitting ? 'Guardando...' : 'Guardar y Atender'}
                 </button>
               </div>
             </form>
