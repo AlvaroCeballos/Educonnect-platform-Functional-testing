@@ -28,7 +28,6 @@ export default function StudentDashboard() {
     setLoading(true);
     setError('');
     try {
-      // Peticiones concurrentes a tutores aprobados y sesiones del estudiante
       const [tutorsRes, sessionsRes] = await Promise.all([
         api.get('/tutors'),
         api.get('/sessions/me'),
@@ -37,14 +36,12 @@ export default function StudentDashboard() {
       const allTutors = tutorsRes.data || [];
       const studentSessions = sessionsRes.data?.sessions || [];
 
-      // Identificar IDs de tutores con sesión activa (PENDING)
       const activeTutorIds = new Set(
         studentSessions
           .filter((s) => s.status === 'PENDING')
           .map((s) => Number(s.tutorId))
       );
 
-      // Criterio HU-009: Excluir tutores con los que ya se tiene una sesión activa
       const available = allTutors.filter(
         (tutor) => !activeTutorIds.has(Number(tutor.id))
       );
@@ -86,6 +83,12 @@ export default function StudentDashboard() {
               className="text-sm font-medium text-slate-600 hover:text-emerald-700 transition-colors px-3 py-2 rounded-md hover:bg-slate-100"
             >
               Mis Sesiones
+            </Link>
+            <Link
+              to="/student/profile"
+              className="text-sm font-medium text-slate-600 hover:text-emerald-700 transition-colors px-3 py-2 rounded-md hover:bg-slate-100"
+            >
+              Mi Perfil
             </Link>
             <button
               onClick={handleLogout}
@@ -147,7 +150,7 @@ export default function StudentDashboard() {
           </div>
         )}
 
-        {/* Estado de carga (Heurística Nielsen #1) */}
+        {/* Estado de carga */}
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[1, 2, 3].map((skeleton) => (
@@ -260,7 +263,7 @@ export default function StudentDashboard() {
                   </div>
                 </div>
 
-                {/* Acciones de la tarjeta: Ver Horarios (HU-011) y Programar (HU-012) */}
+                {/* Acciones de la tarjeta */}
                 <div className="pt-3 border-t border-slate-100 flex items-center gap-2">
                   <button
                     type="button"
@@ -282,7 +285,7 @@ export default function StudentDashboard() {
         )}
       </main>
 
-      {/* Modal de consulta de disponibilidad por fecha (HU-011) */}
+      {/* Modal de consulta de disponibilidad por fecha */}
       {selectedTutorForSchedule && (
         <TutorScheduleModal
           tutor={selectedTutorForSchedule}
