@@ -1,7 +1,5 @@
 # Requerimientos Funcionales (RFs)
 
-Matriz de requerimientos funcionales de EduConnect, derivada del Product Backlog (`docs/Scrumban/historias_usuario.md`) y verificada contra el comportamiento real implementado. Formato: `RF-<módulo>-<consecutivo>`.
-
 Módulos: **1** Estudiante, **2** Tutor, **3** Administrador, **4** Transversal (autenticación, notificaciones, disponibilidad y sesiones que involucran a más de un rol).
 
 ## Módulo 1 — Estudiante
@@ -73,4 +71,4 @@ Módulos: **1** Estudiante, **2** Tutor, **3** Administrador, **4** Transversal 
 
 ---
 
-**Referencia cruzada con historias de usuario:** cada RF corresponde a uno o más criterios de aceptación de `docs/Scrumban/historias_usuario.md`. Los RF del Módulo 1 marcados Alta (RF-1-9 a RF-1-16) corresponden a `HU-012`; RF-1-15/RF-1-16 a `HU-016`; RF-1-17 a `HU-013`; RF-1-18/RF-1-19 a `HU-020`.
+**Referencia cruzada con historias de usuario:** cada RF corresponde a uno o más criterios de aceptación. Los RF del Módulo 1 marcados Alta (RF-1-9 a RF-1-16) corresponden a `HU-012`; RF-1-15/RF-1-16 a `HU-016`; RF-1-17 a `HU-013`; RF-1-18/RF-1-19 a `HU-020`.
