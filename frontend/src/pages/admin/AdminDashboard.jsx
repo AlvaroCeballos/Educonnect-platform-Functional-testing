@@ -28,8 +28,8 @@ export default function AdminDashboard() {
       const [pendingRes, approvedRes, reportRes, subjectsReportRes] = await Promise.all([
         api.get('/admin/users', { params: { status: 'PENDING' } }),
         api.get('/admin/users', { params: { status: 'APPROVED' } }),
-        api.get('/admin/reports/top-tutors').catch(() => ({ data: { topTutors: [] } })),
-        api.get('/admin/reports/top-subjects').catch(() => ({ data: { subjectsReport: [] } })),
+        api.get('/reports/top-tutors').catch(() => ({ data: { topTutors: [] } })),
+        api.get('/reports/top-subjects').catch(() => ({ data: { subjectsReport: [] } })),
       ]);
       setPendingUsers(pendingRes.data.users || []);
       setApprovedUsers(approvedRes.data.users || []);

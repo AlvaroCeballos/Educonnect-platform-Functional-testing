@@ -91,7 +91,7 @@ export default function App() {
       <Route path="/tutor/sesiones" element={<ProtectedRoute><TutorSessions /></ProtectedRoute>} />
       <Route path="/tutor/profile" element={<ProtectedRoute><TutorProfile /></ProtectedRoute>} />
       
-      <Route path="/schedule" element={<ProtectedRoute><ScheduleForm /></ProtectedRoute>} />
+      <Route path="/schedule" element={<ProtectedRoute><ScheduleForm editing /></ProtectedRoute>} />
       <Route path="/admin/dashboard" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
     </Routes>
   );
