@@ -6,16 +6,20 @@ export default function TutorSessions() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   
-  // T-014.1: Estado para controlar las pestañas
+  // Estado para controlar las pestañas
   const [activeTab, setActiveTab] = useState('PENDING');
 
-  // Estados para controlar el Modal
+  // Estados para controlar el Modal de Atender
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeSession, setActiveSession] = useState(null);
   const [summary, setSummary] = useState('');
   const [recommendations, setRecommendations] = useState('');
   const [submitError, setSubmitError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  // T-017.1: Estados para controlar el Modal de Cancelar
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+  const [sessionToCancel, setSessionToCancel] = useState(null);
 
   const fetchSessions = async () => {
     setLoading(true);
@@ -42,6 +46,12 @@ export default function TutorSessions() {
     setIsModalOpen(true);
   };
 
+  // T-017.1: Función para abrir modal de cancelación
+  const openCancelModal = (session) => {
+    setSessionToCancel(session);
+    setIsCancelModalOpen(true);
+  };
+
   const handleAttend = async (e) => {
     e.preventDefault();
     if (!summary.trim()) {
@@ -66,7 +76,13 @@ export default function TutorSessions() {
     }
   };
 
-  // T-014.2: Separar y ORDENAR. Las pendientes van "próximas primero" (Ascendente).
+  // T-017.1: Función temporal de UI para el botón de cancelar
+  const handleCancel = (e) => {
+    e.preventDefault();
+    console.log("Listo para cancelar la sesión:", sessionToCancel.id);
+    setIsCancelModalOpen(false);
+  };
+
   const displayedSessions = activeTab === 'PENDING' 
     ? sessions
         .filter(s => s.status === 'PENDING')
@@ -140,15 +156,25 @@ export default function TutorSessions() {
                 </div>
                 
                 {session.status === 'PENDING' && (
-                  <button
-                    onClick={() => openModal(session)}
-                    className="mt-4 md:mt-0 md:ml-6 bg-emerald-600 text-white font-semibold px-5 py-2.5 rounded-lg hover:bg-emerald-700 transition-colors shadow-sm whitespace-nowrap"
-                  >
-                    Marcar como Atendida
-                  </button>
+                  <div className="flex gap-3 mt-4 md:mt-0 md:ml-6">
+                    {/* T-017.1: Botón de Cancelar */}
+                    <button
+                      onClick={() => openCancelModal(session)}
+                      className="px-4 py-2 border border-red-200 text-red-600 font-semibold rounded-lg hover:bg-red-50 transition-colors shadow-sm whitespace-nowrap"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      onClick={() => openModal(session)}
+                      className="bg-emerald-600 text-white font-semibold px-5 py-2.5 rounded-lg hover:bg-emerald-700 transition-colors shadow-sm whitespace-nowrap"
+                    >
+                      Marcar como Atendida
+                    </button>
+                  </div>
                 )}
               </div>
 
+              {/* Renderizado del historial de atención */}
               {session.status === 'ATTENDED' && session.summary && (
                 <div className="mt-5 pt-4 border-t border-slate-100 bg-slate-50 p-4 rounded-xl">
                   <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Detalles de atención</h4>
@@ -171,7 +197,7 @@ export default function TutorSessions() {
         </div>
       )}
 
-      {/* Modal del formulario */}
+      {/* Modal de Atender (Intacto) */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden zoom-in-95">
@@ -238,6 +264,45 @@ export default function TutorSessions() {
               </div>
             </form>
 
+          </div>
+        </div>
+      )}
+
+      {/* T-017.1: Modal de confirmación para cancelar */}
+      {isCancelModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden zoom-in-95">
+            <div className="px-6 py-4 bg-red-600 text-white flex justify-between items-center">
+              <div>
+                <span className="text-xs uppercase tracking-wider text-red-200 font-semibold block">Atención</span>
+                <h3 className="font-bold text-lg">Cancelar sesión</h3>
+              </div>
+              <button onClick={() => setIsCancelModalOpen(false)} className="text-red-200 hover:text-white text-xl">✕</button>
+            </div>
+            
+            <div className="p-6">
+              <p className="text-slate-700 mb-4">
+                ¿Estás seguro de que deseas cancelar tu tutoría de <strong>{sessionToCancel?.materia}</strong> con <strong>{sessionToCancel?.studentNombre}</strong>?
+              </p>
+              <p className="text-sm text-slate-500 mb-6">
+                Esta acción informará al estudiante, <strong className="text-red-600">liberará tu horario</strong> para nuevas reservas y no se puede deshacer.
+              </p>
+              
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+                <button 
+                  onClick={() => setIsCancelModalOpen(false)} 
+                  className="px-5 py-2 border border-slate-300 text-slate-700 font-semibold rounded-lg hover:bg-slate-50 transition-colors"
+                >
+                  Mantener sesión
+                </button>
+                <button 
+                  onClick={handleCancel} 
+                  className="px-5 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors shadow-sm"
+                >
+                  Sí, Cancelar
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
