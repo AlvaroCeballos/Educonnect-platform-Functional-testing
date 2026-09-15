@@ -6,10 +6,6 @@ const {
   validateSessionPayload,
 } = require('../utils/session');
 
-// Hasta que exista HU-006, `req.user` viene de `mockStudent` y solo trae el
-// users.id. Cuando el login real de estudiante exista y agregue `studentId`
-// al JWT (igual que `loginTutor` hace con `tutorId`), este lookup deja de
-// usarse sin tocar el resto del controlador.
 const resolveStudentProfileId = async (req) => {
   if (req.user?.studentId) return Number(req.user.studentId);
   const [rows] = await pool.execute('SELECT id FROM student_profiles WHERE user_id = ?', [req.user.id]);
@@ -39,8 +35,6 @@ const createSession = async (req, res, next) => {
     connection = await pool.getConnection();
     await connection.beginTransaction();
 
-    // HU-012: no se permite duplicar una cita con el mismo tutor mientras
-    // siga PENDING, sin importar si el horario nuevo traslapa o no.
     const [duplicateTutorSessions] = await connection.execute(
       `SELECT id FROM sessions WHERE student_id = ? AND tutor_id = ? AND status = 'PENDING' FOR UPDATE`,
       [studentId, tutorId],
@@ -50,9 +44,6 @@ const createSession = async (req, res, next) => {
       return res.status(409).json({ message: 'Ya tienes una sesión pendiente con este tutor' });
     }
 
-    // Bloquea la fila de horario del tutor: además de validar el rango,
-    // sirve para serializar reservas concurrentes del mismo tutor/día
-    // (una sesión nueva no tiene fila propia que bloquear con FOR UPDATE).
     const dayOfWeek = getIsoDayOfWeek(sessionDate);
     const [scheduleRows] = await connection.execute(
       `SELECT start_time AS startTime, end_time AS endTime
@@ -89,8 +80,6 @@ const createSession = async (req, res, next) => {
       return res.status(409).json({ message: 'El tutor ya tiene una sesión programada en ese horario' });
     }
 
-    // HU-012: el estudiante tampoco puede tener otra cita a esa hora,
-    // así sea con un tutor distinto.
     const [studentSessions] = await connection.execute(
       `SELECT start_time AS startTime, end_time AS endTime
          FROM sessions
@@ -178,9 +167,6 @@ const cancelSession = async (req, res, next) => {
       return res.status(409).json({ message: 'Solo se pueden cancelar sesiones pendientes' });
     }
 
-    // HU-016: liberar el horario es automático — la disponibilidad del tutor
-    // (validateSessionPayload/createSession) solo cuenta sesiones PENDING,
-    // así que cambiar el estado ya libera el slot sin ningún paso extra.
     await connection.execute(
       "UPDATE sessions SET status = 'CANCELLED_BY_STUDENT' WHERE id = ?",
       [sessionId],
@@ -196,14 +182,12 @@ const cancelSession = async (req, res, next) => {
   }
 };
 
-// Función para resolver el ID del perfil del tutor (similar a resolveStudentProfileId)
 const resolveTutorProfileId = async (req) => {
   if (req.user?.tutorId) return Number(req.user.tutorId);
   const [rows] = await pool.execute('SELECT id FROM tutor_profiles WHERE user_id = ?', [req.user.id]);
   return rows[0]?.id ?? null;
 };
 
-// Controlador principal de HU-017
 const cancelSessionByTutor = async (req, res, next) => {
   const sessionId = Number(req.params.id);
   if (!Number.isInteger(sessionId) || sessionId < 1) {
@@ -218,7 +202,6 @@ const cancelSessionByTutor = async (req, res, next) => {
     connection = await pool.getConnection();
     await connection.beginTransaction();
 
-    // Bloqueo pesimista para evitar concurrencia
     const [rows] = await connection.execute(
       'SELECT id, tutor_id AS tutorId, status FROM sessions WHERE id = ? FOR UPDATE',
       [sessionId],
@@ -234,7 +217,6 @@ const cancelSessionByTutor = async (req, res, next) => {
       return res.status(409).json({ message: 'Solo se pueden cancelar sesiones pendientes' });
     }
 
-    // El cambio de estado libera la franja horaria automáticamente
     await connection.execute(
       "UPDATE sessions SET status = 'CANCELLED_BY_TUTOR' WHERE id = ?",
       [sessionId],
@@ -253,11 +235,91 @@ const cancelSessionByTutor = async (req, res, next) => {
   }
 };
 
+// ==========================================
+// T-015.3: Funciones nuevas para el tutor
+// ==========================================
+
+const getTutorSessions = async (req, res, next) => {
+  try {
+    const tutorId = await resolveTutorProfileId(req);
+    if (!tutorId) return res.status(401).json({ message: 'La sesión no identifica al tutor' });
+
+    const [rows] = await pool.execute(
+      `SELECT s.id, s.student_id AS studentId, sp.nombre AS studentNombre, sp.apellido AS studentApellido,
+              s.session_date AS sessionDate, s.start_time AS startTime, s.end_time AS endTime,
+              s.subject_id AS subjectId, sub.nombre AS materia, s.reason, s.status, s.summary, s.recommendations
+         FROM sessions s
+         JOIN student_profiles sp ON sp.id = s.student_id
+         JOIN subjects sub ON sub.id = s.subject_id
+        WHERE s.tutor_id = ?
+        ORDER BY s.session_date DESC, s.start_time DESC`,
+      [tutorId]
+    );
+    return res.json({ sessions: rows });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+const attendSession = async (req, res, next) => {
+  const sessionId = Number(req.params.id);
+  const { summary, recommendations } = req.body;
+
+  if (!Number.isInteger(sessionId) || sessionId < 1) {
+    return res.status(400).json({ message: 'El identificador de la sesión no es válido' });
+  }
+  if (!summary || summary.trim() === '') {
+    return res.status(400).json({ message: 'El resumen de la sesión es obligatorio' });
+  }
+
+  let connection;
+  try {
+    const tutorId = await resolveTutorProfileId(req);
+    if (!tutorId) return res.status(401).json({ message: 'La sesión no identifica al tutor' });
+
+    connection = await pool.getConnection();
+    await connection.beginTransaction();
+
+    const [rows] = await connection.execute(
+      'SELECT id, tutor_id AS tutorId, status FROM sessions WHERE id = ? FOR UPDATE',
+      [sessionId]
+    );
+    const session = rows[0];
+
+    if (!session || session.tutorId !== tutorId) {
+      await connection.rollback();
+      return res.status(404).json({ message: 'Sesión no encontrada' });
+    }
+    if (session.status !== 'PENDING') {
+      await connection.rollback();
+      return res.status(409).json({ message: 'Solo se pueden atender sesiones pendientes' });
+    }
+
+    await connection.execute(
+      "UPDATE sessions SET status = 'ATTENDED', summary = ?, recommendations = ? WHERE id = ?",
+      [summary.trim(), recommendations ? recommendations.trim() : null, sessionId]
+    );
+
+    await connection.commit();
+    return res.json({
+      message: 'Sesión marcada como atendida correctamente',
+      session: { id: sessionId, status: 'ATTENDED', summary, recommendations }
+    });
+  } catch (error) {
+    if (connection) await connection.rollback();
+    return next(error);
+  } finally {
+    if (connection) connection.release();
+  }
+};
+
 module.exports = { 
   createSession, 
   getMySessions, 
   cancelSession, 
   resolveStudentProfileId,
   resolveTutorProfileId,
-  cancelSessionByTutor
+  cancelSessionByTutor,
+  getTutorSessions,
+  attendSession
 };

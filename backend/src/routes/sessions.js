@@ -3,11 +3,12 @@ const {
   createSession, 
   getMySessions, 
   cancelSession, 
-  cancelSessionByTutor 
+  cancelSessionByTutor,
+  getTutorSessions,
+  attendSession
 } = require('../controllers/sessionController');
 const { authenticate, mockStudent, mockTutor } = require('../middlewares/auth');
 
-// Autenticación flexible: usa JWT si viene token, o mockStudent para compatibilidad previa
 const studentAuth = (req, res, next) => {
   const authHeader = req.headers['authorization'];
   if (authHeader) {
@@ -30,16 +31,14 @@ const tutorAuth = (req, res, next) => {
   return mockTutor(req, res, next);
 };
 
-// HU-012: Programar sesión de tutoría
+// Rutas de Estudiante
 router.post('/', studentAuth, createSession);
-
-// Contrato compartido con HU-016/HU-013: sesiones del estudiante autenticado
 router.get('/me', studentAuth, getMySessions);
-
-// HU-016: Cancelar sesión por el estudiante
 router.patch('/:id/cancel', studentAuth, cancelSession);
 
-// HU-017: Cancelar sesión por el tutor
+// Rutas de Tutor
+router.get('/tutor/me', tutorAuth, getTutorSessions); // T-015.3: GET para el historial
 router.patch('/:id/cancel/tutor', tutorAuth, cancelSessionByTutor);
+router.patch('/:id/attend', tutorAuth, attendSession); // T-015.3: PATCH para marcar atencion
 
 module.exports = router;
