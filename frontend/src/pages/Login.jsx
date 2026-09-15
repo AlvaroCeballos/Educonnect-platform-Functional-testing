@@ -30,7 +30,9 @@ export default function Login() {
         const response = await api.post('/auth/login/tutor', { email: form.email, password: form.password });
         localStorage.setItem('token', response.data.token);
         localStorage.setItem('tutor', JSON.stringify(response.data.tutor));
-        navigate('/mis-sesiones');
+        
+        // REDIRECCIÓN ACTUALIZADA AL NUEVO DASHBOARD
+        navigate('/tutor/dashboard');
       }
     } catch (error) {
       setStatus({ type: 'error', message: error.response?.data?.message || 'Error al iniciar sesión' });
