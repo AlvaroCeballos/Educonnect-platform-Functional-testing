@@ -12,6 +12,7 @@ import BookSession from './pages/student/BookSession';
 import MySessions from './pages/student/MySessions';
 import SessionHistory from './pages/student/SessionHistory';
 import TutorSessions from './pages/tutor/TutorSessions';
+import StudentProfile from './pages/student/StudentProfile';
 import TutorDashboard from './pages/tutor/TutorDashboard'; // <-- Importamos el nuevo dashboard
 
 const ProtectedRoute = ({ children }) => {
@@ -78,6 +79,7 @@ export default function App() {
 
       {/* Rutas Protegidas */}
       <Route path="/dashboard/student" element={<ProtectedRoute><StudentDashboard /></ProtectedRoute>} />
+      <Route path="/student/profile" element={<ProtectedRoute><StudentProfile /></ProtectedRoute>} />
       <Route path="/reservar" element={<ProtectedRoute><BookSession /></ProtectedRoute>} />
       <Route path="/book-session" element={<ProtectedRoute><BookSession /></ProtectedRoute>} />
       <Route path="/mis-sesiones" element={<ProtectedRoute><MySessions /></ProtectedRoute>} />
