@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import api from './utils/api';
+import api from '../../utils/api';
 
 const initialForm = { nombre: '', apellido: '', carnet: '', identificacion: '', fecha_nacimiento: '', genero: 'UNSPECIFIED', email: '', password: '', confirmPassword: '', especialidad: '', direccion_tutoria: '', anio_inicio_experiencia: '', universidad: '' };
 const fields = [['nombre', 'Nombre', 'text'], ['apellido', 'Apellido', 'text'], ['carnet', 'Carnet', 'text'], ['identificacion', 'DPI / identificación', 'text'], ['fecha_nacimiento', 'Fecha de nacimiento', 'date'], ['email', 'Correo electrónico', 'email'], ['especialidad', 'Especialidad o materia', 'text'], ['direccion_tutoria', 'Dirección de tutoría', 'text'], ['anio_inicio_experiencia', 'Año de inicio de experiencia', 'number'], ['universidad', 'Universidad', 'text']];
