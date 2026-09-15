@@ -124,7 +124,6 @@ const getMySessions = async (req, res, next) => {
     const studentId = await resolveStudentProfileId(req);
     if (!studentId) return res.status(401).json({ message: 'La sesión no identifica al estudiante' });
 
-    // HU-013: ?status=PENDING filtra a las sesiones activas del estudiante.
     const { status } = req.query;
     const params = [studentId];
     let statusFilter = '';
@@ -217,8 +216,17 @@ const cancelSessionByTutor = async (req, res, next) => {
     connection = await pool.getConnection();
     await connection.beginTransaction();
 
+    // T-018.2: Agregar JOINs para obtener los datos del estudiante
     const [rows] = await connection.execute(
-      'SELECT id, tutor_id AS tutorId, status FROM sessions WHERE id = ? FOR UPDATE',
+      `SELECT s.id, s.tutor_id AS tutorId, s.status, s.session_date AS sessionDate, s.start_time AS startTime, s.reason,
+              sub.nombre AS materia, sp.nombre AS studentNombre, u.email AS studentEmail,
+              tp.nombre AS tutorNombre, tp.apellido AS tutorApellido
+         FROM sessions s
+         JOIN student_profiles sp ON s.student_id = sp.id
+         JOIN users u ON sp.user_id = u.id
+         JOIN subjects sub ON s.subject_id = sub.id
+         JOIN tutor_profiles tp ON s.tutor_id = tp.id
+        WHERE s.id = ? FOR UPDATE`,
       [sessionId],
     );
     const session = rows[0];
@@ -238,6 +246,23 @@ const cancelSessionByTutor = async (req, res, next) => {
     );
 
     await connection.commit();
+
+    // T-018.2: Integrar envío de correo al momento de la cancelación
+    try {
+      const { sendCancellationEmail } = require('../utils/mailer');
+      await sendCancellationEmail({
+        to: session.studentEmail,
+        studentNombre: session.studentNombre,
+        tutorNombre: `${session.tutorNombre} ${session.tutorApellido}`,
+        materia: session.materia,
+        fecha: String(session.sessionDate).slice(0, 10),
+        hora: String(session.startTime).slice(0, 5),
+        motivo: session.reason
+      });
+    } catch (mailError) {
+      // Dejamos el error silenciado en T-018.2 para no bloquear el flujo
+    }
+
     return res.json({ 
       message: 'Sesión cancelada correctamente', 
       session: { id: sessionId, status: 'CANCELLED_BY_TUTOR' } 
@@ -249,10 +274,6 @@ const cancelSessionByTutor = async (req, res, next) => {
     if (connection) connection.release();
   }
 };
-
-// ==========================================
-// T-015.3: Funciones nuevas para el tutor
-// ==========================================
 
 const getTutorSessions = async (req, res, next) => {
   try {
