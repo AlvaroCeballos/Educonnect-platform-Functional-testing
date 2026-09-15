@@ -4,6 +4,7 @@ const {
   getTutorSchedules,
   getTutorSubjects,
   getTutorAvailability, 
+  getAllSubjects,
 } = require('../controllers/tutorController');
 const { authenticate, authorize } = require('../middlewares/auth');
 const { getMyProfile, updateMyProfile } = require('../controllers/tutorProfileController');
@@ -11,6 +12,7 @@ const { getMySchedules, saveMySchedules, updateMySchedules } = require('../contr
 
 // Rutas públicas
 router.get('/', getTutors);
+router.get('/subjects-catalog', getAllSubjects);
 router.get('/:id/schedules', getTutorSchedules);
 router.get('/:id/subjects', getTutorSubjects);
 router.get('/:id/availability', getTutorAvailability); 

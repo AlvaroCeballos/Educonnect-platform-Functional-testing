@@ -5,16 +5,68 @@ const getTutorId = (value) => {
   return Number.isInteger(tutorId) && tutorId > 0 ? tutorId : null;
 };
 
-const getTutors = async (_req, res, next) => {
+// HU-009 y HU-010: Listado con soporte para los 5 filtros de búsqueda avanzada
+const getTutors = async (req, res, next) => {
   try {
-    const [tutors] = await pool.execute(
-      `SELECT tp.id, tp.user_id, tp.nombre, tp.apellido, tp.especialidad,
-              tp.universidad, tp.fotografia_url, tp.direccion_tutoria
-         FROM tutor_profiles tp
-         JOIN users u ON u.id = tp.user_id
-        WHERE u.role = 'tutor' AND u.status = 'APPROVED'
-        ORDER BY tp.apellido, tp.nombre`,
-    );
+    const { materia, minExp, genero, minEdad, maxEdad, universidad } = req.query;
+
+    let query = `
+      SELECT tp.id, tp.user_id, tp.nombre, tp.apellido, tp.especialidad,
+             tp.universidad, tp.fotografia_url, tp.direccion_tutoria,
+             tp.genero, tp.fecha_nacimiento, tp.anio_inicio_experiencia,
+             (YEAR(CURDATE()) - tp.anio_inicio_experiencia) AS experiencia_anios,
+             TIMESTAMPDIFF(YEAR, tp.fecha_nacimiento, CURDATE()) AS edad
+        FROM tutor_profiles tp
+        JOIN users u ON u.id = tp.user_id
+       WHERE u.role = 'tutor' AND u.status = 'APPROVED'
+    `;
+
+    const params = [];
+
+    // 1. Filtro por Género / Sexo
+    if (genero && ['M', 'F', 'OTHER'].includes(genero)) {
+      query += ` AND tp.genero = ?`;
+      params.push(genero);
+    }
+
+    // 2. Filtro por Años de Experiencia Mínimos
+    if (minExp !== undefined && minExp !== '' && !isNaN(Number(minExp))) {
+      query += ` AND (YEAR(CURDATE()) - tp.anio_inicio_experiencia) >= ?`;
+      params.push(Number(minExp));
+    }
+
+    // 3. Filtro por Rango de Edad
+    if (minEdad !== undefined && minEdad !== '' && !isNaN(Number(minEdad))) {
+      query += ` AND TIMESTAMPDIFF(YEAR, tp.fecha_nacimiento, CURDATE()) >= ?`;
+      params.push(Number(minEdad));
+    }
+    if (maxEdad !== undefined && maxEdad !== '' && !isNaN(Number(maxEdad))) {
+      query += ` AND TIMESTAMPDIFF(YEAR, tp.fecha_nacimiento, CURDATE()) <= ?`;
+      params.push(Number(maxEdad));
+    }
+
+    // 4. Filtro por Universidad
+    if (universidad && universidad.trim() !== '') {
+      query += ` AND tp.universidad LIKE ?`;
+      params.push(`%${universidad.trim()}%`);
+    }
+
+    // 5. Filtro por Materia
+    if (materia && materia.trim() !== '') {
+      query += `
+        AND tp.id IN (
+          SELECT ts.tutor_id
+            FROM tutor_subjects ts
+            JOIN subjects s ON s.id = ts.subject_id
+           WHERE (s.nombre LIKE ? OR s.id = ?) AND s.is_active = TRUE
+        )
+      `;
+      params.push(`%${materia.trim()}%`, isNaN(Number(materia)) ? 0 : Number(materia));
+    }
+
+    query += ` ORDER BY tp.apellido, tp.nombre`;
+
+    const [tutors] = await pool.execute(query, params);
 
     if (tutors.length === 0) return res.json([]);
 
@@ -36,10 +88,12 @@ const getTutors = async (_req, res, next) => {
       subjectsByTutor.set(subject.tutor_id, list);
     });
 
-    return res.json(tutors.map((tutor) => ({
-      ...tutor,
-      materias: subjectsByTutor.get(tutor.id) || [],
-    })));
+    return res.json(
+      tutors.map((tutor) => ({
+        ...tutor,
+        materias: subjectsByTutor.get(tutor.id) || [],
+      })),
+    );
   } catch (error) {
     return next(error);
   }
@@ -84,7 +138,7 @@ const getTutorSubjects = async (req, res, next) => {
 
 const getTutorAvailability = async (req, res, next) => {
   const tutorId = getTutorId(req.params.id);
-  const { date } = req.query; // Formato esperado: YYYY-MM-DD
+  const { date } = req.query;
 
   if (!tutorId) {
     return res.status(400).json({ message: 'El identificador del tutor no es válido' });
@@ -94,7 +148,6 @@ const getTutorAvailability = async (req, res, next) => {
   }
 
   try {
-    // 1. Obtener los horarios de atención activos del tutor
     const [schedules] = await pool.execute(
       `SELECT day_of_week, start_time, end_time
          FROM schedules
@@ -102,7 +155,6 @@ const getTutorAvailability = async (req, res, next) => {
       [tutorId],
     );
 
-    // Calcular día de la semana ISO (1 = Lunes, ..., 7 = Domingo) sin desfase horario
     const [year, month, day] = date.split('-').map(Number);
     const dateObj = new Date(year, month - 1, day);
     const dayOfWeek = dateObj.getDay();
@@ -110,7 +162,6 @@ const getTutorAvailability = async (req, res, next) => {
 
     const daySchedule = schedules.find((s) => s.day_of_week === isoDay);
 
-    // Si el tutor no labora ese día
     if (!daySchedule) {
       return res.json({
         tutorId,
@@ -121,7 +172,6 @@ const getTutorAvailability = async (req, res, next) => {
       });
     }
 
-    // 2. Obtener sesiones activas (PENDING) del tutor para esa fecha
     const [busySessions] = await pool.execute(
       `SELECT start_time, end_time
          FROM sessions
@@ -129,7 +179,6 @@ const getTutorAvailability = async (req, res, next) => {
       [tutorId, date],
     );
 
-    // 3. Generar bloques de 60 minutos dentro de la jornada
     const toMinutes = (timeStr) => {
       const [h, m] = String(timeStr).slice(0, 5).split(':').map(Number);
       return h * 60 + m;
@@ -149,7 +198,6 @@ const getTutorAvailability = async (req, res, next) => {
       const slotStart = current;
       const slotEnd = current + 60;
 
-      // Un bloque colisiona si: slotStart < busyEnd && slotEnd > busyStart
       const isOccupied = busySessions.some((session) => {
         const busyStart = toMinutes(session.start_time);
         const busyEnd = toMinutes(session.end_time);
@@ -178,4 +226,22 @@ const getTutorAvailability = async (req, res, next) => {
   }
 };
 
-module.exports = { getTutors, getTutorSchedules, getTutorSubjects, getTutorAvailability };
+// Catálogo general de materias para alimentar el dropdown del frontend
+const getAllSubjects = async (_req, res, next) => {
+  try {
+    const [subjects] = await pool.execute(
+      `SELECT id, nombre FROM subjects WHERE is_active = TRUE ORDER BY nombre`,
+    );
+    return res.json(subjects);
+  } catch (error) {
+    return next(error);
+  }
+};
+
+module.exports = {
+  getTutors,
+  getTutorSchedules,
+  getTutorSubjects,
+  getTutorAvailability,
+  getAllSubjects,
+};
