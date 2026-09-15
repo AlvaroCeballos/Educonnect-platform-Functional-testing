@@ -6,16 +6,19 @@ export default function TutorSessions() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   
-  // T-014.1: Estado para controlar las pestañas
   const [activeTab, setActiveTab] = useState('PENDING');
 
-  // Estados para controlar el Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeSession, setActiveSession] = useState(null);
   const [summary, setSummary] = useState('');
   const [recommendations, setRecommendations] = useState('');
   const [submitError, setSubmitError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+  const [sessionToCancel, setSessionToCancel] = useState(null);
+  const [cancelError, setCancelError] = useState('');
+  const [canceling, setCanceling] = useState(false);
 
   const fetchSessions = async () => {
     setLoading(true);
@@ -42,6 +45,12 @@ export default function TutorSessions() {
     setIsModalOpen(true);
   };
 
+  const openCancelModal = (session) => {
+    setSessionToCancel(session);
+    setCancelError('');
+    setIsCancelModalOpen(true);
+  };
+
   const handleAttend = async (e) => {
     e.preventDefault();
     if (!summary.trim()) {
@@ -66,7 +75,22 @@ export default function TutorSessions() {
     }
   };
 
-  // T-014.2: Separar y ORDENAR. Las pendientes van "próximas primero" (Ascendente).
+  const handleCancel = async (e) => {
+    e.preventDefault();
+    setCanceling(true);
+    setCancelError('');
+    
+    try {
+      await api.patch(`/sessions/${sessionToCancel.id}/cancel/tutor`);
+      setIsCancelModalOpen(false);
+      fetchSessions(); 
+    } catch (err) {
+      setCancelError(err.response?.data?.message || 'Error al cancelar la sesión.');
+    } finally {
+      setCanceling(false);
+    }
+  };
+
   const displayedSessions = activeTab === 'PENDING' 
     ? sessions
         .filter(s => s.status === 'PENDING')
@@ -81,7 +105,6 @@ export default function TutorSessions() {
     <div className="p-8 max-w-5xl mx-auto font-sans">
       <h2 className="text-3xl font-extrabold text-gray-900 mb-6">Mis Sesiones</h2>
       
-      {/* Interfaz de Pestañas (Tabs) */}
       <div className="flex gap-4 border-b border-gray-200 mb-6">
         <button 
           onClick={() => setActiveTab('PENDING')}
@@ -130,22 +153,32 @@ export default function TutorSessions() {
                     </div>
                   )}
 
+                  {/* T-017.3: Diferenciar visualmente quién canceló la sesión en el historial */}
                   <span className={`inline-block mt-3 px-2.5 py-1 text-xs font-bold rounded-full uppercase ${
                     session.status === 'PENDING' ? 'bg-amber-100 text-amber-800' : 
                     session.status === 'ATTENDED' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'
                   }`}>
                     {session.status === 'PENDING' ? 'Pendiente' : 
-                     session.status === 'ATTENDED' ? 'Atendida' : 'Cancelada'}
+                     session.status === 'ATTENDED' ? 'Atendida' : 
+                     session.status === 'CANCELLED_BY_TUTOR' ? 'Cancelada por ti' : 'Cancelada por est.'}
                   </span>
                 </div>
                 
                 {session.status === 'PENDING' && (
-                  <button
-                    onClick={() => openModal(session)}
-                    className="mt-4 md:mt-0 md:ml-6 bg-emerald-600 text-white font-semibold px-5 py-2.5 rounded-lg hover:bg-emerald-700 transition-colors shadow-sm whitespace-nowrap"
-                  >
-                    Marcar como Atendida
-                  </button>
+                  <div className="flex gap-3 mt-4 md:mt-0 md:ml-6">
+                    <button
+                      onClick={() => openCancelModal(session)}
+                      className="px-4 py-2 border border-red-200 text-red-600 font-semibold rounded-lg hover:bg-red-50 transition-colors shadow-sm whitespace-nowrap"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      onClick={() => openModal(session)}
+                      className="bg-emerald-600 text-white font-semibold px-5 py-2.5 rounded-lg hover:bg-emerald-700 transition-colors shadow-sm whitespace-nowrap"
+                    >
+                      Marcar como Atendida
+                    </button>
+                  </div>
                 )}
               </div>
 
@@ -171,7 +204,7 @@ export default function TutorSessions() {
         </div>
       )}
 
-      {/* Modal del formulario */}
+      {/* Modal de Atender */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden zoom-in-95">
@@ -238,6 +271,53 @@ export default function TutorSessions() {
               </div>
             </form>
 
+          </div>
+        </div>
+      )}
+
+      {/* Modal de confirmación para cancelar */}
+      {isCancelModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden zoom-in-95">
+            <div className="px-6 py-4 bg-red-600 text-white flex justify-between items-center">
+              <div>
+                <span className="text-xs uppercase tracking-wider text-red-200 font-semibold block">Atención</span>
+                <h3 className="font-bold text-lg">Cancelar sesión</h3>
+              </div>
+              <button onClick={() => setIsCancelModalOpen(false)} className="text-red-200 hover:text-white text-xl">✕</button>
+            </div>
+            
+            <div className="p-6">
+              <p className="text-slate-700 mb-4">
+                ¿Estás seguro de que deseas cancelar tu tutoría de <strong>{sessionToCancel?.materia}</strong> con <strong>{sessionToCancel?.studentNombre}</strong>?
+              </p>
+              <p className="text-sm text-slate-500 mb-6">
+                Esta acción informará al estudiante, <strong className="text-red-600">liberará tu horario</strong> para nuevas reservas y no se puede deshacer.
+              </p>
+              
+              {cancelError && (
+                <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-2 mb-4">
+                  {cancelError}
+                </div>
+              )}
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+                <button 
+                  onClick={() => setIsCancelModalOpen(false)} 
+                  disabled={canceling}
+                  className="px-5 py-2 border border-slate-300 text-slate-700 font-semibold rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50"
+                >
+                  Mantener sesión
+                </button>
+                <button 
+                  onClick={handleCancel} 
+                  disabled={canceling}
+                  className="px-5 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors shadow-sm disabled:opacity-50 flex items-center gap-2"
+                >
+                  {canceling ? 'Cancelando...' : 'Sí, Cancelar'}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
