@@ -66,16 +66,22 @@ export default function TutorSessions() {
     }
   };
 
-  // T-014.1: Separación por pestañas (solo filtro, SIN ordenar aún)
+  // T-014.2: Separar y ORDENAR. Las pendientes van "próximas primero" (Ascendente).
   const displayedSessions = activeTab === 'PENDING' 
-    ? sessions.filter(s => s.status === 'PENDING')
+    ? sessions
+        .filter(s => s.status === 'PENDING')
+        .sort((a, b) => {
+          const dateA = new Date(`${String(a.sessionDate).slice(0, 10)}T${a.startTime}`);
+          const dateB = new Date(`${String(b.sessionDate).slice(0, 10)}T${b.startTime}`);
+          return dateA - dateB; 
+        })
     : sessions.filter(s => s.status !== 'PENDING');
 
   return (
     <div className="p-8 max-w-5xl mx-auto font-sans">
       <h2 className="text-3xl font-extrabold text-gray-900 mb-6">Mis Sesiones</h2>
       
-      {/* T-014.1: Interfaz de Pestañas (Tabs) */}
+      {/* Interfaz de Pestañas (Tabs) */}
       <div className="flex gap-4 border-b border-gray-200 mb-6">
         <button 
           onClick={() => setActiveTab('PENDING')}
@@ -117,7 +123,6 @@ export default function TutorSessions() {
                     📅 {String(session.sessionDate).slice(0, 10)} | ⏰ {session.startTime} - {session.endTime}
                   </p>
                   
-                  {/* T-014.1: Mostrar el motivo por el cual el estudiante agendó */}
                   {session.reason && (
                     <div className="mt-3 p-3 bg-gray-50 rounded-lg border border-gray-100 max-w-2xl">
                       <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Motivo / Dudas:</p>
