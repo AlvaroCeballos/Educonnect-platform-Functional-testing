@@ -139,7 +139,8 @@ const getMySessions = async (req, res, next) => {
     const [rows] = await pool.execute(
       `SELECT s.id, s.tutor_id AS tutorId, tp.nombre AS tutorNombre, tp.apellido AS tutorApellido,
               s.session_date AS sessionDate, s.start_time AS startTime, s.end_time AS endTime,
-              s.subject_id AS subjectId, sub.nombre AS materia, s.reason, s.status
+              s.subject_id AS subjectId, sub.nombre AS materia, s.reason, s.status,
+              s.summary, s.recommendations
          FROM sessions s
          JOIN tutor_profiles tp ON tp.id = s.tutor_id
          JOIN subjects sub ON sub.id = s.subject_id

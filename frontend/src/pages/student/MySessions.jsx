@@ -49,7 +49,7 @@ export default function MySessions() {
   };
 
   return <main className="single-panel"><section className="form-panel schedule-panel">
-    <div style={{ marginBottom: '14px' }}>
+    <div style={{ marginBottom: '14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
       <Link
         to="/dashboard/student"
         style={{
@@ -64,8 +64,26 @@ export default function MySessions() {
       >
         ← Volver a tutores disponibles
       </Link>
+      <Link
+        to="/historial"
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '6px',
+          fontSize: '13px',
+          fontWeight: 600,
+          color: '#0f766e',
+          textDecoration: 'none',
+        }}
+      >
+        Ver historial completo →
+      </Link>
     </div>
-    <div className="form-heading"><p className="eyebrow">MIS SESIONES ACTIVAS</p><h2>Sesiones activas</h2><p>Tus próximas sesiones pendientes, ordenadas por fecha más cercana.</p></div>
+    <div className="form-heading">
+      <p className="eyebrow">MIS SESIONES ACTIVAS</p>
+      <h2>Sesiones activas</h2>
+      <p>Tus próximas sesiones pendientes, ordenadas por fecha más cercana.</p>
+    </div>
     {loading && <p>Cargando…</p>}
     {!loading && sessions.length === 0 && <p>No tienes sesiones activas en este momento.</p>}
     <div className="session-list">
