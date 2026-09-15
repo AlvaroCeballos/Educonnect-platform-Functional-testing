@@ -15,10 +15,8 @@ export default function TutorSessions() {
   const [submitError, setSubmitError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  // Estados Modal Cancelar
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
   const [sessionToCancel, setSessionToCancel] = useState(null);
-  // T-017.2: Nuevos estados para control de la petición
   const [cancelError, setCancelError] = useState('');
   const [canceling, setCanceling] = useState(false);
 
@@ -77,7 +75,6 @@ export default function TutorSessions() {
     }
   };
 
-  // T-017.2: Conexión con el backend para cancelar la sesión
   const handleCancel = async (e) => {
     e.preventDefault();
     setCanceling(true);
@@ -156,12 +153,14 @@ export default function TutorSessions() {
                     </div>
                   )}
 
+                  {/* T-017.3: Diferenciar visualmente quién canceló la sesión en el historial */}
                   <span className={`inline-block mt-3 px-2.5 py-1 text-xs font-bold rounded-full uppercase ${
                     session.status === 'PENDING' ? 'bg-amber-100 text-amber-800' : 
                     session.status === 'ATTENDED' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'
                   }`}>
                     {session.status === 'PENDING' ? 'Pendiente' : 
-                     session.status === 'ATTENDED' ? 'Atendida' : 'Cancelada'}
+                     session.status === 'ATTENDED' ? 'Atendida' : 
+                     session.status === 'CANCELLED_BY_TUTOR' ? 'Cancelada por ti' : 'Cancelada por est.'}
                   </span>
                 </div>
                 
@@ -296,7 +295,6 @@ export default function TutorSessions() {
                 Esta acción informará al estudiante, <strong className="text-red-600">liberará tu horario</strong> para nuevas reservas y no se puede deshacer.
               </p>
               
-              {/* T-017.2: Mostrar mensaje si falla la petición */}
               {cancelError && (
                 <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-2 mb-4">
                   {cancelError}
