@@ -115,7 +115,6 @@ const sendAccountDecisionEmail = async ({ to, nombre, role, status, reason = '' 
   }
 };
 
-// T-018.1: Plantilla para notificar cancelación del tutor
 const sendCancellationEmail = async ({ to, studentNombre, tutorNombre, materia, fecha, hora, motivo }) => {
   const subject = `Cancelación de sesión - Tutoría de ${materia}`;
   const from = process.env.SMTP_FROM || 'noreply@educonnect.local';
@@ -183,11 +182,11 @@ const sendCancellationEmail = async ({ to, studentNombre, tutorNombre, materia, 
       subject,
       html: htmlContent,
     });
-    // T-018.3: Registro para pruebas de notificación
-    console.log(`[TEST T-018.3] Correo de cancelación enviado a: ${to} | ID: ${info.messageId}`);
+    // T-018.3: Registro y manejo de errores visible para validar la salida en Mailtrap
+    console.log(`[TEST T-018.3] Correo de cancelación exitoso | Destinatario: ${to} | ID: ${info.messageId}`);
     return { success: true, messageId: info.messageId };
   } catch (error) {
-    console.error(`[ERROR CORREO] Fallo al enviar cancelación a ${to}:`, error.message);
+    console.error(`[TEST T-018.3 ERROR] Fallo al enviar notificación a ${to}:`, error.message);
     return { success: false, error: error.message };
   }
 };
