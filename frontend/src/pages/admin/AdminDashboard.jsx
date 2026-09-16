@@ -2,21 +2,41 @@ import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import api from '../../utils/api';
+import { generateTutorsDemandBlob } from '../../utils/pdfReportGenerator';
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const [admin, setAdmin] = useState(null);
-  const [users, setUsers] = useState([]);
-  const [activeTab, setActiveTab] = useState('students'); // 'students' | 'tutors'
+  const [pendingUsers, setPendingUsers] = useState([]);
+  const [approvedUsers, setApprovedUsers] = useState([]);
+  const [reportTutors, setReportTutors] = useState([]);
+  const [reportSubjects, setReportSubjects] = useState([]);
+  const [activeTab, setActiveTab] = useState('students'); // 'students' | 'tutors' | 'reports' | 'subjects-report'
+  const [studentView, setStudentView] = useState('pending'); // 'pending' | 'approved'
+  const [tutorView, setTutorView] = useState('pending'); // 'pending' | 'approved'
+  const [studentSearchTerm, setStudentSearchTerm] = useState('');
+  const [tutorSearchTerm, setTutorSearchTerm] = useState('');
+  const [reportSearchTerm, setReportSearchTerm] = useState('');
+  const [subjectSearchTerm, setSubjectSearchTerm] = useState('');
+  const [reportFilterMode, setReportFilterMode] = useState('all'); // 'all' | 'attendedOnly'
+  const [subjectFilterMode, setSubjectFilterMode] = useState('all'); // 'all' | 'withSessionsOnly'
   const [loading, setLoading] = useState(true);
   const [actionId, setActionId] = useState(null);
 
   const loadUsers = useCallback(async () => {
     try {
-      const response = await api.get('/admin/users', { params: { status: 'PENDING' } });
-      setUsers(response.data.users || []);
+      const [pendingRes, approvedRes, reportRes, subjectsReportRes] = await Promise.all([
+        api.get('/admin/users', { params: { status: 'PENDING' } }),
+        api.get('/admin/users', { params: { status: 'APPROVED' } }),
+        api.get('/reports/top-tutors').catch(() => ({ data: { topTutors: [] } })),
+        api.get('/reports/top-subjects').catch(() => ({ data: { subjectsReport: [] } })),
+      ]);
+      setPendingUsers(pendingRes.data.users || []);
+      setApprovedUsers(approvedRes.data.users || []);
+      setReportTutors(reportRes.data?.topTutors || []);
+      setReportSubjects(subjectsReportRes.data?.subjectsReport || []);
     } catch (err) {
-      console.error('Error cargando usuarios:', err);
+      console.error('Error cargando usuarios o reportes:', err);
     }
   }, []);
 
@@ -131,10 +151,12 @@ export default function AdminDashboard() {
           <div><strong>Género:</strong> ${formatGender(tutor.genero)}</div>
           <div><strong>Fecha de Nacimiento:</strong> ${formatDate(tutor.fecha_nacimiento)}</div>
           <div><strong>Fecha de Solicitud:</strong> ${formatDate(tutor.created_at)}</div>
+          <div><strong>Estado actual:</strong> <span style="font-weight:700; color:${tutor.status === 'APPROVED' ? '#167963' : '#b45309'};">${tutor.status === 'APPROVED' ? 'Aprobado / Activo' : 'Pendiente'}</span></div>
         </div>
       `,
       showCancelButton: true,
-      showDenyButton: true,
+      showConfirmButton: tutor.status !== 'APPROVED',
+      showDenyButton: tutor.status !== 'APPROVED',
       confirmButtonText: 'Aceptar Tutor',
       denyButtonText: 'Rechazar Tutor',
       cancelButtonText: 'Cerrar',
@@ -142,14 +164,15 @@ export default function AdminDashboard() {
       denyButtonColor: '#a42e3a',
       cancelButtonColor: '#64748b',
     }).then((result) => {
-      if (result.isConfirmed) {
-        handleApprove(tutor);
-      } else if (result.isDenied) {
-        handleReject(tutor);
+      if (tutor.status !== 'APPROVED') {
+        if (result.isConfirmed) {
+          handleApprove(tutor);
+        } else if (result.isDenied) {
+          handleReject(tutor);
+        }
       }
     });
   };
-
 
   const handleReject = async (user) => {
     const roleLabel = user.role === 'tutor' ? 'tutor' : 'estudiante';
@@ -200,8 +223,286 @@ export default function AdminDashboard() {
     }
   };
 
-  const students = users.filter((u) => u.role === 'student');
-  const tutors = users.filter((u) => u.role === 'tutor');
+  const handleDisableStudent = async (student) => {
+    const nombre = [student.nombre, student.apellido].filter(Boolean).join(' ') || 'el estudiante';
+
+    const confirm = await Swal.fire({
+      icon: 'warning',
+      title: '¿Dar de baja al estudiante?',
+      html: `
+        ¿Estás seguro de que deseas dar de baja a <strong>${nombre}</strong>?<br>
+        <span style="font-size: 13px; color: #64748b;">Carnet: ${student.carnet || '—'} · Correo: ${student.email}</span><br><br>
+        <span style="font-size: 13px; color: #a42e3a; font-weight: 600;">
+          Nota importante: Esta acción es una baja lógica. El estudiante no podrá volver a iniciar sesión en la plataforma.
+        </span>
+      `,
+      showCancelButton: true,
+      confirmButtonText: 'Sí, dar de baja',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#a42e3a',
+      cancelButtonColor: '#64748b',
+    });
+
+    if (!confirm.isConfirmed) return;
+
+    setActionId(student.id);
+    try {
+      const res = await api.patch(`/admin/users/${student.id}/disable`);
+      await Swal.fire({
+        icon: 'success',
+        title: 'Estudiante dado de baja',
+        text: res.data.message || 'La cuenta del estudiante ha sido desactivada.',
+        confirmButtonColor: '#167963',
+      });
+      await loadUsers();
+    } catch (err) {
+      await Swal.fire({
+        icon: 'error',
+        title: 'Error al dar de baja',
+        text: err.response?.data?.message || 'No fue posible dar de baja al estudiante.',
+        confirmButtonColor: '#167963',
+      });
+    } finally {
+      setActionId(null);
+    }
+  };
+
+  const handleDisableTutor = async (tutor) => {
+    const nombre = [tutor.nombre, tutor.apellido].filter(Boolean).join(' ') || 'el tutor';
+
+    const { value: reason, isConfirmed } = await Swal.fire({
+      icon: 'warning',
+      title: '¿Dar de baja al tutor?',
+      html: `
+        ¿Estás seguro de que deseas dar de baja a <strong>${nombre}</strong>?<br>
+        <span style="font-size: 13px; color: #64748b;">Especialidad: ${tutor.especialidad || 'General'} · Correo: ${tutor.email}</span><br><br>
+        <span style="font-size: 13px; color: #a42e3a; font-weight: 600;">
+          Nota importante: Esta acción es una baja lógica. El tutor no podrá iniciar sesión, no aparecerá en el catálogo de estudiantes y se enviará una notificación por correo a <strong>${tutor.email}</strong>.
+        </span><br><br>
+        <label style="display:block; text-align:left; font-size:12px; font-weight:600; color:#475569; margin-bottom:4px;">Motivo de la baja (opcional, para el correo):</label>
+      `,
+      input: 'textarea',
+      inputPlaceholder: 'Ej: Inactividad prolongada, solicitud voluntaria o incumplimiento de normativas...',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, dar de baja',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#a42e3a',
+      cancelButtonColor: '#64748b',
+    });
+
+    if (!isConfirmed) return;
+
+    setActionId(tutor.id);
+    try {
+      const res = await api.patch(`/admin/users/${tutor.id}/disable`, { reason: reason || '' });
+      await Swal.fire({
+        icon: 'success',
+        title: 'Tutor dado de baja',
+        text: res.data.message || 'La cuenta del tutor ha sido desactivada y se notificó por correo.',
+        confirmButtonColor: '#167963',
+      });
+      await loadUsers();
+    } catch (err) {
+      await Swal.fire({
+        icon: 'error',
+        title: 'Error al dar de baja',
+        text: err.response?.data?.message || 'No fue posible dar de baja al tutor.',
+        confirmButtonColor: '#167963',
+      });
+    } finally {
+      setActionId(null);
+    }
+  };
+
+  const pendingStudents = pendingUsers.filter((u) => u.role === 'student');
+  const approvedStudents = approvedUsers.filter((u) => u.role === 'student');
+  const pendingTutors = pendingUsers.filter((u) => u.role === 'tutor');
+  const approvedTutors = approvedUsers.filter((u) => u.role === 'tutor');
+
+  const filteredApprovedStudents = approvedStudents.filter((u) => {
+    if (!studentSearchTerm.trim()) return true;
+    const term = studentSearchTerm.toLowerCase();
+    const fullName = `${u.nombre || ''} ${u.apellido || ''}`.toLowerCase();
+    const carnet = String(u.carnet || '').toLowerCase();
+    const email = String(u.email || '').toLowerCase();
+    return fullName.includes(term) || carnet.includes(term) || email.includes(term);
+  });
+
+  const filteredApprovedTutors = approvedTutors.filter((u) => {
+    if (!tutorSearchTerm.trim()) return true;
+    const term = tutorSearchTerm.toLowerCase();
+    const fullName = `${u.nombre || ''} ${u.apellido || ''}`.toLowerCase();
+    const carnet = String(u.carnet || '').toLowerCase();
+    const email = String(u.email || '').toLowerCase();
+    const especialidad = String(u.especialidad || '').toLowerCase();
+    const universidad = String(u.universidad || '').toLowerCase();
+    const identificacion = String(u.identificacion || '').toLowerCase();
+    return (
+      fullName.includes(term) ||
+      carnet.includes(term) ||
+      email.includes(term) ||
+      especialidad.includes(term) ||
+      universidad.includes(term) ||
+      identificacion.includes(term)
+    );
+  });
+
+  // Cálculos para HU-026: Tutores
+  const maxAttended = reportTutors.length > 0 ? Math.max(...reportTutors.map((t) => t.totalAtendidos)) : 0;
+  const totalAttendedAll = reportTutors.reduce((acc, t) => acc + t.totalAtendidos, 0);
+  const totalDistinctStudents = reportTutors.reduce((acc, t) => acc + t.estudiantesDistintos, 0);
+  const topTutor = reportTutors.length > 0 ? reportTutors[0] : null;
+
+  const filteredReportTutors = reportTutors.filter((t) => {
+    if (reportFilterMode === 'attendedOnly' && t.totalAtendidos === 0) return false;
+    if (!reportSearchTerm.trim()) return true;
+    const term = reportSearchTerm.toLowerCase();
+    return (
+      t.nombreCompleto.toLowerCase().includes(term) ||
+      t.carnet.toLowerCase().includes(term) ||
+      t.email.toLowerCase().includes(term) ||
+      t.especialidad.toLowerCase().includes(term) ||
+      t.universidad.toLowerCase().includes(term)
+    );
+  });
+
+  // Cálculos para HU-027: Materias
+  const totalSessionsAllSubjects = reportSubjects.reduce((acc, s) => acc + s.totalSesiones, 0);
+  const maxSubjectSessions = reportSubjects.length > 0 ? Math.max(...reportSubjects.map((s) => s.totalSesiones)) : 0;
+  const topSubject = reportSubjects.length > 0 && reportSubjects[0].totalSesiones > 0 ? reportSubjects[0] : null;
+
+  const filteredReportSubjects = reportSubjects.filter((s) => {
+    if (subjectFilterMode === 'withSessionsOnly' && s.totalSesiones === 0) return false;
+    if (!subjectSearchTerm.trim()) return true;
+    return s.materia.toLowerCase().includes(subjectSearchTerm.toLowerCase());
+  });
+
+  const downloadCSV = () => {
+    if (reportTutors.length === 0) return;
+    const dateStr = new Date().toISOString().slice(0, 10);
+    const headers = ['Ranking', 'Tutor', 'Correo', 'Carnet', 'Especialidad', 'Universidad', 'Estado', 'Sesiones Atendidas', 'Estudiantes Distintos'];
+    const rows = reportTutors.map((t) => [
+      t.ranking,
+      `"${t.nombreCompleto}"`,
+      `"${t.email}"`,
+      `"${t.carnet}"`,
+      `"${t.especialidad}"`,
+      `"${t.universidad}"`,
+      `"${t.userStatus === 'APPROVED' ? 'Activo' : 'Dado de baja'}"`,
+      t.totalAtendidos,
+      t.estudiantesDistintos,
+    ]);
+
+    const csvContent = '\uFEFF' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    const csvBlob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const csvUrl = URL.createObjectURL(csvBlob);
+    const csvLink = document.createElement('a');
+    csvLink.href = csvUrl;
+    csvLink.download = `reporte_tutores_demanda_${dateStr}.csv`;
+    document.body.appendChild(csvLink);
+    csvLink.click();
+    document.body.removeChild(csvLink);
+    setTimeout(() => URL.revokeObjectURL(csvUrl), 2000);
+  };
+
+  const downloadSubjectsCSV = () => {
+    if (reportSubjects.length === 0) return;
+    const dateStr = new Date().toISOString().slice(0, 10);
+    const headers = ['Ranking', 'Materia', 'Total Sesiones', 'Sesiones Atendidas', 'Sesiones Pendientes', 'Porcentaje Demanda'];
+    const rows = reportSubjects.map((s) => [
+      s.ranking,
+      `"${s.materia}"`,
+      s.totalSesiones,
+      s.sesionesAtendidas,
+      s.sesionesPendientes,
+      `${s.porcentaje}%`,
+    ]);
+
+    const csvContent = '\uFEFF' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    const csvBlob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const csvUrl = URL.createObjectURL(csvBlob);
+    const csvLink = document.createElement('a');
+    csvLink.href = csvUrl;
+    csvLink.download = `reporte_materias_demanda_${dateStr}.csv`;
+    document.body.appendChild(csvLink);
+    csvLink.click();
+    document.body.removeChild(csvLink);
+    setTimeout(() => URL.revokeObjectURL(csvUrl), 2000);
+  };
+
+  const downloadPDF = () => {
+    if (reportTutors.length === 0) return;
+    try {
+      const dateStr = new Date().toISOString().slice(0, 10);
+      const pdfBlob = generateTutorsDemandBlob(
+        {
+          topTutors: reportTutors,
+          totalAttendedAll,
+          totalDistinctStudents,
+          topTutor,
+          generatedAt: new Date().toISOString(),
+        },
+        admin
+      );
+
+      const pdfUrl = URL.createObjectURL(pdfBlob);
+      const pdfLink = document.createElement('a');
+      pdfLink.href = pdfUrl;
+      pdfLink.download = `reporte_tutores_demanda_${dateStr}.pdf`;
+      document.body.appendChild(pdfLink);
+      pdfLink.click();
+      document.body.removeChild(pdfLink);
+      setTimeout(() => URL.revokeObjectURL(pdfUrl), 2000);
+    } catch (err) {
+      console.error('Error al descargar PDF:', err);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error al generar PDF',
+        text: 'Ocurrió un problema generando el documento PDF.',
+        confirmButtonColor: '#167963',
+      });
+    }
+  };
+
+  const handleExportReports = () => {
+    if (reportTutors.length === 0) {
+      Swal.fire({
+        icon: 'info',
+        title: 'Sin datos',
+        text: 'No hay datos de tutores para exportar en este momento.',
+        confirmButtonColor: '#167963',
+      });
+      return;
+    }
+
+    downloadCSV();
+    setTimeout(() => {
+      downloadPDF();
+    }, 150);
+
+    Swal.fire({
+      icon: 'success',
+      title: 'Reportes exportados',
+      html: `
+        <div style="font-size: 14px; color: #334155; line-height: 1.6; margin-bottom: 12px;">
+          Se iniciaron las descargas de los reportes en formato <strong>CSV</strong> y <strong>PDF</strong>.
+        </div>
+        <div style="font-size: 12px; color: #64748b; margin-bottom: 12px;">
+          Si tu navegador bloqueó la segunda descarga automática, descárgalos directamente:
+        </div>
+        <div style="display: flex; justify-content: center; gap: 10px;">
+          <button id="swal-dl-pdf" class="swal2-confirm swal2-styled" style="background: #0f766e; padding: 7px 16px; font-size: 12px; border-radius: 6px; margin: 0;">Descargar PDF</button>
+          <button id="swal-dl-csv" class="swal2-confirm swal2-styled" style="background: #1e293b; padding: 7px 16px; font-size: 12px; border-radius: 6px; margin: 0;">Descargar CSV</button>
+        </div>
+      `,
+      showConfirmButton: false,
+      showCloseButton: true,
+      didOpen: () => {
+        document.getElementById('swal-dl-pdf')?.addEventListener('click', () => downloadPDF());
+        document.getElementById('swal-dl-csv')?.addEventListener('click', () => downloadCSV());
+      },
+    });
+  };
 
   const formatGender = (gender) => {
     if (gender === 'M') return 'Masculino';
@@ -247,14 +548,16 @@ export default function AdminDashboard() {
       <main className="admin-content">
         <section className="admin-section-heading">
           <div>
-            <p className="eyebrow">CONTROL DE ACCESO</p>
-            <h2>Solicitudes Pendientes de Aprobación</h2>
-            <p>Revisa la información de cada postulante y aprueba o rechaza el acceso al sistema.</p>
+            <p className="eyebrow">CONTROL DE ACCESO Y ADMINISTRACIÓN</p>
+            <h2>Gestión de Usuarios y Solicitudes</h2>
+            <p>Supervisa las solicitudes de ingreso y administra los usuarios activos en la plataforma.</p>
           </div>
-          <span className="admin-count">{users.length} pendientes en total</span>
+          <span className="admin-count">
+            {pendingStudents.length + pendingTutors.length} solicitudes pendientes
+          </span>
         </section>
 
-        {/* Pestañas para separar Estudiantes y Tutores */}
+        {/* Pestañas para separar Estudiantes, Tutores y los dos Reportes */}
         <div className="admin-tabs">
           <button
             type="button"
@@ -262,7 +565,7 @@ export default function AdminDashboard() {
             onClick={() => setActiveTab('students')}
           >
             Estudiantes
-            <span className="admin-tab-count">{students.length}</span>
+            <span className="admin-tab-count">{pendingStudents.length + approvedStudents.length}</span>
           </button>
           <button
             type="button"
@@ -270,90 +573,748 @@ export default function AdminDashboard() {
             onClick={() => setActiveTab('tutors')}
           >
             Tutores
-            <span className="admin-tab-count">{tutors.length}</span>
+            <span className="admin-tab-count">{pendingTutors.length + approvedTutors.length}</span>
+          </button>
+          <button
+            type="button"
+            className={`admin-tab ${activeTab === 'reports' ? 'active' : ''}`}
+            onClick={() => setActiveTab('reports')}
+          >
+            Reporte Tutores (HU-026)
+            <span className="admin-tab-count">{totalAttendedAll}</span>
+          </button>
+          <button
+            type="button"
+            className={`admin-tab ${activeTab === 'subjects-report' ? 'active' : ''}`}
+            onClick={() => setActiveTab('subjects-report')}
+          >
+            Reporte Materias (HU-027)
+            <span className="admin-tab-count">{totalSessionsAllSubjects}</span>
           </button>
         </div>
 
-        {/* TAB 1: ESTUDIANTES PENDIENTES (HU-004) */}
+        {/* TAB 1: MÓDULO DE ESTUDIANTES (HU-004 y HU-024) */}
         {activeTab === 'students' && (
-          <section className="admin-table-card">
-            <div className="admin-tab-header">
-              <h3>Solicitudes de Registro de Estudiantes (HU-004)</h3>
-              <p>Valida la información académica y decide la admisión a la plataforma.</p>
+          <div>
+            <div className="admin-subtabs">
+              <button
+                type="button"
+                className={`admin-subtab ${studentView === 'pending' ? 'active' : ''}`}
+                onClick={() => setStudentView('pending')}
+              >
+                Solicitudes Pendientes (HU-004)
+                <span className="badge-sub">{pendingStudents.length}</span>
+              </button>
+              <button
+                type="button"
+                className={`admin-subtab ${studentView === 'approved' ? 'active' : ''}`}
+                onClick={() => setStudentView('approved')}
+              >
+                Estudiantes Aprobados / Activos (HU-024)
+                <span className="badge-sub">{approvedStudents.length}</span>
+              </button>
             </div>
 
-            {students.length === 0 ? (
-              <div className="admin-empty">No hay solicitudes de estudiantes pendientes de aprobación.</div>
+            {studentView === 'pending' && (
+              <section className="admin-table-card">
+                <div className="admin-tab-header">
+                  <h3>Solicitudes de Registro de Estudiantes (HU-004)</h3>
+                  <p>Valida la información académica y decide la admisión a la plataforma.</p>
+                </div>
+
+                {pendingStudents.length === 0 ? (
+                  <div className="admin-empty">No hay solicitudes de estudiantes pendientes de aprobación.</div>
+                ) : (
+                  <div className="admin-table-wrap">
+                    <table className="admin-table">
+                      <thead>
+                        <tr>
+                          <th>Estudiante</th>
+                          <th>Carnet</th>
+                          <th>Género</th>
+                          <th>Fecha Nacimiento</th>
+                          <th>Fecha Solicitud</th>
+                          <th>Acciones</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {pendingStudents.map((student) => (
+                          <tr key={student.id}>
+                            <td>
+                              <div className="admin-user-info">
+                                {student.fotografia_url ? (
+                                  <img
+                                    src={resolveMediaUrl(student.fotografia_url)}
+                                    alt="Foto Estudiante"
+                                    className="admin-user-avatar"
+                                  />
+                                ) : (
+                                  <div className="admin-avatar-placeholder" title="Fotografía por defecto">
+                                    {(student.nombre?.[0] || 'E').toUpperCase()}
+                                  </div>
+                                )}
+                                <div>
+                                  <strong>
+                                    {[student.nombre, student.apellido].filter(Boolean).join(' ') || 'Sin nombre'}
+                                  </strong>
+                                  <span>{student.email}</span>
+                                  {student.universidad && (
+                                    <span style={{ fontSize: '11px', color: '#0f766e' }}>{student.universidad}</span>
+                                  )}
+                                </div>
+                              </div>
+                            </td>
+                            <td>
+                              <span className="font-mono font-bold text-slate-700">{student.carnet || '—'}</span>
+                            </td>
+                            <td>
+                              <span className="badge-gender">{formatGender(student.genero)}</span>
+                            </td>
+                            <td>{formatDate(student.fecha_nacimiento)}</td>
+                            <td>{formatDate(student.created_at)}</td>
+                            <td>
+                              <div className="admin-actions">
+                                <button
+                                  type="button"
+                                  className="approve-button"
+                                  disabled={actionId === student.id}
+                                  onClick={() => handleApprove(student)}
+                                >
+                                  {actionId === student.id ? '...' : 'Aceptar'}
+                                </button>
+                                <button
+                                  type="button"
+                                  className="reject-button"
+                                  disabled={actionId === student.id}
+                                  onClick={() => handleReject(student)}
+                                >
+                                  {actionId === student.id ? '...' : 'Rechazar'}
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </section>
+            )}
+
+            {studentView === 'approved' && (
+              <section className="admin-table-card">
+                <div className="admin-tab-header">
+                  <h3>Administración de Estudiantes Aprobados (HU-024)</h3>
+                  <p>Consulta a los estudiantes activos. Puedes dar de baja a una cuenta para revocar su acceso.</p>
+                </div>
+
+                <div className="admin-search-bar">
+                  <input
+                    type="text"
+                    className="admin-search-input"
+                    placeholder="Buscar por carnet, nombre o correo..."
+                    value={studentSearchTerm}
+                    onChange={(e) => setStudentSearchTerm(e.target.value)}
+                  />
+                  {studentSearchTerm && (
+                    <button
+                      type="button"
+                      className="admin-clear-search"
+                      onClick={() => setStudentSearchTerm('')}
+                    >
+                      Limpiar
+                    </button>
+                  )}
+                  <span style={{ fontSize: '13px', color: '#64748b', marginLeft: 'auto' }}>
+                    {filteredApprovedStudents.length} de {approvedStudents.length} estudiantes
+                  </span>
+                </div>
+
+                {approvedStudents.length === 0 ? (
+                  <div className="admin-empty">Aún no hay estudiantes en estado aprobado.</div>
+                ) : filteredApprovedStudents.length === 0 ? (
+                  <div className="admin-empty">No se encontraron estudiantes que coincidan con la búsqueda.</div>
+                ) : (
+                  <div className="admin-table-wrap">
+                    <table className="admin-table">
+                      <thead>
+                        <tr>
+                          <th>Estudiante</th>
+                          <th>Carnet</th>
+                          <th>Universidad / Carrera</th>
+                          <th>Género</th>
+                          <th>Estado</th>
+                          <th>Fecha Registro</th>
+                          <th>Acciones</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredApprovedStudents.map((student) => (
+                          <tr key={student.id}>
+                            <td>
+                              <div className="admin-user-info">
+                                {student.fotografia_url ? (
+                                  <img
+                                    src={resolveMediaUrl(student.fotografia_url)}
+                                    alt="Foto Estudiante"
+                                    className="admin-user-avatar"
+                                  />
+                                ) : (
+                                  <div className="admin-avatar-placeholder" title="Fotografía por defecto">
+                                    {(student.nombre?.[0] || 'E').toUpperCase()}
+                                  </div>
+                                )}
+                                <div>
+                                  <strong>
+                                    {[student.nombre, student.apellido].filter(Boolean).join(' ') || 'Sin nombre'}
+                                  </strong>
+                                  <span>{student.email}</span>
+                                </div>
+                              </div>
+                            </td>
+                            <td>
+                              <span className="font-mono font-bold text-slate-800" style={{ fontSize: '14px' }}>
+                                {student.carnet || '—'}
+                              </span>
+                            </td>
+                            <td>
+                              <strong style={{ fontSize: '13px', color: '#0f766e' }}>
+                                {student.universidad || 'USAC'}
+                              </strong>
+                              <span style={{ fontSize: '11px', color: '#64748b', display: 'block' }}>
+                                {student.carrera || 'Ingeniería en Sistemas'}
+                              </span>
+                            </td>
+                            <td>
+                              <span className="badge-gender">{formatGender(student.genero)}</span>
+                            </td>
+                            <td>
+                              <span className="badge-status-active">ACTIVO</span>
+                            </td>
+                            <td>{formatDate(student.created_at)}</td>
+                            <td>
+                              <button
+                                type="button"
+                                className="disable-button"
+                                disabled={actionId === student.id}
+                                title="Dar de baja lógica a este estudiante"
+                                onClick={() => handleDisableStudent(student)}
+                              >
+                                {actionId === student.id ? 'Procesando...' : 'Dar de baja'}
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </section>
+            )}
+          </div>
+        )}
+
+        {/* TAB 2: MÓDULO DE TUTORES (HU-005 y HU-025) */}
+        {activeTab === 'tutors' && (
+          <div>
+            <div className="admin-subtabs">
+              <button
+                type="button"
+                className={`admin-subtab ${tutorView === 'pending' ? 'active' : ''}`}
+                onClick={() => setTutorView('pending')}
+              >
+                Solicitudes Pendientes (HU-005)
+                <span className="badge-sub">{pendingTutors.length}</span>
+              </button>
+              <button
+                type="button"
+                className={`admin-subtab ${tutorView === 'approved' ? 'active' : ''}`}
+                onClick={() => setTutorView('approved')}
+              >
+                Tutores Aprobados / Activos (HU-025)
+                <span className="badge-sub">{approvedTutors.length}</span>
+              </button>
+            </div>
+
+            {tutorView === 'pending' && (
+              <section className="admin-table-card">
+                <div className="admin-tab-header">
+                  <h3>Solicitudes de Registro de Tutores (HU-005)</h3>
+                  <p>Revisa la fotografía obligatoria, especialidad y credenciales profesionales del tutor.</p>
+                </div>
+
+                {pendingTutors.length === 0 ? (
+                  <div className="admin-empty">No hay solicitudes de tutores pendientes de aprobación.</div>
+                ) : (
+                  <div className="admin-table-wrap">
+                    <table className="admin-table">
+                      <thead>
+                        <tr>
+                          <th>Tutor</th>
+                          <th>Carnet / Identificación</th>
+                          <th>Especialidad / Exp.</th>
+                          <th>Universidad / Modalidad</th>
+                          <th>Fecha Solicitud</th>
+                          <th>Acciones</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {pendingTutors.map((tutor) => (
+                          <tr key={tutor.id}>
+                            <td>
+                              <div className="admin-user-info">
+                                <div
+                                  className="admin-avatar-wrapper"
+                                  onClick={() => handleViewTutorDetails(tutor)}
+                                  title="Ver expediente del tutor"
+                                >
+                                  {tutor.fotografia_url ? (
+                                    <img
+                                      src={resolveMediaUrl(tutor.fotografia_url)}
+                                      alt="Foto Tutor"
+                                      className="admin-user-avatar tutor-avatar"
+                                      onError={(e) => {
+                                        e.target.style.display = 'none';
+                                        if (e.target.nextSibling) e.target.nextSibling.style.display = 'flex';
+                                      }}
+                                    />
+                                  ) : null}
+                                  <div
+                                    className="admin-avatar-placeholder tutor"
+                                    style={{ display: tutor.fotografia_url ? 'none' : 'flex' }}
+                                  >
+                                    {(tutor.nombre?.[0] || 'T').toUpperCase()}
+                                  </div>
+                                </div>
+                                <div>
+                                  <strong>
+                                    {[tutor.nombre, tutor.apellido].filter(Boolean).join(' ') || 'Sin nombre'}
+                                  </strong>
+                                  <span>{tutor.email}</span>
+                                  <span style={{ fontSize: '11px', color: '#64748b' }}>
+                                    {formatGender(tutor.genero)}
+                                  </span>
+                                </div>
+                              </div>
+                            </td>
+                            <td>
+                              <div>
+                                <strong>Carnet: {tutor.carnet || '—'}</strong>
+                                <span style={{ fontSize: '11px', color: '#64748b', display: 'block' }}>
+                                  DPI: {tutor.identificacion || '—'}
+                                </span>
+                              </div>
+                            </td>
+                            <td>
+                              <span className="badge-specialty">{tutor.especialidad || 'General'}</span>
+                              {tutor.anio_inicio_experiencia && (
+                                <span style={{ fontSize: '11px', color: '#475569', display: 'block', marginTop: '4px' }}>
+                                  Desde {tutor.anio_inicio_experiencia} ({new Date().getFullYear() - Number(tutor.anio_inicio_experiencia)} años exp.)
+                                </span>
+                              )}
+                            </td>
+                            <td>
+                              <strong style={{ fontSize: '13px', color: '#0f766e' }}>{tutor.universidad || '—'}</strong>
+                              <span style={{ fontSize: '12px', color: '#334155', display: 'block' }}>
+                                {tutor.direccion_tutoria || 'Online'}
+                              </span>
+                            </td>
+                            <td>{formatDate(tutor.created_at)}</td>
+                            <td>
+                              <div className="admin-actions">
+                                <button
+                                  type="button"
+                                  className="detail-button"
+                                  title="Ver expediente completo"
+                                  onClick={() => handleViewTutorDetails(tutor)}
+                                >
+                                  Detalle
+                                </button>
+                                <button
+                                  type="button"
+                                  className="approve-button"
+                                  disabled={actionId === tutor.id}
+                                  onClick={() => handleApprove(tutor)}
+                                >
+                                  {actionId === tutor.id ? '...' : 'Aceptar'}
+                                </button>
+                                <button
+                                  type="button"
+                                  className="reject-button"
+                                  disabled={actionId === tutor.id}
+                                  onClick={() => handleReject(tutor)}
+                                >
+                                  {actionId === tutor.id ? '...' : 'Rechazar'}
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </section>
+            )}
+
+            {tutorView === 'approved' && (
+              <section className="admin-table-card">
+                <div className="admin-tab-header">
+                  <h3>Administración de Tutores Aprobados (HU-025)</h3>
+                  <p>Consulta los tutores acreditados en el sistema y gestiona la baja lógica con notificación por correo.</p>
+                </div>
+
+                <div className="admin-search-bar">
+                  <input
+                    type="text"
+                    className="admin-search-input"
+                    placeholder="Buscar por nombre, carnet, especialidad o correo..."
+                    value={tutorSearchTerm}
+                    onChange={(e) => setTutorSearchTerm(e.target.value)}
+                  />
+                  {tutorSearchTerm && (
+                    <button
+                      type="button"
+                      className="admin-clear-search"
+                      onClick={() => setTutorSearchTerm('')}
+                    >
+                      Limpiar
+                    </button>
+                  )}
+                  <span style={{ fontSize: '13px', color: '#64748b', marginLeft: 'auto' }}>
+                    Mostrando <strong>{filteredApprovedTutors.length}</strong> de {approvedTutors.length} tutores
+                  </span>
+                </div>
+
+                {approvedTutors.length === 0 ? (
+                  <div className="admin-empty">Aún no hay tutores en estado aprobado.</div>
+                ) : filteredApprovedTutors.length === 0 ? (
+                  <div className="admin-empty">
+                    No se encontraron tutores que coincidan con "{tutorSearchTerm}".
+                  </div>
+                ) : (
+                  <div className="admin-table-wrap">
+                    <table className="admin-table">
+                      <thead>
+                        <tr>
+                          <th>Tutor</th>
+                          <th>Carnet / DPI</th>
+                          <th>Especialidad / Exp.</th>
+                          <th>Universidad / Modalidad</th>
+                          <th>Estado</th>
+                          <th>Fecha Registro</th>
+                          <th>Acciones</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredApprovedTutors.map((tutor) => (
+                          <tr key={tutor.id}>
+                            <td>
+                              <div className="admin-user-info">
+                                <div
+                                  className="admin-avatar-wrapper"
+                                  onClick={() => handleViewTutorDetails(tutor)}
+                                  title="Ver expediente del tutor"
+                                >
+                                  {tutor.fotografia_url ? (
+                                    <img
+                                      src={resolveMediaUrl(tutor.fotografia_url)}
+                                      alt="Foto Tutor"
+                                      className="admin-user-avatar tutor-avatar"
+                                      onError={(e) => {
+                                        e.target.style.display = 'none';
+                                        if (e.target.nextSibling) e.target.nextSibling.style.display = 'flex';
+                                      }}
+                                    />
+                                  ) : null}
+                                  <div
+                                    className="admin-avatar-placeholder tutor"
+                                    style={{ display: tutor.fotografia_url ? 'none' : 'flex' }}
+                                  >
+                                    {(tutor.nombre?.[0] || 'T').toUpperCase()}
+                                  </div>
+                                </div>
+                                <div>
+                                  <strong>
+                                    {[tutor.nombre, tutor.apellido].filter(Boolean).join(' ') || 'Sin nombre'}
+                                  </strong>
+                                  <span>{tutor.email}</span>
+                                </div>
+                              </div>
+                            </td>
+                            <td>
+                              <div>
+                                <span className="font-mono font-bold text-slate-800" style={{ fontSize: '14px' }}>
+                                  {tutor.carnet || '—'}
+                                </span>
+                                <span style={{ fontSize: '11px', color: '#64748b', display: 'block' }}>
+                                  DPI: {tutor.identificacion || '—'}
+                                </span>
+                              </div>
+                            </td>
+                            <td>
+                              <span className="badge-specialty">{tutor.especialidad || 'General'}</span>
+                              {tutor.anio_inicio_experiencia && (
+                                <span style={{ fontSize: '11px', color: '#475569', display: 'block', marginTop: '3px' }}>
+                                  Desde {tutor.anio_inicio_experiencia} ({new Date().getFullYear() - Number(tutor.anio_inicio_experiencia)} años exp.)
+                                </span>
+                              )}
+                            </td>
+                            <td>
+                              <strong style={{ fontSize: '13px', color: '#0f766e' }}>{tutor.universidad || '—'}</strong>
+                              <span style={{ fontSize: '12px', color: '#334155', display: 'block' }}>
+                                {tutor.direccion_tutoria || 'Online'}
+                              </span>
+                            </td>
+                            <td>
+                              <span className="badge-status-active">ACTIVO</span>
+                            </td>
+                            <td>{formatDate(tutor.created_at)}</td>
+                            <td>
+                              <div className="admin-actions">
+                                <button
+                                  type="button"
+                                  className="detail-button"
+                                  title="Ver expediente completo"
+                                  onClick={() => handleViewTutorDetails(tutor)}
+                                >
+                                  Detalle
+                                </button>
+                                <button
+                                  type="button"
+                                  className="disable-button"
+                                  disabled={actionId === tutor.id}
+                                  title="Dar de baja lógica a este tutor"
+                                  onClick={() => handleDisableTutor(tutor)}
+                                >
+                                  {actionId === tutor.id ? 'Procesando...' : 'Dar de baja'}
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </section>
+            )}
+          </div>
+        )}
+
+        {/* TAB 3: REPORTE DE TUTORES CON MÁS ESTUDIANTES ATENDIDOS (HU-026) */}
+        {activeTab === 'reports' && (
+          <section className="admin-table-card">
+            <div className="admin-tab-header">
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+                <div>
+                  <h3>Reporte: Tutores con Más Estudiantes Atendidos (HU-026)</h3>
+                  <p>Ranking de demanda docente basado exclusivamente en sesiones en estado Atendido (ATTENDED).</p>
+                </div>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <button
+                    type="button"
+                    className="export-csv-button"
+                    onClick={handleExportReports}
+                    title="Descargar ambos reportes (CSV y PDF)"
+                  >
+                    Exportar Reportes
+                  </button>
+                  <button
+                    type="button"
+                    className="report-filter-toggle"
+                    onClick={downloadPDF}
+                    title="Descargar únicamente el reporte en formato PDF"
+                    style={{ padding: '8px 12px', fontWeight: 600 }}
+                  >
+                    PDF
+                  </button>
+                  <button
+                    type="button"
+                    className="report-filter-toggle"
+                    onClick={downloadCSV}
+                    title="Descargar únicamente el reporte en formato CSV"
+                    style={{ padding: '8px 12px', fontWeight: 600 }}
+                  >
+                    CSV
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Tarjetas KPI */}
+            <div className="report-metrics-grid">
+              <div className="metric-card success">
+                <span className="metric-title">Sesiones Atendidas</span>
+                <span className="metric-value">{totalAttendedAll}</span>
+                <span className="metric-desc">Total histórico en estado ATTENDED</span>
+              </div>
+              <div className="metric-card">
+                <span className="metric-title">Estudiantes Beneficiados</span>
+                <span className="metric-value">{totalDistinctStudents}</span>
+                <span className="metric-desc">Estudiantes únicos atendidos</span>
+              </div>
+              <div className="metric-card accent">
+                <span className="metric-title">Tutor #1 en Demanda</span>
+                <span className="metric-value" style={{ fontSize: '18px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {topTutor && topTutor.totalAtendidos > 0 ? `#1 ${topTutor.nombreCompleto}` : '— Sin sesiones'}
+                </span>
+                <span className="metric-desc">
+                  {topTutor && topTutor.totalAtendidos > 0 ? `${topTutor.totalAtendidos} sesiones · ${topTutor.especialidad}` : 'Ningún tutor ha completado sesiones aún'}
+                </span>
+              </div>
+            </div>
+
+            {/* Filtros */}
+            <div className="admin-search-bar" style={{ flexWrap: 'wrap', gap: '12px' }}>
+              <input
+                type="text"
+                className="admin-search-input"
+                placeholder="Buscar en el ranking por nombre, carnet o especialidad..."
+                value={reportSearchTerm}
+                onChange={(e) => setReportSearchTerm(e.target.value)}
+              />
+              {reportSearchTerm && (
+                <button
+                  type="button"
+                  className="admin-clear-search"
+                  onClick={() => setReportSearchTerm('')}
+                >
+                  Limpiar
+                </button>
+              )}
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <button
+                  type="button"
+                  className={`report-filter-toggle ${reportFilterMode === 'all' ? 'active' : ''}`}
+                  onClick={() => setReportFilterMode('all')}
+                >
+                  Todos ({reportTutors.length})
+                </button>
+                <button
+                  type="button"
+                  className={`report-filter-toggle ${reportFilterMode === 'attendedOnly' ? 'active' : ''}`}
+                  onClick={() => setReportFilterMode('attendedOnly')}
+                >
+                  Solo con Atenciones ({reportTutors.filter((t) => t.totalAtendidos > 0).length})
+                </button>
+              </div>
+              <span style={{ fontSize: '13px', color: '#64748b', marginLeft: 'auto' }}>
+                Mostrando <strong>{filteredReportTutors.length}</strong> tutores en el ranking
+              </span>
+            </div>
+
+            {filteredReportTutors.length === 0 ? (
+              <div className="admin-empty">
+                {reportSearchTerm
+                  ? `No se encontraron tutores que coincidan con "${reportSearchTerm}".`
+                  : 'No hay registros de tutores en este filtro.'}
+              </div>
             ) : (
               <div className="admin-table-wrap">
                 <table className="admin-table">
                   <thead>
                     <tr>
-                      <th>Estudiante</th>
-                      <th>Carnet</th>
-                      <th>Género</th>
-                      <th>Fecha Nacimiento</th>
-                      <th>Fecha Solicitud</th>
-                      <th>Acciones</th>
+                      <th style={{ width: '70px', textAlign: 'center' }}>Ranking</th>
+                      <th>Tutor</th>
+                      <th>Especialidad / Universidad</th>
+                      <th style={{ textAlign: 'center' }}>Estudiantes Atendidos</th>
+                      <th style={{ textAlign: 'center' }}>Sesiones Atendidas</th>
+                      <th style={{ minWidth: '160px' }}>Nivel de Demanda</th>
+                      <th>Estado</th>
+                      <th>Acción</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {students.map((student) => (
-                      <tr key={student.id}>
-                        <td>
-                          <div className="admin-user-info">
-                            {student.fotografia_url ? (
-                              <img
-                                src={resolveMediaUrl(student.fotografia_url)}
-                                alt="Foto Estudiante"
-                                className="admin-user-avatar"
-                              />
+                    {filteredReportTutors.map((tutor) => {
+                      const percentage = maxAttended > 0 ? Math.round((tutor.totalAtendidos / maxAttended) * 100) : 0;
+                      return (
+                        <tr key={tutor.tutorId}>
+                          <td style={{ textAlign: 'center' }}>
+                            {tutor.ranking === 1 && tutor.totalAtendidos > 0 ? (
+                              <span className="ranking-medal medal-1" title="1er Lugar en demanda">#1</span>
+                            ) : tutor.ranking === 2 && tutor.totalAtendidos > 0 ? (
+                              <span className="ranking-medal medal-2" title="2do Lugar en demanda">#2</span>
+                            ) : tutor.ranking === 3 && tutor.totalAtendidos > 0 ? (
+                              <span className="ranking-medal medal-3" title="3er Lugar en demanda">#3</span>
                             ) : (
-                              <div className="admin-avatar-placeholder" title="Fotografía por defecto">
-                                {(student.nombre?.[0] || 'E').toUpperCase()}
-                              </div>
+                              <span className="ranking-medal medal-other">#{tutor.ranking}</span>
                             )}
-                            <div>
-                              <strong>
-                                {[student.nombre, student.apellido].filter(Boolean).join(' ') || 'Sin nombre'}
-                              </strong>
-                              <span>{student.email}</span>
-                              {student.universidad && (
-                                <span style={{ fontSize: '11px', color: '#0f766e' }}>{student.universidad}</span>
-                              )}
+                          </td>
+                          <td>
+                            <div className="admin-user-info">
+                              <div
+                                className="admin-avatar-wrapper"
+                                onClick={() => handleViewTutorDetails({ ...tutor, id: tutor.userId, status: tutor.userStatus })}
+                                title="Ver expediente del tutor"
+                              >
+                                {tutor.fotografiaUrl ? (
+                                  <img
+                                    src={resolveMediaUrl(tutor.fotografiaUrl)}
+                                    alt="Foto Tutor"
+                                    className="admin-user-avatar tutor-avatar"
+                                    onError={(e) => {
+                                      e.target.style.display = 'none';
+                                      if (e.target.nextSibling) e.target.nextSibling.style.display = 'flex';
+                                    }}
+                                  />
+                                ) : null}
+                                <div
+                                  className="admin-avatar-placeholder tutor"
+                                  style={{ display: tutor.fotografiaUrl ? 'none' : 'flex' }}
+                                >
+                                  {(tutor.nombre?.[0] || 'T').toUpperCase()}
+                                </div>
+                              </div>
+                              <div>
+                                <strong>{tutor.nombreCompleto}</strong>
+                                <span>{tutor.email}</span>
+                                <span style={{ fontSize: '11px', color: '#64748b' }}>Carnet: {tutor.carnet}</span>
+                              </div>
                             </div>
-                          </div>
-                        </td>
-                        <td>
-                          <span className="font-mono font-bold text-slate-700">{student.carnet || '—'}</span>
-                        </td>
-                        <td>
-                          <span className="badge-gender">{formatGender(student.genero)}</span>
-                        </td>
-                        <td>{formatDate(student.fecha_nacimiento)}</td>
-                        <td>{formatDate(student.created_at)}</td>
-                        <td>
-                          <div className="admin-actions">
+                          </td>
+                          <td>
+                            <span className="badge-specialty">{tutor.especialidad}</span>
+                            <span style={{ fontSize: '11px', color: '#64748b', display: 'block', marginTop: '3px' }}>
+                              {tutor.universidad}
+                            </span>
+                          </td>
+                          <td style={{ textAlign: 'center' }}>
+                            <strong style={{ fontSize: '15px', color: '#0f172a' }}>{tutor.estudiantesDistintos}</strong>
+                            <span style={{ fontSize: '11px', color: '#64748b', display: 'block' }}>estudiantes</span>
+                          </td>
+                          <td style={{ textAlign: 'center' }}>
+                            <strong style={{ fontSize: '16px', color: '#0f766e' }}>{tutor.totalAtendidos}</strong>
+                            <span style={{ fontSize: '11px', color: '#64748b', display: 'block' }}>citas completadas</span>
+                          </td>
+                          <td>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <div className="demand-bar-wrap">
+                                <div className="demand-bar-fill" style={{ width: `${percentage}%` }} />
+                              </div>
+                              <span style={{ fontSize: '12px', fontWeight: 700, color: '#475569', minWidth: '35px' }}>
+                                {percentage}%
+                              </span>
+                            </div>
+                          </td>
+                          <td>
+                            <span className={tutor.userStatus === 'APPROVED' ? 'badge-status-active' : 'badge-specialty'} style={tutor.userStatus !== 'APPROVED' ? { background: '#fef2f2', color: '#991b1b', borderColor: '#fca5a5' } : {}}>
+                              {tutor.userStatus === 'APPROVED' ? 'ACTIVO' : 'DADO DE BAJA'}
+                            </span>
+                          </td>
+                          <td>
                             <button
                               type="button"
-                              className="approve-button"
-                              disabled={actionId === student.id}
-                              onClick={() => handleApprove(student)}
+                              className="detail-button"
+                              title="Ver información del tutor"
+                              onClick={() => handleViewTutorDetails({ ...tutor, id: tutor.userId, status: tutor.userStatus })}
                             >
-                              {actionId === student.id ? '...' : 'Aceptar'}
+                              Detalle
                             </button>
-                            <button
-                              type="button"
-                              className="reject-button"
-                              disabled={actionId === student.id}
-                              onClick={() => handleReject(student)}
-                            >
-                              {actionId === student.id ? '...' : 'Rechazar'}
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -361,121 +1322,159 @@ export default function AdminDashboard() {
           </section>
         )}
 
-        {/* TAB 2: TUTORES PENDIENTES (HU-005) */}
-        {activeTab === 'tutors' && (
+        {/* TAB 4: REPORTE DE MATERIAS CON MAYOR DEMANDA (HU-027) */}
+        {activeTab === 'subjects-report' && (
           <section className="admin-table-card">
             <div className="admin-tab-header">
-              <h3>Solicitudes de Registro de Tutores (HU-005)</h3>
-              <p>Revisa la fotografía obligatoria, especialidad y credenciales profesionales del tutor.</p>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+                <div>
+                  <h3>Reporte: Materias con Mayor Demanda (HU-027)</h3>
+                  <p>Análisis de materias que más sesiones han generado en la plataforma.</p>
+                </div>
+                <div>
+                  <button
+                    type="button"
+                    className="export-csv-button"
+                    onClick={downloadSubjectsCSV}
+                    title="Descargar reporte de materias en formato CSV"
+                  >
+                    Descargar CSV
+                  </button>
+                </div>
+              </div>
             </div>
 
-            {tutors.length === 0 ? (
-              <div className="admin-empty">No hay solicitudes de tutores pendientes de aprobación.</div>
+            {/* Tarjetas KPI de Resumen */}
+            <div className="report-metrics-grid">
+              <div className="metric-card success">
+                <span className="metric-title">Total Sesiones Generadas</span>
+                <span className="metric-value">{totalSessionsAllSubjects}</span>
+                <span className="metric-desc">Sesiones totales registradas</span>
+              </div>
+              <div className="metric-card">
+                <span className="metric-title">Materias Ofertadas</span>
+                <span className="metric-value">{reportSubjects.length}</span>
+                <span className="metric-desc">Materias activas en catálogo</span>
+              </div>
+              <div className="metric-card accent">
+                <span className="metric-title">Materia #1 en Demanda</span>
+                <span className="metric-value" style={{ fontSize: '18px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {topSubject ? `#1 ${topSubject.materia}` : '— Sin sesiones'}
+                </span>
+                <span className="metric-desc">
+                  {topSubject ? `${topSubject.totalSesiones} sesiones (${topSubject.porcentaje}% del total)` : 'No hay reservas registradas'}
+                </span>
+              </div>
+            </div>
+
+            {/* Barra de Búsqueda y Filtro */}
+            <div className="admin-search-bar" style={{ flexWrap: 'wrap', gap: '12px' }}>
+              <input
+                type="text"
+                className="admin-search-input"
+                placeholder="Buscar materia en el ranking..."
+                value={subjectSearchTerm}
+                onChange={(e) => setSubjectSearchTerm(e.target.value)}
+              />
+              {subjectSearchTerm && (
+                <button
+                  type="button"
+                  className="admin-clear-search"
+                  onClick={() => setSubjectSearchTerm('')}
+                >
+                  Limpiar
+                </button>
+              )}
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <button
+                  type="button"
+                  className={`report-filter-toggle ${subjectFilterMode === 'all' ? 'active' : ''}`}
+                  onClick={() => setSubjectFilterMode('all')}
+                >
+                  Todas ({reportSubjects.length})
+                </button>
+                <button
+                  type="button"
+                  className={`report-filter-toggle ${subjectFilterMode === 'withSessionsOnly' ? 'active' : ''}`}
+                  onClick={() => setSubjectFilterMode('withSessionsOnly')}
+                >
+                  Con Sesiones ({reportSubjects.filter((s) => s.totalSesiones > 0).length})
+                </button>
+              </div>
+              <span style={{ fontSize: '13px', color: '#64748b', marginLeft: 'auto' }}>
+                Mostrando <strong>{filteredReportSubjects.length}</strong> materias
+              </span>
+            </div>
+
+            {/* Tabla de Ranking */}
+            {filteredReportSubjects.length === 0 ? (
+              <div className="admin-empty">No se encontraron materias con el criterio seleccionado.</div>
             ) : (
               <div className="admin-table-wrap">
                 <table className="admin-table">
                   <thead>
                     <tr>
-                      <th>Tutor</th>
-                      <th>Carnet / Identificación</th>
-                      <th>Especialidad / Exp.</th>
-                      <th>Universidad / Modalidad</th>
-                      <th>Fecha Solicitud</th>
-                      <th>Acciones</th>
+                      <th style={{ width: '70px', textAlign: 'center' }}>Ranking</th>
+                      <th>Materia</th>
+                      <th style={{ textAlign: 'center' }}>Estudiantes Únicos</th>
+                      <th style={{ textAlign: 'center' }}>Sesiones Atendidas</th>
+                      <th style={{ textAlign: 'center' }}>Sesiones Pendientes</th>
+                      <th style={{ textAlign: 'center' }}>Total Sesiones</th>
+                      <th style={{ minWidth: '170px' }}>Distribución de Demanda</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {tutors.map((tutor) => (
-                      <tr key={tutor.id}>
-                        <td>
-                          <div className="admin-user-info">
-                            <div
-                              className="admin-avatar-wrapper"
-                              onClick={() => handleViewTutorDetails(tutor)}
-                              title="Ver expediente del tutor"
-                            >
-                              {tutor.fotografia_url ? (
-                                <img
-                                  src={resolveMediaUrl(tutor.fotografia_url)}
-                                  alt="Foto Tutor"
-                                  className="admin-user-avatar tutor-avatar"
-                                  onError={(e) => {
-                                    e.target.style.display = 'none';
-                                    if (e.target.nextSibling) e.target.nextSibling.style.display = 'flex';
-                                  }}
-                                />
-                              ) : null}
-                              <div
-                                className="admin-avatar-placeholder tutor"
-                                style={{ display: tutor.fotografia_url ? 'none' : 'flex' }}
-                              >
-                                {(tutor.nombre?.[0] || 'T').toUpperCase()}
+                    {filteredReportSubjects.map((sub) => {
+                      const barPercent = maxSubjectSessions > 0 ? Math.round((sub.totalSesiones / maxSubjectSessions) * 100) : 0;
+                      return (
+                        <tr key={sub.subjectId}>
+                          <td style={{ textAlign: 'center' }}>
+                            {sub.ranking === 1 && sub.totalSesiones > 0 ? (
+                              <span className="ranking-medal medal-1" title="Materia más demandada">#1</span>
+                            ) : sub.ranking === 2 && sub.totalSesiones > 0 ? (
+                              <span className="ranking-medal medal-2" title="2do Lugar">#2</span>
+                            ) : sub.ranking === 3 && sub.totalSesiones > 0 ? (
+                              <span className="ranking-medal medal-3" title="3er Lugar">#3</span>
+                            ) : (
+                              <span className="ranking-medal medal-other">#{sub.ranking}</span>
+                            )}
+                          </td>
+                          <td>
+                            <strong style={{ fontSize: '14px', color: '#0f172a' }}>{sub.materia}</strong>
+                          </td>
+                          <td style={{ textAlign: 'center' }}>
+                            <span style={{ fontSize: '14px', fontWeight: 600, color: '#334155' }}>
+                              {sub.estudiantesUnicos}
+                            </span>
+                          </td>
+                          <td style={{ textAlign: 'center' }}>
+                            <span style={{ fontSize: '14px', fontWeight: 600, color: '#0f766e' }}>
+                              {sub.sesionesAtendidas}
+                            </span>
+                          </td>
+                          <td style={{ textAlign: 'center' }}>
+                            <span style={{ fontSize: '14px', fontWeight: 600, color: '#b45309' }}>
+                              {sub.sesionesPendientes}
+                            </span>
+                          </td>
+                          <td style={{ textAlign: 'center' }}>
+                            <strong style={{ fontSize: '15px', color: '#0f766e' }}>
+                              {sub.totalSesiones}
+                            </strong>
+                          </td>
+                          <td>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <div className="demand-bar-wrap">
+                                <div className="demand-bar-fill" style={{ width: `${barPercent}%` }} />
                               </div>
-                            </div>
-                            <div>
-                              <strong>
-                                {[tutor.nombre, tutor.apellido].filter(Boolean).join(' ') || 'Sin nombre'}
-                              </strong>
-                              <span>{tutor.email}</span>
-                              <span style={{ fontSize: '11px', color: '#64748b' }}>
-                                {formatGender(tutor.genero)}
+                              <span style={{ fontSize: '12px', fontWeight: 700, color: '#475569', minWidth: '35px' }}>
+                                {sub.porcentaje}%
                               </span>
                             </div>
-                          </div>
-                        </td>
-                        <td>
-                          <div>
-                            <strong>Carnet: {tutor.carnet || '—'}</strong>
-                            <span style={{ fontSize: '11px', color: '#64748b' }}>
-                              DPI: {tutor.identificacion || '—'}
-                            </span>
-                          </div>
-                        </td>
-                        <td>
-                          <span className="badge-specialty">{tutor.especialidad || 'General'}</span>
-                          {tutor.anio_inicio_experiencia && (
-                            <span style={{ fontSize: '11px', color: '#475569', marginTop: '4px' }}>
-                              Desde {tutor.anio_inicio_experiencia} ({new Date().getFullYear() - Number(tutor.anio_inicio_experiencia)} años exp.)
-                            </span>
-                          )}
-                        </td>
-                        <td>
-                          <strong style={{ fontSize: '13px', color: '#0f766e' }}>{tutor.universidad || '—'}</strong>
-                          <span style={{ fontSize: '12px', color: '#334155' }}>
-                            {tutor.direccion_tutoria || 'Online'}
-                          </span>
-                        </td>
-                        <td>{formatDate(tutor.created_at)}</td>
-                        <td>
-                          <div className="admin-actions">
-                            <button
-                              type="button"
-                              className="detail-button"
-                              title="Ver expediente completo"
-                              onClick={() => handleViewTutorDetails(tutor)}
-                            >
-                              Detalle
-                            </button>
-                            <button
-                              type="button"
-                              className="approve-button"
-                              disabled={actionId === tutor.id}
-                              onClick={() => handleApprove(tutor)}
-                            >
-                              {actionId === tutor.id ? '...' : 'Aceptar'}
-                            </button>
-                            <button
-                              type="button"
-                              className="reject-button"
-                              disabled={actionId === tutor.id}
-                              onClick={() => handleReject(tutor)}
-                            >
-                              {actionId === tutor.id ? '...' : 'Rechazar'}
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -486,4 +1485,3 @@ export default function AdminDashboard() {
     </div>
   );
 }
-

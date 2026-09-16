@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import api from '../../utils/api';
 
@@ -15,7 +16,7 @@ export default function MySessions() {
 
   const loadSessions = () => {
     setLoading(true);
-    api.get('/sessions/me').then(({ data }) => setSessions(data.sessions)).finally(() => setLoading(false));
+    api.get('/sessions/me?status=PENDING').then(({ data }) => setSessions(data.sessions)).finally(() => setLoading(false));
   };
 
   useEffect(() => { loadSessions(); }, []);
@@ -48,9 +49,43 @@ export default function MySessions() {
   };
 
   return <main className="single-panel"><section className="form-panel schedule-panel">
-    <div className="form-heading"><p className="eyebrow">MIS SESIONES</p><h2>Sesiones programadas</h2><p>Consulta y cancela tus sesiones pendientes.</p></div>
+    <div style={{ marginBottom: '14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+      <Link
+        to="/dashboard/student"
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '6px',
+          fontSize: '13px',
+          fontWeight: 600,
+          color: '#0f766e',
+          textDecoration: 'none',
+        }}
+      >
+        ← Volver a tutores disponibles
+      </Link>
+      <Link
+        to="/historial"
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '6px',
+          fontSize: '13px',
+          fontWeight: 600,
+          color: '#0f766e',
+          textDecoration: 'none',
+        }}
+      >
+        Ver historial completo →
+      </Link>
+    </div>
+    <div className="form-heading">
+      <p className="eyebrow">MIS SESIONES ACTIVAS</p>
+      <h2>Sesiones activas</h2>
+      <p>Tus próximas sesiones pendientes, ordenadas por fecha más cercana.</p>
+    </div>
     {loading && <p>Cargando…</p>}
-    {!loading && sessions.length === 0 && <p>Todavía no tienes sesiones programadas.</p>}
+    {!loading && sessions.length === 0 && <p>No tienes sesiones activas en este momento.</p>}
     <div className="session-list">
       {sessions.map((session) => (
         <div key={session.id} className="session-card">

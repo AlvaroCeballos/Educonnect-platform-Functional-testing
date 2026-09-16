@@ -3,24 +3,42 @@ const {
   createSession, 
   getMySessions, 
   cancelSession, 
-  cancelSessionByTutor 
+  cancelSessionByTutor,
+  getTutorSessions,
+  attendSession
 } = require('../controllers/sessionController');
-const { mockStudent } = require('../middlewares/auth');
+const { authenticate, mockStudent, mockTutor } = require('../middlewares/auth');
 
-// TODO(HU-006): reemplazar `mockStudent` por `authenticate, authorize('student')`
-// cuando exista el login de estudiante (ver middlewares/auth.js).
-const mockTutor = mockStudent;
+const studentAuth = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  if (authHeader) {
+    return authenticate(req, res, () => {
+      if (req.user && req.user.role === 'student') return next();
+      return res.status(403).json({ message: 'No tienes permiso para realizar esta acción' });
+    });
+  }
+  return mockStudent(req, res, next);
+};
 
-// HU-012: Programar sesión de tutoría
-router.post('/', mockStudent, createSession);
+const tutorAuth = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  if (authHeader) {
+    return authenticate(req, res, () => {
+      if (req.user && req.user.role === 'tutor') return next();
+      return res.status(403).json({ message: 'No tienes permiso para realizar esta acción' });
+    });
+  }
+  return mockTutor(req, res, next);
+};
 
-// Contrato compartido con HU-016/HU-013: sesiones del estudiante autenticado
-router.get('/me', mockStudent, getMySessions);
+// Rutas de Estudiante
+router.post('/', studentAuth, createSession);
+router.get('/me', studentAuth, getMySessions);
+router.patch('/:id/cancel', studentAuth, cancelSession);
 
-// HU-016: Cancelar sesión por el estudiante
-router.patch('/:id/cancel', mockStudent, cancelSession);
-
-// HU-017: Cancelar sesión por el tutor
-router.patch('/:id/cancel/tutor', mockTutor, cancelSessionByTutor);
+// Rutas de Tutor
+router.get('/tutor/me', tutorAuth, getTutorSessions); // T-015.3: GET para el historial
+router.patch('/:id/cancel/tutor', tutorAuth, cancelSessionByTutor);
+router.patch('/:id/attend', tutorAuth, attendSession); // T-015.3: PATCH para marcar atencion
 
 module.exports = router;

@@ -29,11 +29,15 @@ const createTransporter = () => {
 const sendAccountDecisionEmail = async ({ to, nombre, role, status, reason = '' }) => {
   const roleLabel = role === 'tutor' ? 'Tutor' : 'Estudiante';
   const isApproved = status === 'APPROVED';
+  const isDisabled = status === 'DISABLED';
   const from = process.env.SMTP_FROM || 'noreply@educonnect.local';
 
-  const subject = isApproved
-    ? `¡Tu cuenta de ${roleLabel} ha sido aprobada! — EduConnect`
-    : `Actualización sobre tu solicitud de ${roleLabel} — EduConnect`;
+  let subject = `Actualización sobre tu solicitud de ${roleLabel} — EduConnect`;
+  if (isApproved) {
+    subject = `¡Tu cuenta de ${roleLabel} ha sido aprobada! — EduConnect`;
+  } else if (isDisabled) {
+    subject = `Notificación: Tu cuenta de ${roleLabel} ha sido dada de baja — EduConnect`;
+  }
 
   const htmlContent = `
     <!DOCTYPE html>
@@ -63,11 +67,13 @@ const sendAccountDecisionEmail = async ({ to, nombre, role, status, reason = '' 
         </div>
         <div class="content">
           <p>Hola <strong>${nombre || 'Usuario'}</strong>,</p>
-          <p>Te informamos que la administración ha revisado tu solicitud de registro como <strong>${roleLabel}</strong>.</p>
+          <p>Te informamos sobre una actualización de tu cuenta de <strong>${roleLabel}</strong> en EduConnect.</p>
           
           <div class="status-box ${isApproved ? 'approved' : 'rejected'}">
             ${isApproved
               ? '<strong>¡Felicidades!</strong> Tu cuenta ha sido <strong>APROBADA</strong> exitosamente. Ya puedes iniciar sesión y acceder a todas las funcionalidades del sistema.'
+              : isDisabled
+              ? `<strong>Estado de la cuenta: DADA DE BAJA</strong>.<br>Te informamos que tu cuenta de ${roleLabel} ha sido desactivada por el administrador.${reason ? `<br><br><strong>Motivo:</strong> ${reason}` : ''}`
               : `<strong>Estado de la solicitud: RECHAZADA</strong>.<br>Lamentablemente tu solicitud no ha sido aceptada en esta ocasión.${reason ? `<br><br><strong>Motivo:</strong> ${reason}` : ''}`}
           </div>
 
@@ -109,6 +115,83 @@ const sendAccountDecisionEmail = async ({ to, nombre, role, status, reason = '' 
   }
 };
 
+const sendCancellationEmail = async ({ to, studentNombre, tutorNombre, materia, fecha, hora, motivo }) => {
+  const subject = `Cancelación de sesión - Tutoría de ${materia}`;
+  const from = process.env.SMTP_FROM || 'noreply@educonnect.local';
+
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+      <meta charset="UTF-8" />
+      <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f6f8; color: #1e293b; }
+        .container { max-width: 600px; margin: 30px auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: 1px solid #e2e8f0; }
+        .header { background-color: #0f766e; padding: 32px 24px; text-align: center; color: #ffffff; }
+        .header h1 { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.5px; }
+        .content { padding: 32px 28px; line-height: 1.6; }
+        .details-box { background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 20px; margin: 24px 0; border-radius: 0 8px 8px 0; }
+        .details-box h3 { margin-top: 0; color: #92400e; font-size: 18px; }
+        .details-list { list-style: none; padding: 0; margin: 0; color: #b45309; }
+        .details-list li { margin-bottom: 10px; }
+        .footer { background-color: #f8fafc; padding: 20px; text-align: center; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>EduConnect</h1>
+          <div style="display: inline-block; background-color: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 9999px; font-size: 12px; font-weight: 600; text-transform: uppercase; margin-top: 8px;">Notificación de Cancelación</div>
+        </div>
+        <div class="content">
+          <p>Hola <strong>${studentNombre}</strong>,</p>
+          <p>Lamentamos informarte que el tutor <strong>${tutorNombre}</strong> ha tenido un inconveniente y ha tenido que cancelar la sesión que tenían programada.</p>
+          
+          <div class="details-box">
+            <h3>Detalles de la sesión cancelada:</h3>
+            <ul class="details-list">
+              <li>📚 <strong>Materia:</strong> ${materia}</li>
+              <li>📅 <strong>Fecha:</strong> ${fecha}</li>
+              <li>⏰ <strong>Hora:</strong> ${hora}</li>
+              ${motivo ? `<li>💬 <strong>Motivo original:</strong> ${motivo}</li>` : ''}
+            </ul>
+          </div>
+          
+          <p>El tutor te extiende una sincera disculpa por los inconvenientes que esto pueda causarte. <strong>Tu horario ha sido liberado exitosamente</strong>.</p>
+          <p>Te invitamos a ingresar nuevamente a la plataforma para reagendar tu sesión con el mismo experto en otro horario, o buscar a un nuevo tutor disponible.</p>
+        </div>
+        <div class="footer">
+          Este es un correo automático generado por EduConnect. Por favor no respondas a este mensaje.
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  const transporter = createTransporter();
+
+  if (!transporter) {
+    console.log(`[SIMULACIÓN CORREO CANCELACIÓN] Para: ${to} | Tutor: ${tutorNombre} | Fecha: ${fecha}`);
+    return { success: true, simulated: true };
+  }
+
+  try {
+    const info = await transporter.sendMail({
+      from: `"EduConnect Notificaciones" <${from}>`,
+      to,
+      subject,
+      html: htmlContent,
+    });
+    // T-018.3: Registro y manejo de errores visible para validar la salida en Mailtrap
+    console.log(`[TEST T-018.3] Correo de cancelación exitoso | Destinatario: ${to} | ID: ${info.messageId}`);
+    return { success: true, messageId: info.messageId };
+  } catch (error) {
+    console.error(`[TEST T-018.3 ERROR] Fallo al enviar notificación a ${to}:`, error.message);
+    return { success: false, error: error.message };
+  }
+};
+
 module.exports = {
   sendAccountDecisionEmail,
+  sendCancellationEmail,
 };

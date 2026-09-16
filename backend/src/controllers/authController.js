@@ -183,8 +183,16 @@ const loginStudent = async (req, res) => {
     const student = rows[0];
 
     // Solo estudiantes aprobados
-    if (student.status !== 'APPROVED')
-      return res.status(403).json({ message: 'Tu cuenta aún no ha sido aprobada por el administrador' });
+    if (student.status !== 'APPROVED') {
+      const statusMessages = {
+        PENDING: 'Tu cuenta aún no ha sido aprobada por el administrador',
+        REJECTED: 'Tu solicitud de estudiante fue rechazada',
+        DISABLED: 'Tu cuenta ha sido dada de baja por el administrador',
+      };
+      return res.status(403).json({
+        message: statusMessages[student.status] || 'Tu cuenta no está habilitada',
+      });
+    }
 
     const passwordMatch = await comparePassword(password, student.password_hash);
     if (!passwordMatch)

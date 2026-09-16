@@ -1,7 +1,7 @@
 import { Routes, Route, Navigate, Link } from 'react-router-dom';
-import TutorRegistration from './TutorRegistration';
+import TutorRegistration from './pages/tutor/TutorRegistration';
 import ScheduleForm from './ScheduleForm';
-import TutorProfile from './TutorProfile';
+import TutorProfile from './pages/tutor/TutorProfile';
 import RegisterStudent from './pages/student/RegisterStudent';
 import RegisterSuccess from './pages/student/RegisterSuccess';
 import Login from './pages/Login';
@@ -10,6 +10,10 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import StudentDashboard from './pages/student/StudentDashboard';
 import BookSession from './pages/student/BookSession';
 import MySessions from './pages/student/MySessions';
+import SessionHistory from './pages/student/SessionHistory';
+import TutorSessions from './pages/tutor/TutorSessions';
+import StudentProfile from './pages/student/StudentProfile';
+import TutorDashboard from './pages/tutor/TutorDashboard'; // <-- Importamos el nuevo dashboard
 
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem('token');
@@ -66,6 +70,8 @@ export default function App() {
       {/* Rutas Públicas */}
       <Route path="/" element={<Home />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/login/student" element={<Navigate to="/login" replace />} />
+      <Route path="/login/admin" element={<Navigate to="/login" replace />} />
       <Route path="/registro" element={<RegisterStudent />} />
       <Route path="/register" element={<TutorRegistration />} />
       <Route path="/registro-exitoso" element={<RegisterSuccess />} />
@@ -73,10 +79,19 @@ export default function App() {
 
       {/* Rutas Protegidas */}
       <Route path="/dashboard/student" element={<ProtectedRoute><StudentDashboard /></ProtectedRoute>} />
+      <Route path="/student/profile" element={<ProtectedRoute><StudentProfile /></ProtectedRoute>} />
       <Route path="/reservar" element={<ProtectedRoute><BookSession /></ProtectedRoute>} />
+      <Route path="/book-session" element={<ProtectedRoute><BookSession /></ProtectedRoute>} />
       <Route path="/mis-sesiones" element={<ProtectedRoute><MySessions /></ProtectedRoute>} />
-      <Route path="/schedule" element={<ProtectedRoute><ScheduleForm /></ProtectedRoute>} />
-      <Route path="/profile" element={<ProtectedRoute><TutorProfile /></ProtectedRoute>} />
+      <Route path="/my-sessions" element={<ProtectedRoute><MySessions /></ProtectedRoute>} />
+      <Route path="/historial" element={<ProtectedRoute><SessionHistory /></ProtectedRoute>} />
+      
+      {/* Rutas del Tutor */}
+      <Route path="/tutor/dashboard" element={<ProtectedRoute><TutorDashboard /></ProtectedRoute>} /> {/* <-- Nueva ruta del Dashboard */}
+      <Route path="/tutor/sesiones" element={<ProtectedRoute><TutorSessions /></ProtectedRoute>} />
+      <Route path="/tutor/profile" element={<ProtectedRoute><TutorProfile /></ProtectedRoute>} />
+      
+      <Route path="/schedule" element={<ProtectedRoute><ScheduleForm editing /></ProtectedRoute>} />
       <Route path="/admin/dashboard" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
     </Routes>
   );

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import api from './utils/api';
+import api from '../../utils/api';
 
 const editable = [['nombre', 'Nombre'], ['apellido', 'Apellido'], ['carnet', 'Carnet'], ['identificacion', 'DPI / identificación'], ['fecha_nacimiento', 'Fecha de nacimiento'], ['especialidad', 'Especialidad o materia'], ['direccion_tutoria', 'Dirección de tutoría'], ['anio_inicio_experiencia', 'Año de inicio de experiencia'], ['universidad', 'Universidad']];
 
