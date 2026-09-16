@@ -77,7 +77,7 @@ Todos los flujos contemplan skeleton de carga, catálogo vacío, error de conexi
 | `ADM-02 Detalle de tutor` | Administrador | Consulta completa y acciones administrativas |
 | `ADM-03 Reportes` | Administrador | HU-027, materias con mayor demanda y exportación |
 
-La composición se organiza en Figma en tres páginas: **Wireframes**, **Mockups** (alta fidelidad) y **Prototipo interactivo**. La página **Mockups** contiene las cuatro pantallas del paquete de Yury —HU-009, HU-010, HU-011 y HU-027— con la paleta y los componentes alineados a la aplicación; la página **Prototipo interactivo** contiene la copia editable de esas pantallas para continuar conectando los flujos. En todas se conservan los nombres de las historias para facilitar la trazabilidad.
+La composición se organiza en Figma en tres páginas: **Wireframes**, **Mockups** (alta fidelidad) y **Prototipo interactivo**. La página **Mockups** contiene las cuatro pantallas del paquete de Yury —HU-009, HU-010, HU-011 y HU-027— con la paleta y los componentes alineados a la aplicación; la página **Prototipo interactivo** contiene la copia editable con un flujo navegable desde HU-009 → HU-010 → HU-011 → HU-027. En todas se conservan los nombres de las historias para facilitar la trazabilidad.
 
 ## 5. Flujos del prototipo
 
