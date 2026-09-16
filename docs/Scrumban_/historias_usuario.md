@@ -23,14 +23,26 @@ Cada historia describe una funcionalidad desde la perspectiva del usuario final 
 
 Para estimar el tamaño de las historias de usuario, se utilizó el método T-Shirt Size.  
 
-- Durante la Fase 1, el equipo evaluó las actividades del núcleo técnico (autenticación, base de datos relacional y lógica de traslapes), asignando las tallas XS, S, M, L y XL con base en la opinión conjunta del equipo y consolidando las estimaciones en una única etiqueta.
-- Durante la Fase 2, el equipo asignó tallas a las historias de gestión administrativa, reportes con exportación y notificaciones por correo electrónico, considerando el peso individual de las tareas y su integración en el sistema global.
+- Durante las sesiones de planificación, los 6 integrantes del equipo evaluaron conjuntamente cada una de las 27 historias de usuario del backlog.
+- Cada miembro del equipo emitió su voto individual según su perspectiva técnica de complejidad (frontend, backend, base de datos y pruebas), y posteriormente se debatió en conjunto hasta alcanzar un **Veredicto Final** consensuado.
 
-> **XS:** Historia de muy baja complejidad y rápida implementación.  
+> **XS:** Historia de muy baja complejidad y rápida implementación (formularios básicos o ajustes directos).  
 > **S:** Historia sencilla, con pocos criterios de aceptación y cambios focalizados.  
 > **M:** Historia de complejidad media, que requiere lógica de negocio e integración entre frontend y backend.  
 > **L:** Historia compleja, que involucra múltiples validaciones, algoritmos de verificación de traslape, persistencia crítica o seguridad.  
 > **XL:** Historia muy compleja, con alta incertidumbre técnica o alcance extenso que abarca múltiples subsistemas.  
+
+---
+
+### Evidencias de la Matriz de Estimación Colaborativa (Consenso del Equipo)
+
+Como evidencia del proceso de estimación grupal, se utilizó una matriz de votación en una hoja de cálculo compartida en la que participaron **Alvaro**, **Nicole**, **Yury**, **Xavi**, **Isai** y **Katheryn**, determinando de común acuerdo la talla definitiva de cada historia:
+
+#### Paquetes A, B y C — Identidad, Tutor y Administración
+![Matriz de Estimación Paquetes A, B y C](imgs_kanban/estimacion_paquetes_a_b_c.png)
+
+#### Paquetes D, E y F — Descubrimiento, Sesiones y Notificaciones
+![Matriz de Estimación Paquetes D, E y F](imgs_kanban/estimacion_paquetes_d_e_f.png)
 
 ---
 
@@ -54,7 +66,7 @@ Para estimar el tamaño de las historias de usuario, se utilizó el método T-Sh
 - Al completar el registro, la cuenta del estudiante debe crearse en estado pendiente (`PENDING`), impidiendo el inicio de sesión hasta que un administrador apruebe la solicitud.
 - El sistema debe mostrar un mensaje claro informando que la cuenta está en espera de revisión administrativa.
 
-### Tamaño: M
+### Tamaño: XS
 
 ### Dependencias
 
@@ -78,7 +90,7 @@ Para estimar el tamaño de las historias de usuario, se utilizó el método T-Sh
 - La contraseña debe cumplir con las políticas de complejidad (mínimo 8 caracteres, mayúscula, minúscula y número) y almacenarse con hash seguro.
 - La cuenta debe crearse en estado pendiente (`PENDING`), impidiendo el acceso a la plataforma hasta su aprobación.
 
-### Tamaño: M
+### Tamaño: XS
 
 ### Dependencias
 
@@ -103,7 +115,7 @@ Para estimar el tamaño de las historias de usuario, se utilizó el método T-Sh
 - Las contraseñas de ambos pasos deben validarse rigurosamente; solo tras la aprobación de ambos factores se emite el token JWT con rol `admin`.
 - Si el archivo es inválido, modificado o ausente, el acceso debe denegarse con código HTTP 401.
 
-### Tamaño: L
+### Tamaño: M
 
 ### Dependencias
 
@@ -152,7 +164,7 @@ Para estimar el tamaño de las historias de usuario, se utilizó el método T-Sh
 - Debe dispararse un correo electrónico institucional automático notificando al tutor la decisión del administrador.
 - Las decisiones administrativas deben reflejarse de inmediato en el sistema sin requerir recargas manuales.
 
-### Tamaño: S
+### Tamaño: M
 
 ### Dependencias
 
@@ -249,7 +261,7 @@ Para estimar el tamaño de las historias de usuario, se utilizó el método T-Sh
 - Si el estudiante ya tiene una sesión activa programada con un tutor específico, dicho tutor debe ser excluido del catálogo de reserva activa para prevenir duplicidad.
 - Cada tarjeta de tutor debe incluir un botón directo para consultar sus horarios y disponibilidad.
 
-### Tamaño: M
+### Tamaño: S
 
 ### Dependencias
 
@@ -298,7 +310,7 @@ Para estimar el tamaño de las historias de usuario, se utilizó el método T-Sh
 - **Regla de unicidad de sesión:** Un estudiante no puede tener más de una sesión activa simultánea con el mismo tutor.
 - Al confirmar la reserva, la sesión se registra con estado `PENDING` y duración estándar de 60 minutos.
 
-### Tamaño: L
+### Tamaño: M
 
 ### Dependencias
 
@@ -377,7 +389,7 @@ Para estimar el tamaño de las historias de usuario, se utilizó el método T-Sh
 - El sistema debe proveer un botón para limpiar filtros y restaurar el listado completo.
 - Si no existen tutores que coincidan con la combinación de filtros, debe mostrarse un mensaje informativo amigable.
 
-### Tamaño: M
+### Tamaño: L
 
 ### Dependencias
 
@@ -450,7 +462,7 @@ Para estimar el tamaño de las historias de usuario, se utilizó el método T-Sh
 - Al confirmar el guardado, el estado de la sesión cambia a `ATTENDED` y se persisten los textos en la base de datos.
 - La sesión se remueve de las citas pendientes del tutor y pasa a formar parte de las estadísticas e historiales.
 
-### Tamaño: M
+### Tamaño: S
 
 ### Dependencias
 
@@ -521,7 +533,7 @@ Para estimar el tamaño de las historias de usuario, se utilizó el método T-Sh
 - El correo electrónico institucional y el carnet deben permanecer bloqueados para edición por motivos de seguridad e identidad.
 - El sistema debe confirmar la actualización con un mensaje de éxito reactivo.
 
-### Tamaño: S
+### Tamaño: XS
 
 ### Dependencias
 
@@ -544,7 +556,7 @@ Para estimar el tamaño de las historias de usuario, se utilizó el método T-Sh
 - Las actualizaciones de contraseña deben verificar la presencia de mayúsculas, minúsculas y números antes de encriptarse.
 - Los cambios deben guardarse de forma inmediata en la tabla `tutor_profiles`.
 
-### Tamaño: S
+### Tamaño: XS
 
 ### Dependencias
 
@@ -618,7 +630,7 @@ Para estimar el tamaño de las historias de usuario, se utilizó el método T-Sh
 - El cuerpo del correo debe incluir: nombre del estudiante, nombre del tutor, materia, fecha y hora original de la cita, y el motivo detallado de la cancelación.
 - Si el servicio de correo presenta fallas de red, la transacción de cancelación de la base de datos debe conservarse y registrar el error en bitácora.
 
-### Tamaño: S
+### Tamaño: M
 
 ### Dependencias
 
@@ -641,7 +653,7 @@ Para estimar el tamaño de las historias de usuario, se utilizó el método T-Sh
 - Si existen sesiones pendientes que entrarían en conflicto con el nuevo horario, la actualización debe ser rechazada informando al tutor de las citas existentes.
 - Si no hay conflictos, los nuevos rangos deben actualizarse en la tabla de horarios del tutor.
 
-### Tamaño: L
+### Tamaño: M
 
 ### Dependencias
 
@@ -672,7 +684,7 @@ Para estimar el tamaño de las historias de usuario, se utilizó el método T-Sh
   2. Documento ejecutivo oficial en formato PDF con membrete y estructura formal.
 - La interfaz del reporte y sus exportaciones deben presentarse sin caracteres emojis informales.
 
-### Tamaño: M
+### Tamaño: S
 
 ### Dependencias
 
@@ -696,7 +708,7 @@ Para estimar el tamaño de las historias de usuario, se utilizó el método T-Sh
 - La interfaz debe presentar una tabla ordenada con el nombre de la materia, total de citas solicitadas y porcentaje relativo sobre el total general.
 - Debe calcularse en tiempo real a partir de las sesiones existentes en base de datos.
 
-### Tamaño: M
+### Tamaño: S
 
 ### Dependencias
 

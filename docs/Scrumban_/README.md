@@ -47,6 +47,6 @@ Esta carpeta concentra los artefactos y la documentación práctica para organiz
 ---
 
 ## Herramientas Utilizadas
-- **Trello:** Plataforma visual para el seguimiento Kanban del flujo de desarrollo.
+- **Trello:** Plataforma visual para el seguimiento Kanban del flujo de desarrollo ([Acceder al Tablero AYD1 - EduConnect](https://trello.com/invite/b/6a8e3c36dcf32de42c7d8d45/ATTIc16aa6c7be21da464d3dabfea5738f984D9AE89F/ayd1-educonnect)).
 - **Markdown:** Estándar de documentación técnica colaborativa.
 - **PDF:** Formato estándar para archivar las impresiones y evidencias de evolución del tablero.
