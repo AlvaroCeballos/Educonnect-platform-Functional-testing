@@ -92,6 +92,8 @@ La composición se organiza en Figma en tres páginas: **Wireframes**, **Mockups
 
 [Abrir prototipos interactivos de EduConnect en Figma](https://www.figma.com/design/WK53bf0D4M3PiP5elIF0bz/EduConnect-%E2%80%94-Prototipos-interactivos-Yury)
 
+[Presentar el flujo interactivo HU-009 → HU-010 → HU-011 → HU-027](https://www.figma.com/proto/WK53bf0D4M3PiP5elIF0bz/EduConnect-%E2%80%94-Prototipos-interactivos-Yury?scaling=min-zoom&content-scaling=fixed&page-id=12%3A2&node-id=12-3)
+
 El archivo contiene las pantallas del paquete de Yury y usa la misma paleta, tipografía, jerarquía, tarjetas y estados que la aplicación. El enlace requiere permisos de Figma para editar y presentar el prototipo.
 
 ## 7. Correspondencia con el código
