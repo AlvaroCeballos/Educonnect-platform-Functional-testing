@@ -93,6 +93,16 @@ input:focus, select:focus { border-color: #20a98b; box-shadow: 0 0 0 4px rgba(32
 .session-card { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; padding: 20px; border: 1px solid #dfe6ee; border-radius: 16px; background: white; }
 .session-card p { margin: 4px 0 0; color: #6a768c; font-size: 14px; }
 .session-actions { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; flex: 0 0 auto; }
+.rating-panel { margin-top: 14px; padding: 14px; border: 1px solid #cfe7df; border-radius: 12px; background: #f4fbf8; }
+.star-rating { display: flex; align-items: center; gap: 2px; margin: 8px 0; }
+.star-button, .zero-rating { border: 0; background: transparent; cursor: pointer; }
+.star-button { padding: 0 3px; color: #b5c4c0; font-size: 28px; line-height: 1; }
+.star-button.selected { color: #d79a24; }
+.zero-rating { margin-left: 8px; color: #52645f; font-size: 12px; font-weight: 700; }
+.zero-rating.selected { color: #0f766e; }
+.rating-comment { display: block; width: 100%; min-height: 64px; margin: 8px 0; padding: 9px; border: 1px solid #d5e2df; border-radius: 8px; resize: vertical; }
+.rating-submit { width: auto; padding: 9px 14px; box-shadow: none; }
+.rating-summary { color: #a26d0d !important; }
 .status-badge { font-size: 12px; font-weight: 800; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
 .status-badge.status-pending { background: #fff7e6; color: #9a6a00; }
 .status-badge.status-attended { background: #eaf9f4; color: #14735e; }
