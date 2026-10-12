@@ -168,7 +168,7 @@ CREATE TABLE IF NOT EXISTS reviews (
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
              ON UPDATE CURRENT_TIMESTAMP,
   CONSTRAINT uq_reviews_session UNIQUE (session_id),
-  CONSTRAINT chk_reviews_rating CHECK (rating BETWEEN 1 AND 5),
+  CONSTRAINT chk_reviews_rating CHECK (rating BETWEEN 0 AND 5),
   CONSTRAINT fk_reviews_session
     FOREIGN KEY (session_id) REFERENCES sessions(id)
     ON UPDATE CASCADE

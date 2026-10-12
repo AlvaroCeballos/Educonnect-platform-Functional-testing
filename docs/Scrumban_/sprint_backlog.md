@@ -129,3 +129,25 @@ Las 41 tareas técnicas planificadas y concluidas durante el Sprint 2 se estruct
 | **Tareas en DONE** | 50 (100%) | 41 (100%) | **91 (100%)** |
 | **Tareas Bloqueadas (BLOCKED)** | 0 | 0 | **0** |
 | **Deuda Técnica Pendiente** | 0% | 0% | **0%** |
+
+---
+
+# Actualización vigente — Fase 2, Sprint 1, Paquete F
+
+La distribución actualizada de Fase 2 redefine el alcance de Isai para este Sprint 1. El trabajo activo se limita a las historias HU-035 y HU-049; HU-036, HU-037, HU-038 y el despliegue final de CI/CD se mantienen en el Sprint 2.
+
+| Historia | Tarea | Responsable | Prioridad | Estado de implementación |
+| :--- | :--- | :--- | :---: | :---: |
+| HU-035 | T-035.1 — Formulario de calificación | Isai | 🟥 Alta | Implementada |
+| HU-035 | T-035.2 — Validación de sesión atendida y estrellas 0–5 | Isai | 🟥 Alta | Implementada |
+| HU-035 | T-035.3 — Persistencia y consulta de calificaciones | Isai | 🟥 Alta | Implementada |
+| HU-049 | T-049.1 — Workflow de Build | Isai | 🟥 Alta | Implementada |
+| HU-049 | T-049.2 — Workflow de Test | Isai | 🟥 Alta | Implementada |
+| HU-049 | T-049.3 — Deploy en `main` | Isai | 🟥 Alta | Pendiente Sprint 2 |
+
+## Evidencia técnica del cierre parcial
+
+- Backend: `npm test` ejecutado con 32 pruebas exitosas.
+- Frontend: `npm run build` ejecutado correctamente.
+- Workflow: `.github/workflows/backend-ci-cd.yml` contiene los jobs secuenciales `build` y `test`.
+- Bloqueo de integración: la validación funcional completa de HU-035 requiere sesiones `ATTENDED` disponibles en la base de datos; la API ya valida ese estado y no bloquea el desarrollo del pipeline.
