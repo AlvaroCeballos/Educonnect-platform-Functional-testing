@@ -23,6 +23,9 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [actionId, setActionId] = useState(null);
   const [editingStudent, setEditingStudent] = useState(null);
+  const [tutorIncidents, setTutorIncidents] = useState([]);
+  const [incidentSearchTerm, setIncidentSearchTerm] = useState('');
+  const [incidentStatusFilter, setIncidentStatusFilter] = useState('all'); // 'all' | 'PENDING' | 'RESOLVED_BANNED' | 'DISMISSED'
   const [editStudentForm, setEditStudentForm] = useState({
     nombre: '',
     apellido: '',
@@ -37,16 +40,18 @@ export default function AdminDashboard() {
 
   const loadUsers = useCallback(async () => {
     try {
-      const [pendingRes, approvedRes, reportRes, subjectsReportRes] = await Promise.all([
+      const [pendingRes, approvedRes, reportRes, subjectsReportRes, incidentsRes] = await Promise.all([
         api.get('/admin/users', { params: { status: 'PENDING' } }),
         api.get('/admin/users', { params: { status: 'APPROVED' } }),
-        api.get('/reports/top-tutors').catch(() => ({ data: { topTutors: [] } })),
-        api.get('/reports/top-subjects').catch(() => ({ data: { subjectsReport: [] } })),
+        api.get('/reports/top-tutors').catch((err) => { console.warn('Reporte tutores:', err); return { data: { topTutors: [] } }; }),
+        api.get('/reports/top-subjects').catch((err) => { console.warn('Reporte materias:', err); return { data: { subjectsReport: [] } }; }),
+        api.get('/admin/reports/tutors').catch((err) => { console.error('Error cargando denuncias tutores:', err); return { data: { reports: [] } }; }),
       ]);
       setPendingUsers(pendingRes.data.users || []);
       setApprovedUsers(approvedRes.data.users || []);
       setReportTutors(reportRes.data?.topTutors || []);
       setReportSubjects(subjectsReportRes.data?.subjectsReport || []);
+      setTutorIncidents(incidentsRes.data?.reports || []);
     } catch (err) {
       console.error('Error cargando usuarios o reportes:', err);
     }
@@ -366,10 +371,97 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleResolveIncident = async (incident, action) => {
+    const isBan = action === 'BAN';
+    const roleTitle = isBan ? '¿Dar de baja al tutor por denuncia?' : '¿Rechazar / Desestimar denuncia?';
+    const confirmBtnText = isBan ? 'Sí, dar de baja' : 'Sí, rechazar denuncia';
+    const confirmBtnColor = isBan ? '#a42e3a' : '#475569';
+
+    const { value: notes, isConfirmed } = await Swal.fire({
+      icon: isBan ? 'warning' : 'question',
+      title: roleTitle,
+      html: `
+        <div style="text-align: left; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 16px; margin: 12px 0; font-size: 13px; color: #334155; line-height: 1.6;">
+          <p style="margin: 0 0 4px;"><strong>Tutor reportado:</strong> ${incident.reportedNombreCompleto} (${incident.reportedCarnet || '—'})</p>
+          <p style="margin: 0 0 4px;"><strong>Estudiante denunciante:</strong> ${incident.reporterNombreCompleto} (${incident.reporterCarnet || '—'})</p>
+          <p style="margin: 0 0 4px;"><strong>Falta:</strong> <span style="background: #fee2e2; color: #991b1b; padding: 2px 6px; border-radius: 4px; font-weight: 700;">${incident.category}</span></p>
+          <p style="margin: 0;"><strong>Motivo:</strong> ${incident.reason}</p>
+        </div>
+        <p style="font-size: 13px; color: ${isBan ? '#991b1b' : '#64748b'}; font-weight: 600;">
+          ${isBan 
+            ? 'Esta acción inhabilitará de inmediato la cuenta del tutor (status = DISABLED) y se enviará la notificación por correo.' 
+            : 'La denuncia quedará marcada como desestimada y no afectará el estado del tutor.'}
+        </p>
+        <label style="display:block; text-align:left; font-size:12px; font-weight:600; color:#475569; margin-top:10px; margin-bottom:4px;">
+          Motivo o notas de la resolución administrativa (opcional):
+        </label>
+      `,
+      input: 'textarea',
+      inputPlaceholder: isBan 
+        ? 'Indica el motivo de la sanción disciplinaria...' 
+        : 'Indica por qué se desestima la queja...',
+      showCancelButton: true,
+      confirmButtonText: confirmBtnText,
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: confirmBtnColor,
+      cancelButtonColor: '#94a3b8',
+    });
+
+    if (!isConfirmed) return;
+
+    setActionId(incident.id);
+    try {
+      const res = await api.patch(`/admin/reports/${incident.id}/resolve`, {
+        action,
+        notes: notes || '',
+      });
+      await Swal.fire({
+        icon: 'success',
+        title: isBan ? 'Tutor dado de baja' : 'Denuncia desestimada',
+        text: res.data.message || 'La resolución ha sido procesada exitosamente.',
+        confirmButtonColor: '#167963',
+      });
+      await loadUsers();
+    } catch (err) {
+      await Swal.fire({
+        icon: 'error',
+        title: 'Error al resolver denuncia',
+        text: err.response?.data?.message || 'No fue posible procesar la resolución.',
+        confirmButtonColor: '#167963',
+      });
+    } finally {
+      setActionId(null);
+    }
+  };
+
   const pendingStudents = pendingUsers.filter((u) => u.role === 'student');
   const approvedStudents = approvedUsers.filter((u) => u.role === 'student');
   const pendingTutors = pendingUsers.filter((u) => u.role === 'tutor');
   const approvedTutors = approvedUsers.filter((u) => u.role === 'tutor');
+
+  const pendingTutorIncidentsCount = tutorIncidents.filter((i) => i.status === 'PENDING').length;
+  const bannedTutorIncidentsCount = tutorIncidents.filter((i) => i.status === 'RESOLVED_BANNED').length;
+  const dismissedTutorIncidentsCount = tutorIncidents.filter((i) => i.status === 'DISMISSED').length;
+
+  const filteredTutorIncidents = tutorIncidents.filter((inc) => {
+    if (incidentStatusFilter !== 'all' && inc.status !== incidentStatusFilter) {
+      return false;
+    }
+    if (!incidentSearchTerm.trim()) return true;
+    const term = incidentSearchTerm.toLowerCase();
+    const tutorName = (inc.reportedNombreCompleto || '').toLowerCase();
+    const studentName = (inc.reporterNombreCompleto || '').toLowerCase();
+    const category = (inc.category || '').toLowerCase();
+    const reason = (inc.reason || '').toLowerCase();
+    const carnet = String(inc.reportedCarnet || '').toLowerCase();
+    return (
+      tutorName.includes(term) ||
+      studentName.includes(term) ||
+      category.includes(term) ||
+      reason.includes(term) ||
+      carnet.includes(term)
+    );
+  });
 
   const filteredApprovedStudents = approvedStudents.filter((u) => {
     if (!studentSearchTerm.trim()) return true;
@@ -896,6 +988,26 @@ export default function AdminDashboard() {
                 Tutores Aprobados / Activos (HU-025)
                 <span className="badge-sub">{approvedTutors.length}</span>
               </button>
+              <button
+                type="button"
+                className={`admin-subtab ${tutorView === 'incidents' ? 'active' : ''}`}
+                onClick={() => {
+                  setTutorView('incidents');
+                  loadUsers();
+                }}
+              >
+                Denuncias Recibidas (HU-043)
+                <span
+                  className="badge-sub"
+                  style={
+                    pendingTutorIncidentsCount > 0
+                      ? { background: '#fee2e2', color: '#991b1b', fontWeight: 800 }
+                      : undefined
+                  }
+                >
+                  {tutorIncidents.length}
+                </span>
+              </button>
             </div>
 
             {tutorView === 'pending' && (
@@ -1152,6 +1264,182 @@ export default function AdminDashboard() {
                                   {actionId === tutor.id ? 'Procesando...' : 'Dar de baja'}
                                 </button>
                               </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </section>
+            )}
+
+            {/* SECCIÓN HU-043: PANEL DE DENUNCIAS CONTRA TUTORES */}
+            {tutorView === 'incidents' && (
+              <section className="admin-table-card">
+                <div className="admin-tab-header">
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+                    <div>
+                      <h3>Moderación de Denuncias contra Tutores (HU-043)</h3>
+                      <p>
+                        Supervisa las faltas disciplinarias reportadas por estudiantes en tutorías atendidas.
+                        Puedes dar de baja al tutor si la falta amerita sanción o desestimar el reporte.
+                      </p>
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      <button
+                        type="button"
+                        className={`report-filter-toggle ${incidentStatusFilter === 'all' ? 'active' : ''}`}
+                        onClick={() => setIncidentStatusFilter('all')}
+                      >
+                        Todas ({tutorIncidents.length})
+                      </button>
+                      <button
+                        type="button"
+                        className={`report-filter-toggle ${incidentStatusFilter === 'PENDING' ? 'active' : ''}`}
+                        onClick={() => setIncidentStatusFilter('PENDING')}
+                      >
+                        Pendientes ({pendingTutorIncidentsCount})
+                      </button>
+                      <button
+                        type="button"
+                        className={`report-filter-toggle ${incidentStatusFilter === 'RESOLVED_BANNED' ? 'active' : ''}`}
+                        onClick={() => setIncidentStatusFilter('RESOLVED_BANNED')}
+                      >
+                        Sancionados ({bannedTutorIncidentsCount})
+                      </button>
+                      <button
+                        type="button"
+                        className={`report-filter-toggle ${incidentStatusFilter === 'DISMISSED' ? 'active' : ''}`}
+                        onClick={() => setIncidentStatusFilter('DISMISSED')}
+                      >
+                        Desestimadas ({dismissedTutorIncidentsCount})
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="admin-search-bar">
+                  <input
+                    type="text"
+                    className="admin-search-input"
+                    placeholder="Buscar por tutor, estudiante, falta o motivo..."
+                    value={incidentSearchTerm}
+                    onChange={(e) => setIncidentSearchTerm(e.target.value)}
+                  />
+                  {incidentSearchTerm && (
+                    <button
+                      type="button"
+                      className="admin-clear-search"
+                      onClick={() => setIncidentSearchTerm('')}
+                    >
+                      Limpiar
+                    </button>
+                  )}
+                  <span style={{ fontSize: '13px', color: '#64748b', marginLeft: 'auto' }}>
+                    {filteredTutorIncidents.length} de {tutorIncidents.length} denuncias
+                  </span>
+                </div>
+
+                {tutorIncidents.length === 0 ? (
+                  <div className="admin-empty">No hay denuncias disciplinarias registradas contra tutores.</div>
+                ) : filteredTutorIncidents.length === 0 ? (
+                  <div className="admin-empty">No se encontraron denuncias con el criterio seleccionado.</div>
+                ) : (
+                  <div className="admin-table-wrap">
+                    <table className="admin-table">
+                      <thead>
+                        <tr>
+                          <th>Fecha Reporte</th>
+                          <th>Tutor Denunciado</th>
+                          <th>Estudiante Denunciante</th>
+                          <th>Falta Disciplinaria</th>
+                          <th>Motivo y Explicación</th>
+                          <th>Estado</th>
+                          <th>Acciones</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredTutorIncidents.map((incident) => (
+                          <tr key={incident.id}>
+                            <td style={{ whiteSpace: 'nowrap' }}>
+                              <strong style={{ fontSize: '13px', color: '#0f172a' }}>
+                                {formatDate(incident.createdAt)}
+                              </strong>
+                              <span style={{ fontSize: '11px', color: '#64748b', display: 'block' }}>
+                                Sesión: {formatDate(incident.sessionDate)} ({incident.materia})
+                              </span>
+                            </td>
+                            <td>
+                              <div className="admin-user-info">
+                                <div>
+                                  <strong>{incident.reportedNombreCompleto}</strong>
+                                  <span>{incident.reportedEmail}</span>
+                                  <span style={{ fontSize: '11px', color: '#0f766e' }}>
+                                    Carnet: {incident.reportedCarnet} · {incident.reportedEspecialidad}
+                                  </span>
+                                </div>
+                              </div>
+                            </td>
+                            <td>
+                              <div>
+                                <strong style={{ fontSize: '13px', color: '#334155' }}>
+                                  {incident.reporterNombreCompleto}
+                                </strong>
+                                <span style={{ fontSize: '12px', color: '#64748b', display: 'block' }}>
+                                  Carnet: {incident.reporterCarnet}
+                                </span>
+                              </div>
+                            </td>
+                            <td>
+                              <span className="badge-category">{incident.category}</span>
+                            </td>
+                            <td style={{ maxWidth: '280px' }}>
+                              <p style={{ margin: 0, fontSize: '13px', color: '#334155', lineHeight: '1.4' }}>
+                                {incident.reason}
+                              </p>
+                              {incident.adminNotes && (
+                                <p style={{ margin: '6px 0 0', fontSize: '11px', color: '#0f766e', fontStyle: 'italic' }}>
+                                  Resolución: {incident.adminNotes}
+                                </p>
+                              )}
+                            </td>
+                            <td>
+                              {incident.status === 'PENDING' ? (
+                                <span className="badge-incident-pending">PENDIENTE</span>
+                              ) : incident.status === 'RESOLVED_BANNED' ? (
+                                <span className="badge-incident-banned">SANCIONADO</span>
+                              ) : (
+                                <span className="badge-incident-dismissed">DESESTIMADA</span>
+                              )}
+                            </td>
+                            <td>
+                              {incident.status === 'PENDING' ? (
+                                <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                                  <button
+                                    type="button"
+                                    className="ban-button"
+                                    disabled={actionId === incident.id}
+                                    title="Dar de baja definitiva al tutor infractor"
+                                    onClick={() => handleResolveIncident(incident, 'BAN')}
+                                  >
+                                    Dar de baja
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="dismiss-button"
+                                    disabled={actionId === incident.id}
+                                    title="Desestimar denuncia por falta de mérito"
+                                    onClick={() => handleResolveIncident(incident, 'DISMISS')}
+                                  >
+                                    Rechazar
+                                  </button>
+                                </div>
+                              ) : (
+                                <span style={{ fontSize: '11px', color: '#94a3b8', fontStyle: 'italic' }}>
+                                  Resuelta
+                                </span>
+                              )}
                             </td>
                           </tr>
                         ))}
