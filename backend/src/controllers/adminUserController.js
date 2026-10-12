@@ -316,10 +316,130 @@ const getSubjectsDemandReport = async (_req, res) => {
   }
 };
 
+/**
+ * HU-041: Actualizar información del perfil de un estudiante por el Administrador
+ * PUT /api/admin/users/:id/student-profile
+ * PUT /api/admin/students/:id
+ * Regla de inmutabilidad (PU-11): El correo electrónico no se puede modificar.
+ */
+const updateStudentProfileByAdmin = async (req, res) => {
+  const userId = Number(req.params.id);
+  const {
+    nombre,
+    apellido,
+    carnet,
+    fecha_nacimiento,
+    genero,
+    universidad,
+    carrera,
+    fotografia_url,
+    email,
+  } = req.body || {};
+
+  if (!Number.isInteger(userId) || userId < 1) {
+    return res.status(400).json({ message: 'El identificador de usuario no es válido' });
+  }
+
+  if (!nombre || !apellido || !carnet) {
+    return res.status(400).json({ message: 'Nombre, apellido y carnet son obligatorios' });
+  }
+
+  let conn;
+  try {
+    conn = await pool.getConnection();
+
+    // 1. Verificar existencia del usuario con rol student
+    const [userRows] = await conn.execute(
+      `SELECT u.id, u.email, u.status, sp.id AS profile_id
+         FROM users u
+         LEFT JOIN student_profiles sp ON sp.user_id = u.id
+        WHERE u.id = ? AND u.role = 'student'`,
+      [userId]
+    );
+
+    if (userRows.length === 0) {
+      return res.status(404).json({ message: 'Estudiante no encontrado' });
+    }
+
+    const currentStudent = userRows[0];
+
+    // PU-11: Regla de inmutabilidad estricta del correo electrónico
+    if (
+      email !== undefined &&
+      email !== null &&
+      String(email).trim().toLowerCase() !== String(currentStudent.email).trim().toLowerCase()
+    ) {
+      return res.status(400).json({
+        message: 'El correo electrónico no puede ser modificado por políticas de seguridad e inmutabilidad',
+      });
+    }
+
+    // 2. Verificar que no exista otro estudiante con el mismo carnet
+    const [carnetConflict] = await conn.execute(
+      'SELECT id FROM student_profiles WHERE carnet = ? AND user_id != ?',
+      [String(carnet).trim(), userId]
+    );
+    if (carnetConflict.length > 0) {
+      return res.status(409).json({ message: 'El carnet ya se encuentra registrado por otro estudiante' });
+    }
+
+    const validGenders = new Set(['M', 'F', 'OTHER', 'UNSPECIFIED']);
+    const normalizedGender = validGenders.has(String(genero || '').toUpperCase())
+      ? String(genero).toUpperCase()
+      : 'UNSPECIFIED';
+
+    await conn.execute(
+      `UPDATE student_profiles
+          SET nombre = ?,
+              apellido = ?,
+              carnet = ?,
+              fecha_nacimiento = ?,
+              genero = ?,
+              universidad = ?,
+              carrera = ?,
+              fotografia_url = ?
+        WHERE user_id = ?`,
+      [
+        String(nombre).trim(),
+        String(apellido).trim(),
+        String(carnet).trim(),
+        fecha_nacimiento || null,
+        normalizedGender,
+        universidad ? String(universidad).trim() : null,
+        carrera ? String(carrera).trim() : null,
+        fotografia_url ? String(fotografia_url).trim() : null,
+        userId,
+      ]
+    );
+
+    return res.json({
+      message: 'Perfil de estudiante actualizado exitosamente',
+      student: {
+        userId,
+        email: currentStudent.email,
+        nombre: String(nombre).trim(),
+        apellido: String(apellido).trim(),
+        carnet: String(carnet).trim(),
+        fecha_nacimiento: fecha_nacimiento || null,
+        genero: normalizedGender,
+        universidad: universidad ? String(universidad).trim() : null,
+        carrera: carrera ? String(carrera).trim() : null,
+        fotografia_url: fotografia_url ? String(fotografia_url).trim() : null,
+      },
+    });
+  } catch (error) {
+    console.error('Error actualizando perfil de estudiante:', error);
+    return res.status(500).json({ message: 'No fue posible actualizar el perfil del estudiante' });
+  } finally {
+    if (conn) conn.release();
+  }
+};
+
 module.exports = {
   listUsers,
   updateUserStatus,
   disableUser,
   getTopTutorsReport,
   getSubjectsDemandReport,
+  updateStudentProfileByAdmin,
 };

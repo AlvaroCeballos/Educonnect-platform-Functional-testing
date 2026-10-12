@@ -22,6 +22,18 @@ export default function AdminDashboard() {
   const [subjectFilterMode, setSubjectFilterMode] = useState('all'); // 'all' | 'withSessionsOnly'
   const [loading, setLoading] = useState(true);
   const [actionId, setActionId] = useState(null);
+  const [editingStudent, setEditingStudent] = useState(null);
+  const [editStudentForm, setEditStudentForm] = useState({
+    nombre: '',
+    apellido: '',
+    carnet: '',
+    universidad: '',
+    carrera: '',
+    genero: 'UNSPECIFIED',
+    fecha_nacimiento: '',
+    fotografia_url: '',
+  });
+  const [savingEdit, setSavingEdit] = useState(false);
 
   const loadUsers = useCallback(async () => {
     try {
@@ -264,6 +276,46 @@ export default function AdminDashboard() {
       });
     } finally {
       setActionId(null);
+    }
+  };
+
+  const handleOpenEditStudent = (student) => {
+    setEditingStudent(student);
+    setEditStudentForm({
+      nombre: student.nombre || '',
+      apellido: student.apellido || '',
+      carnet: student.carnet || '',
+      universidad: student.universidad || '',
+      carrera: student.carrera || '',
+      genero: student.genero || 'UNSPECIFIED',
+      fecha_nacimiento: student.fecha_nacimiento ? String(student.fecha_nacimiento).substring(0, 10) : '',
+      fotografia_url: student.fotografia_url || '',
+    });
+  };
+
+  const handleSaveEditStudent = async (e) => {
+    e.preventDefault();
+    if (!editingStudent) return;
+    setSavingEdit(true);
+    try {
+      const res = await api.put(`/admin/users/${editingStudent.id}/student-profile`, editStudentForm);
+      await Swal.fire({
+        icon: 'success',
+        title: 'Estudiante actualizado',
+        text: res.data.message || 'Los datos han sido actualizados exitosamente.',
+        confirmButtonColor: '#167963',
+      });
+      setEditingStudent(null);
+      await loadUsers();
+    } catch (err) {
+      await Swal.fire({
+        icon: 'error',
+        title: 'Error al actualizar',
+        text: err.response?.data?.message || 'No fue posible guardar los cambios.',
+        confirmButtonColor: '#167963',
+      });
+    } finally {
+      setSavingEdit(false);
     }
   };
 
@@ -793,15 +845,25 @@ export default function AdminDashboard() {
                             </td>
                             <td>{formatDate(student.created_at)}</td>
                             <td>
-                              <button
-                                type="button"
-                                className="disable-button"
-                                disabled={actionId === student.id}
-                                title="Dar de baja lógica a este estudiante"
-                                onClick={() => handleDisableStudent(student)}
-                              >
-                                {actionId === student.id ? 'Procesando...' : 'Dar de baja'}
-                              </button>
+                              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                <button
+                                  type="button"
+                                  className="edit-button"
+                                  title="Editar datos del estudiante (correo inmutable)"
+                                  onClick={() => handleOpenEditStudent(student)}
+                                >
+                                  Editar
+                                </button>
+                                <button
+                                  type="button"
+                                  className="disable-button"
+                                  disabled={actionId === student.id}
+                                  title="Dar de baja lógica a este estudiante"
+                                  onClick={() => handleDisableStudent(student)}
+                                >
+                                  {actionId === student.id ? 'Procesando...' : 'Dar de baja'}
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         ))}
@@ -1480,6 +1542,158 @@ export default function AdminDashboard() {
               </div>
             )}
           </section>
+        )}
+
+        {/* MODAL HU-041: Edición de perfil de estudiante (correo inmutable) */}
+        {editingStudent && (
+          <div className="admin-modal-overlay" onClick={() => setEditingStudent(null)}>
+            <div className="admin-modal-card" onClick={(e) => e.stopPropagation()}>
+              <div className="admin-modal-header">
+                <div>
+                  <h3>Editar Estudiante (HU-041)</h3>
+                  <p>Modifica la información académica. El correo electrónico institucional es inmutable.</p>
+                </div>
+                <button
+                  type="button"
+                  className="admin-modal-close"
+                  onClick={() => setEditingStudent(null)}
+                  title="Cerrar modal"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveEditStudent} className="admin-modal-form">
+                <div className="admin-form-group">
+                  <label>
+                    Correo Electrónico
+                    <span className="badge-immutable">Inmutable</span>
+                  </label>
+                  <input
+                    type="email"
+                    value={editingStudent.email}
+                    disabled
+                    className="admin-input-disabled"
+                  />
+                  <small className="admin-input-hint">
+                    Por normativas de seguridad e identidad USAC, el correo no puede ser modificado.
+                  </small>
+                </div>
+
+                <div className="admin-form-row">
+                  <div className="admin-form-group">
+                    <label>Nombre *</label>
+                    <input
+                      type="text"
+                      required
+                      value={editStudentForm.nombre}
+                      onChange={(e) => setEditStudentForm({ ...editStudentForm, nombre: e.target.value })}
+                      className="admin-input"
+                    />
+                  </div>
+                  <div className="admin-form-group">
+                    <label>Apellido *</label>
+                    <input
+                      type="text"
+                      required
+                      value={editStudentForm.apellido}
+                      onChange={(e) => setEditStudentForm({ ...editStudentForm, apellido: e.target.value })}
+                      className="admin-input"
+                    />
+                  </div>
+                </div>
+
+                <div className="admin-form-row">
+                  <div className="admin-form-group">
+                    <label>Carnet Universitario *</label>
+                    <input
+                      type="text"
+                      required
+                      value={editStudentForm.carnet}
+                      onChange={(e) => setEditStudentForm({ ...editStudentForm, carnet: e.target.value })}
+                      className="admin-input"
+                      style={{ fontFamily: 'monospace', fontWeight: 'bold' }}
+                    />
+                  </div>
+                  <div className="admin-form-group">
+                    <label>Género</label>
+                    <select
+                      value={editStudentForm.genero}
+                      onChange={(e) => setEditStudentForm({ ...editStudentForm, genero: e.target.value })}
+                      className="admin-select"
+                    >
+                      <option value="UNSPECIFIED">No especificado</option>
+                      <option value="M">Masculino</option>
+                      <option value="F">Femenino</option>
+                      <option value="OTHER">Otro</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="admin-form-row">
+                  <div className="admin-form-group">
+                    <label>Universidad</label>
+                    <input
+                      type="text"
+                      value={editStudentForm.universidad}
+                      onChange={(e) => setEditStudentForm({ ...editStudentForm, universidad: e.target.value })}
+                      className="admin-input"
+                      placeholder="Ej. USAC"
+                    />
+                  </div>
+                  <div className="admin-form-group">
+                    <label>Carrera</label>
+                    <input
+                      type="text"
+                      value={editStudentForm.carrera}
+                      onChange={(e) => setEditStudentForm({ ...editStudentForm, carrera: e.target.value })}
+                      className="admin-input"
+                      placeholder="Ej. Ingeniería en Sistemas"
+                    />
+                  </div>
+                </div>
+
+                <div className="admin-form-row">
+                  <div className="admin-form-group">
+                    <label>Fecha de Nacimiento</label>
+                    <input
+                      type="date"
+                      value={editStudentForm.fecha_nacimiento}
+                      onChange={(e) => setEditStudentForm({ ...editStudentForm, fecha_nacimiento: e.target.value })}
+                      className="admin-input"
+                    />
+                  </div>
+                  <div className="admin-form-group">
+                    <label>URL de Fotografía</label>
+                    <input
+                      type="text"
+                      value={editStudentForm.fotografia_url}
+                      onChange={(e) => setEditStudentForm({ ...editStudentForm, fotografia_url: e.target.value })}
+                      className="admin-input"
+                      placeholder="https://..."
+                    />
+                  </div>
+                </div>
+
+                <div className="admin-modal-footer">
+                  <button
+                    type="button"
+                    className="admin-button-secondary"
+                    onClick={() => setEditingStudent(null)}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={savingEdit}
+                    className="admin-button-primary"
+                  >
+                    {savingEdit ? 'Guardando...' : 'Guardar Cambios'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
         )}
       </main>
     </div>
