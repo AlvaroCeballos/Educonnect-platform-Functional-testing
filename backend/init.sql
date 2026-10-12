@@ -184,3 +184,43 @@ CREATE TABLE IF NOT EXISTS reviews (
   INDEX idx_reviews_tutor (tutor_id),
   INDEX idx_reviews_student (student_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Fase 2: Reportes disciplinarios y denuncias entre tutores y estudiantes (HU-036, HU-038, HU-043, HU-044)
+CREATE TABLE IF NOT EXISTS incident_reports (
+  id               INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  session_id       INT UNSIGNED NOT NULL,
+  reporter_id      INT UNSIGNED NOT NULL,
+  reported_user_id INT UNSIGNED NOT NULL,
+  reporter_role    ENUM('student', 'tutor') NOT NULL,
+  category         VARCHAR(150) NOT NULL,
+  reason           TEXT NOT NULL,
+  status           ENUM('PENDING', 'RESOLVED_BANNED', 'DISMISSED')
+                   NOT NULL DEFAULT 'PENDING',
+  admin_notes      TEXT NULL,
+  resolved_by      INT UNSIGNED NULL,
+  resolved_at      TIMESTAMP NULL,
+  created_at       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+                   ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT uq_incident_session_reporter UNIQUE (session_id, reporter_id),
+  CONSTRAINT fk_incident_session
+    FOREIGN KEY (session_id) REFERENCES sessions(id)
+    ON UPDATE CASCADE
+    ON DELETE RESTRICT,
+  CONSTRAINT fk_incident_reporter
+    FOREIGN KEY (reporter_id) REFERENCES users(id)
+    ON UPDATE CASCADE
+    ON DELETE CASCADE,
+  CONSTRAINT fk_incident_reported_user
+    FOREIGN KEY (reported_user_id) REFERENCES users(id)
+    ON UPDATE CASCADE
+    ON DELETE CASCADE,
+  CONSTRAINT fk_incident_admin
+    FOREIGN KEY (resolved_by) REFERENCES users(id)
+    ON UPDATE CASCADE
+    ON DELETE SET NULL,
+  INDEX idx_incident_status (status),
+  INDEX idx_incident_reported_user (reported_user_id),
+  INDEX idx_incident_reporter_role (reporter_role)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
