@@ -7,15 +7,23 @@ USE educonnect;
 -- Contrato compartido de autenticacion.
 -- Los valores se mantienen compatibles con el modulo de Wade (HU-001).
 CREATE TABLE IF NOT EXISTS users (
-  id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  email         VARCHAR(191) NOT NULL,
-  password_hash VARCHAR(255) NOT NULL,
-  role          ENUM('student', 'tutor', 'admin') NOT NULL,
-  status        ENUM('PENDING', 'APPROVED', 'REJECTED', 'DISABLED')
-                NOT NULL DEFAULT 'PENDING',
-  created_at    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-                ON UPDATE CURRENT_TIMESTAMP,
+  id                 INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  email              VARCHAR(191) NOT NULL,
+  password_hash      VARCHAR(255) NOT NULL,
+  role               ENUM('student', 'tutor', 'admin') NOT NULL,
+  status             ENUM('PENDING', 'APPROVED', 'REJECTED', 'DISABLED')
+                     NOT NULL DEFAULT 'PENDING',
+  
+  -- ACTUALIZACIONES FASE 0: Validacion de tokens (Yury) y URLs de PDFs (Xavi)
+  email_verified     BOOLEAN NOT NULL DEFAULT FALSE,
+  verification_token VARCHAR(10) NULL,
+  carnet_pdf_url     VARCHAR(500) NULL,
+  cv_pdf_url         VARCHAR(500) NULL,
+  -- FIN ACTUALIZACIONES FASE 0
+
+  created_at         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+                     ON UPDATE CURRENT_TIMESTAMP,
   CONSTRAINT uq_users_email UNIQUE (email)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -224,3 +232,36 @@ CREATE TABLE IF NOT EXISTS incident_reports (
   INDEX idx_incident_reporter_role (reporter_role)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- ==============================================================================
+-- ACTUALIZACIONES FASE 0 - EDUCONNECT FASE 2
+-- Tablas para Planes de Estudio Estructurados (Paquete E - Nicole)
+-- ==============================================================================
+
+-- Se vincula directamente a una sesion que haya pasado a estado 'ATTENDED'
+CREATE TABLE IF NOT EXISTS study_plans (
+  id                      INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  session_id              INT UNSIGNED NOT NULL,
+  dificultades_detectadas TEXT NOT NULL,
+  created_at              TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at              TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP 
+                          ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT uq_study_plans_session UNIQUE (session_id),
+  CONSTRAINT fk_study_plans_session
+    FOREIGN KEY (session_id) REFERENCES sessions(id)
+    ON UPDATE CASCADE
+    ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Recursos Recomendados dinamicos. Se vincula al plan de estudio general.
+CREATE TABLE IF NOT EXISTS study_resources (
+  id               INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  study_plan_id    INT UNSIGNED NOT NULL,
+  nombre_recurso   VARCHAR(255) NOT NULL,
+  tipo_recurso     ENUM('Texto', 'Video', 'PDF', 'Enlace') NOT NULL,
+  descripcion_uso  TEXT NOT NULL,
+  created_at       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_study_resources_plan
+    FOREIGN KEY (study_plan_id) REFERENCES study_plans(id)
+    ON UPDATE CASCADE
+    ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
