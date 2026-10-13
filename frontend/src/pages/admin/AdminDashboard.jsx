@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import api from '../../utils/api';
 import { generateTutorsDemandBlob } from '../../utils/pdfReportGenerator';
+import PendingStudents from '../../components/admin/PendingStudents';
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -760,89 +761,7 @@ export default function AdminDashboard() {
             </div>
 
             {studentView === 'pending' && (
-              <section className="admin-table-card">
-                <div className="admin-tab-header">
-                  <h3>Solicitudes de Registro de Estudiantes (HU-004)</h3>
-                  <p>Valida la información académica y decide la admisión a la plataforma.</p>
-                </div>
-
-                {pendingStudents.length === 0 ? (
-                  <div className="admin-empty">No hay solicitudes de estudiantes pendientes de aprobación.</div>
-                ) : (
-                  <div className="admin-table-wrap">
-                    <table className="admin-table">
-                      <thead>
-                        <tr>
-                          <th>Estudiante</th>
-                          <th>Carnet</th>
-                          <th>Género</th>
-                          <th>Fecha Nacimiento</th>
-                          <th>Fecha Solicitud</th>
-                          <th>Acciones</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {pendingStudents.map((student) => (
-                          <tr key={student.id}>
-                            <td>
-                              <div className="admin-user-info">
-                                {student.fotografia_url ? (
-                                  <img
-                                    src={resolveMediaUrl(student.fotografia_url)}
-                                    alt="Foto Estudiante"
-                                    className="admin-user-avatar"
-                                  />
-                                ) : (
-                                  <div className="admin-avatar-placeholder" title="Fotografía por defecto">
-                                    {(student.nombre?.[0] || 'E').toUpperCase()}
-                                  </div>
-                                )}
-                                <div>
-                                  <strong>
-                                    {[student.nombre, student.apellido].filter(Boolean).join(' ') || 'Sin nombre'}
-                                  </strong>
-                                  <span>{student.email}</span>
-                                  {student.universidad && (
-                                    <span style={{ fontSize: '11px', color: '#0f766e' }}>{student.universidad}</span>
-                                  )}
-                                </div>
-                              </div>
-                            </td>
-                            <td>
-                              <span className="font-mono font-bold text-slate-700">{student.carnet || '—'}</span>
-                            </td>
-                            <td>
-                              <span className="badge-gender">{formatGender(student.genero)}</span>
-                            </td>
-                            <td>{formatDate(student.fecha_nacimiento)}</td>
-                            <td>{formatDate(student.created_at)}</td>
-                            <td>
-                              <div className="admin-actions">
-                                <button
-                                  type="button"
-                                  className="approve-button"
-                                  disabled={actionId === student.id}
-                                  onClick={() => handleApprove(student)}
-                                >
-                                  {actionId === student.id ? '...' : 'Aceptar'}
-                                </button>
-                                <button
-                                  type="button"
-                                  className="reject-button"
-                                  disabled={actionId === student.id}
-                                  onClick={() => handleReject(student)}
-                                >
-                                  {actionId === student.id ? '...' : 'Rechazar'}
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </section>
+              <PendingStudents />
             )}
 
             {studentView === 'approved' && (

@@ -63,6 +63,92 @@ const listUsers = async (req, res) => {
   }
 };
 
+const listPendingStudents = async (_req, res) => {
+  try {
+    const [students] = await pool.execute(
+      `SELECT
+         u.id,
+         u.email,
+         u.status,
+         u.created_at,
+         u.carnet_pdf_url,
+         sp.nombre,
+         sp.apellido,
+         sp.carnet,
+         sp.genero,
+         sp.fecha_nacimiento,
+         sp.universidad,
+         sp.carrera,
+         sp.fotografia_url
+       FROM users u
+       INNER JOIN student_profiles sp ON sp.user_id = u.id
+       WHERE u.status = 'PENDING' AND u.role = 'student'
+       ORDER BY u.created_at ASC, u.id ASC`,
+    );
+
+    return res.json({ students });
+  } catch (error) {
+    console.error('Error listando estudiantes pendientes:', error);
+    return res.status(500).json({ message: 'No fue posible cargar los estudiantes pendientes' });
+  }
+};
+
+const updateStudentStatus = async (req, res) => {
+  const userId = Number(req.params.id);
+  const status = String(req.body?.status || '').toUpperCase();
+
+  if (!Number.isInteger(userId) || userId < 1) {
+    return res.status(400).json({ message: 'El identificador de usuario no es válido' });
+  }
+  if (!['APPROVED', 'REJECTED'].includes(status)) {
+    return res.status(400).json({ message: 'El estado debe ser APPROVED o REJECTED' });
+  }
+
+  try {
+    const [students] = await pool.execute(
+      `SELECT u.id, u.email, sp.nombre, sp.apellido
+       FROM users u
+       INNER JOIN student_profiles sp ON sp.user_id = u.id
+       WHERE u.id = ? AND u.role = 'student' AND u.status = 'PENDING'
+       LIMIT 1`,
+      [userId],
+    );
+
+    if (students.length === 0) {
+      return res.status(404).json({ message: 'Estudiante pendiente no encontrado' });
+    }
+
+    const [result] = await pool.execute(
+      `UPDATE users
+       SET status = ?
+       WHERE id = ? AND role = 'student' AND status = 'PENDING'`,
+      [status, userId],
+    );
+
+    if (result.affectedRows !== 1) {
+      return res.status(404).json({ message: 'Estudiante pendiente no encontrado' });
+    }
+
+    const targetStudent = students[0];
+    sendAccountDecisionEmail({
+      to: targetStudent.email,
+      nombre: [targetStudent.nombre, targetStudent.apellido].filter(Boolean).join(' ') || 'Estudiante',
+      role: 'student',
+      status,
+    }).catch((mailError) => {
+      console.error('Error notificando la decisión de aprobación estudiantil:', mailError);
+    });
+
+    return res.json({
+      message: `Estudiante ${status === 'APPROVED' ? 'aprobado' : 'rechazado'} exitosamente`,
+      user: { id: targetStudent.id, email: targetStudent.email, role: 'student', status },
+    });
+  } catch (error) {
+    console.error('Error actualizando estado del estudiante:', error);
+    return res.status(500).json({ message: 'No fue posible actualizar el estado del estudiante' });
+  }
+};
+
 const updateUserStatus = async (req, res) => {
   const userId = Number(req.params.id);
   const status = String(req.body?.status || '').toUpperCase();
@@ -628,6 +714,8 @@ const resolveTutorIncident = async (req, res) => {
 
 module.exports = {
   listUsers,
+  listPendingStudents,
+  updateStudentStatus,
   updateUserStatus,
   disableUser,
   getTopTutorsReport,
