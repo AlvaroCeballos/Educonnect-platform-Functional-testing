@@ -23,6 +23,7 @@ app.use('/api/reports', require('./routes/reports'));
 app.use('/api/tutors', require('./routes/tutors'));
 app.use('/api/sessions', require('./routes/sessions'));
 app.use('/api/ratings', require('./routes/ratings'));
+app.use('/api/documents', require('./routes/documents'));
 
 app.listen(PORT, () => {
   console.log(` EduConnect API corriendo en http://localhost:${PORT}`);
