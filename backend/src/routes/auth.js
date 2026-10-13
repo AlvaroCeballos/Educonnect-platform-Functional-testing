@@ -3,7 +3,7 @@ const multer = require('multer');
 const { registerStudent, loginAdmin, loginAdmin2FA, loginStudent } = require('../controllers/authController');
 const { registerTutor } = require('../controllers/tutorAuthController');
 const { loginTutor } = require('../controllers/tutorLoginController');
-const { uploadTutorPhoto } = require('../middlewares/tutorPhoto');
+const { uploadTutorRegistrationFiles } = require('../middlewares/tutorRegistrationUpload');
 const { authenticateJWT, authorizeAdmin } = require('../middlewares/authJWT');
 
 // Configurar multer para procesar archivos en memoria
@@ -45,7 +45,7 @@ router.get('/admin/profile', authenticateJWT, authorizeAdmin, async (req, res) =
 });
 
 // HU-002: Registro de tutor
-router.post('/register/tutor', uploadTutorPhoto.single('fotografia'), registerTutor);
+router.post('/register/tutor', uploadTutorRegistrationFiles, registerTutor);
 
 // HU-007: Login de tutor
 router.post('/login/tutor', loginTutor);
