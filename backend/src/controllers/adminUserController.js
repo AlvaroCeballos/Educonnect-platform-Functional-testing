@@ -1,5 +1,6 @@
 const pool = require('../config/db');
 const { sendAccountDecisionEmail } = require('../utils/mailer');
+const { validateResolutionPayload } = require('../utils/incidentReport');
 
 const ALLOWED_STATUS = new Set(['APPROVED', 'REJECTED', 'DISABLED']);
 
@@ -59,6 +60,92 @@ const listUsers = async (req, res) => {
   } catch (error) {
     console.error('Error listando usuarios para administración:', error);
     return res.status(500).json({ message: 'No fue posible cargar los usuarios' });
+  }
+};
+
+const listPendingStudents = async (_req, res) => {
+  try {
+    const [students] = await pool.execute(
+      `SELECT
+         u.id,
+         u.email,
+         u.status,
+         u.created_at,
+         u.carnet_pdf_url,
+         sp.nombre,
+         sp.apellido,
+         sp.carnet,
+         sp.genero,
+         sp.fecha_nacimiento,
+         sp.universidad,
+         sp.carrera,
+         sp.fotografia_url
+       FROM users u
+       INNER JOIN student_profiles sp ON sp.user_id = u.id
+       WHERE u.status = 'PENDING' AND u.role = 'student'
+       ORDER BY u.created_at ASC, u.id ASC`,
+    );
+
+    return res.json({ students });
+  } catch (error) {
+    console.error('Error listando estudiantes pendientes:', error);
+    return res.status(500).json({ message: 'No fue posible cargar los estudiantes pendientes' });
+  }
+};
+
+const updateStudentStatus = async (req, res) => {
+  const userId = Number(req.params.id);
+  const status = String(req.body?.status || '').toUpperCase();
+
+  if (!Number.isInteger(userId) || userId < 1) {
+    return res.status(400).json({ message: 'El identificador de usuario no es válido' });
+  }
+  if (!['APPROVED', 'REJECTED'].includes(status)) {
+    return res.status(400).json({ message: 'El estado debe ser APPROVED o REJECTED' });
+  }
+
+  try {
+    const [students] = await pool.execute(
+      `SELECT u.id, u.email, sp.nombre, sp.apellido
+       FROM users u
+       INNER JOIN student_profiles sp ON sp.user_id = u.id
+       WHERE u.id = ? AND u.role = 'student' AND u.status = 'PENDING'
+       LIMIT 1`,
+      [userId],
+    );
+
+    if (students.length === 0) {
+      return res.status(404).json({ message: 'Estudiante pendiente no encontrado' });
+    }
+
+    const [result] = await pool.execute(
+      `UPDATE users
+       SET status = ?
+       WHERE id = ? AND role = 'student' AND status = 'PENDING'`,
+      [status, userId],
+    );
+
+    if (result.affectedRows !== 1) {
+      return res.status(404).json({ message: 'Estudiante pendiente no encontrado' });
+    }
+
+    const targetStudent = students[0];
+    sendAccountDecisionEmail({
+      to: targetStudent.email,
+      nombre: [targetStudent.nombre, targetStudent.apellido].filter(Boolean).join(' ') || 'Estudiante',
+      role: 'student',
+      status,
+    }).catch((mailError) => {
+      console.error('Error notificando la decisión de aprobación estudiantil:', mailError);
+    });
+
+    return res.json({
+      message: `Estudiante ${status === 'APPROVED' ? 'aprobado' : 'rechazado'} exitosamente`,
+      user: { id: targetStudent.id, email: targetStudent.email, role: 'student', status },
+    });
+  } catch (error) {
+    console.error('Error actualizando estado del estudiante:', error);
+    return res.status(500).json({ message: 'No fue posible actualizar el estado del estudiante' });
   }
 };
 
@@ -316,10 +403,324 @@ const getSubjectsDemandReport = async (_req, res) => {
   }
 };
 
+/**
+ * HU-041: Actualizar información del perfil de un estudiante por el Administrador
+ * PUT /api/admin/users/:id/student-profile
+ * PUT /api/admin/students/:id
+ * Regla de inmutabilidad (PU-11): El correo electrónico no se puede modificar.
+ */
+const updateStudentProfileByAdmin = async (req, res) => {
+  const userId = Number(req.params.id);
+  const {
+    nombre,
+    apellido,
+    carnet,
+    fecha_nacimiento,
+    genero,
+    universidad,
+    carrera,
+    fotografia_url,
+    email,
+  } = req.body || {};
+
+  if (!Number.isInteger(userId) || userId < 1) {
+    return res.status(400).json({ message: 'El identificador de usuario no es válido' });
+  }
+
+  if (!nombre || !apellido || !carnet) {
+    return res.status(400).json({ message: 'Nombre, apellido y carnet son obligatorios' });
+  }
+
+  let conn;
+  try {
+    conn = await pool.getConnection();
+
+    // 1. Verificar existencia del usuario con rol student
+    const [userRows] = await conn.execute(
+      `SELECT u.id, u.email, u.status, sp.id AS profile_id
+         FROM users u
+         LEFT JOIN student_profiles sp ON sp.user_id = u.id
+        WHERE u.id = ? AND u.role = 'student'`,
+      [userId]
+    );
+
+    if (userRows.length === 0) {
+      return res.status(404).json({ message: 'Estudiante no encontrado' });
+    }
+
+    const currentStudent = userRows[0];
+
+    // PU-11: Regla de inmutabilidad estricta del correo electrónico
+    if (
+      email !== undefined &&
+      email !== null &&
+      String(email).trim().toLowerCase() !== String(currentStudent.email).trim().toLowerCase()
+    ) {
+      return res.status(400).json({
+        message: 'El correo electrónico no puede ser modificado por políticas de seguridad e inmutabilidad',
+      });
+    }
+
+    // 2. Verificar que no exista otro estudiante con el mismo carnet
+    const [carnetConflict] = await conn.execute(
+      'SELECT id FROM student_profiles WHERE carnet = ? AND user_id != ?',
+      [String(carnet).trim(), userId]
+    );
+    if (carnetConflict.length > 0) {
+      return res.status(409).json({ message: 'El carnet ya se encuentra registrado por otro estudiante' });
+    }
+
+    const validGenders = new Set(['M', 'F', 'OTHER', 'UNSPECIFIED']);
+    const normalizedGender = validGenders.has(String(genero || '').toUpperCase())
+      ? String(genero).toUpperCase()
+      : 'UNSPECIFIED';
+
+    await conn.execute(
+      `UPDATE student_profiles
+          SET nombre = ?,
+              apellido = ?,
+              carnet = ?,
+              fecha_nacimiento = ?,
+              genero = ?,
+              universidad = ?,
+              carrera = ?,
+              fotografia_url = ?
+        WHERE user_id = ?`,
+      [
+        String(nombre).trim(),
+        String(apellido).trim(),
+        String(carnet).trim(),
+        fecha_nacimiento || null,
+        normalizedGender,
+        universidad ? String(universidad).trim() : null,
+        carrera ? String(carrera).trim() : null,
+        fotografia_url ? String(fotografia_url).trim() : null,
+        userId,
+      ]
+    );
+
+    return res.json({
+      message: 'Perfil de estudiante actualizado exitosamente',
+      student: {
+        userId,
+        email: currentStudent.email,
+        nombre: String(nombre).trim(),
+        apellido: String(apellido).trim(),
+        carnet: String(carnet).trim(),
+        fecha_nacimiento: fecha_nacimiento || null,
+        genero: normalizedGender,
+        universidad: universidad ? String(universidad).trim() : null,
+        carrera: carrera ? String(carrera).trim() : null,
+        fotografia_url: fotografia_url ? String(fotografia_url).trim() : null,
+      },
+    });
+  } catch (error) {
+    console.error('Error actualizando perfil de estudiante:', error);
+    return res.status(500).json({ message: 'No fue posible actualizar el perfil del estudiante' });
+  } finally {
+    if (conn) conn.release();
+  }
+};
+
+/**
+ * HU-043: Listar denuncias disciplinarias contra tutores
+ * GET /api/admin/reports/tutors
+ */
+const listTutorIncidents = async (req, res) => {
+  const statusFilter = req.query.status ? String(req.query.status).toUpperCase() : null;
+
+  try {
+    let query = `
+      SELECT 
+        ir.id,
+        ir.session_id AS sessionId,
+        s.session_date AS sessionDate,
+        s.start_time AS startTime,
+        s.end_time AS endTime,
+        sub.nombre AS materia,
+        ir.reporter_id AS reporterUserId,
+        sp.id AS studentProfileId,
+        sp.nombre AS reporterNombre,
+        sp.apellido AS reporterApellido,
+        sp.carnet AS reporterCarnet,
+        u_student.email AS reporterEmail,
+        ir.reported_user_id AS reportedUserId,
+        tp.id AS tutorProfileId,
+        tp.nombre AS reportedNombre,
+        tp.apellido AS reportedApellido,
+        tp.carnet AS reportedCarnet,
+        tp.especialidad AS reportedEspecialidad,
+        u_tutor.email AS reportedEmail,
+        u_tutor.status AS reportedUserStatus,
+        ir.category,
+        ir.reason,
+        ir.status,
+        ir.admin_notes AS adminNotes,
+        ir.created_at AS createdAt,
+        ir.resolved_at AS resolvedAt
+      FROM incident_reports ir
+      JOIN sessions s ON s.id = ir.session_id
+      LEFT JOIN subjects sub ON sub.id = s.subject_id
+      JOIN users u_student ON u_student.id = ir.reporter_id
+      LEFT JOIN student_profiles sp ON sp.user_id = u_student.id
+      JOIN users u_tutor ON u_tutor.id = ir.reported_user_id
+      LEFT JOIN tutor_profiles tp ON tp.user_id = u_tutor.id
+      WHERE ir.reporter_role = 'student'
+    `;
+
+    const params = [];
+
+    if (statusFilter && ['PENDING', 'RESOLVED_BANNED', 'DISMISSED'].includes(statusFilter)) {
+      query += ` AND ir.status = ?`;
+      params.push(statusFilter);
+    }
+
+    query += ` ORDER BY CASE WHEN ir.status = 'PENDING' THEN 1 ELSE 2 END, ir.created_at DESC, ir.id DESC`;
+
+    const [rows] = await pool.execute(query, params);
+
+    const formatted = rows.map((row) => ({
+      id: row.id,
+      sessionId: row.sessionId,
+      sessionDate: row.sessionDate,
+      startTime: row.startTime,
+      endTime: row.endTime,
+      materia: row.materia || 'General',
+      reporterUserId: row.reporterUserId,
+      reporterNombreCompleto: [row.reporterNombre, row.reporterApellido].filter(Boolean).join(' ') || 'Estudiante',
+      reporterCarnet: row.reporterCarnet || '—',
+      reporterEmail: row.reporterEmail,
+      reportedUserId: row.reportedUserId,
+      reportedNombreCompleto: [row.reportedNombre, row.reportedApellido].filter(Boolean).join(' ') || 'Tutor',
+      reportedCarnet: row.reportedCarnet || '—',
+      reportedEspecialidad: row.reportedEspecialidad || 'General',
+      reportedUserStatus: row.reportedUserStatus,
+      category: row.category,
+      reason: row.reason,
+      status: row.status,
+      adminNotes: row.adminNotes,
+      createdAt: row.createdAt,
+      resolvedAt: row.resolvedAt,
+    }));
+
+    return res.json({ reports: formatted });
+  } catch (error) {
+    console.error('Error listando denuncias contra tutores:', error);
+    return res.status(500).json({ message: 'No fue posible cargar las denuncias' });
+  }
+};
+
+/**
+ * HU-043: Resolver denuncia contra tutor (desestimar o sancionar con baja)
+ * PATCH /api/admin/reports/:id/resolve
+ */
+const resolveTutorIncident = async (req, res) => {
+  const incidentId = Number(req.params.id);
+  const validation = validateResolutionPayload(req.body);
+
+  if (!Number.isInteger(incidentId) || incidentId < 1) {
+    return res.status(400).json({ message: 'El identificador de la denuncia no es válido' });
+  }
+
+  if (!validation.valid) {
+    return res.status(400).json({ message: validation.message });
+  }
+
+  const { action, notes } = validation;
+  const adminId = req.user?.id || null;
+
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    await conn.beginTransaction();
+
+    const [incidentRows] = await conn.execute(
+      `SELECT ir.id, ir.status, ir.reporter_role, ir.reported_user_id,
+              u.email AS tutor_email, u.status AS tutor_status,
+              tp.nombre AS tutor_nombre, tp.apellido AS tutor_apellido
+         FROM incident_reports ir
+         JOIN users u ON u.id = ir.reported_user_id
+         LEFT JOIN tutor_profiles tp ON tp.user_id = u.id
+        WHERE ir.id = ? FOR UPDATE`,
+      [incidentId]
+    );
+
+    if (incidentRows.length === 0) {
+      await conn.rollback();
+      return res.status(404).json({ message: 'Denuncia no encontrada' });
+    }
+
+    const incident = incidentRows[0];
+
+    if (incident.status !== 'PENDING') {
+      await conn.rollback();
+      return res.status(409).json({ message: 'Esta denuncia ya ha sido resuelta previamente' });
+    }
+
+    const newStatus = action === 'BAN' ? 'RESOLVED_BANNED' : 'DISMISSED';
+
+    await conn.execute(
+      `UPDATE incident_reports
+          SET status = ?,
+              admin_notes = ?,
+              resolved_by = ?,
+              resolved_at = CURRENT_TIMESTAMP
+        WHERE id = ?`,
+      [newStatus, notes, adminId, incidentId]
+    );
+
+    if (action === 'BAN') {
+      await conn.execute(
+        `UPDATE users
+            SET status = 'DISABLED'
+          WHERE id = ?`,
+        [incident.reported_user_id]
+      );
+
+      const tutorNombreCompleto = [incident.tutor_nombre, incident.tutor_apellido].filter(Boolean).join(' ') || 'Tutor';
+      sendAccountDecisionEmail({
+        to: incident.tutor_email,
+        nombre: tutorNombreCompleto,
+        role: 'tutor',
+        status: 'DISABLED',
+        reason: notes || 'Baja disciplinaria derivada de denuncia resuelta por la administración.',
+      }).catch((mailErr) => {
+        console.error('Error enviando notificación de baja disciplinaria:', mailErr);
+      });
+    }
+
+    await conn.commit();
+
+    return res.json({
+      message: action === 'BAN' 
+        ? 'Denuncia resuelta y tutor dado de baja exitosamente' 
+        : 'Denuncia desestimada correctamente',
+      incident: {
+        id: incidentId,
+        status: newStatus,
+        adminNotes: notes,
+        reportedUserId: incident.reported_user_id,
+        tutorStatus: action === 'BAN' ? 'DISABLED' : incident.tutor_status,
+      },
+    });
+  } catch (error) {
+    if (conn) await conn.rollback();
+    console.error('Error resolviendo denuncia de tutor:', error);
+    return res.status(500).json({ message: 'No fue posible resolver la denuncia' });
+  } finally {
+    if (conn) conn.release();
+  }
+};
+
 module.exports = {
   listUsers,
+  listPendingStudents,
+  updateStudentStatus,
   updateUserStatus,
   disableUser,
   getTopTutorsReport,
   getSubjectsDemandReport,
+  updateStudentProfileByAdmin,
+  listTutorIncidents,
+  resolveTutorIncident,
 };
