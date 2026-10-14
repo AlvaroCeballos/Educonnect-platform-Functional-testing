@@ -19,12 +19,6 @@ const createTransporter = () => {
 
 /**
  * Envía correo de notificación de decisión de cuenta (HU-004 / HU-005)
- * @param {Object} params
- * @param {string} params.to - Correo del destinatario
- * @param {string} params.nombre - Nombre del usuario
- * @param {string} params.role - 'student' o 'tutor'
- * @param {string} params.status - 'APPROVED' o 'REJECTED'
- * @param {string} [params.reason] - Motivo opcional
  */
 const sendAccountDecisionEmail = async ({ to, nombre, role, status, reason = '' }) => {
   const roleLabel = role === 'tutor' ? 'Tutor' : 'Estudiante';
@@ -96,7 +90,7 @@ const sendAccountDecisionEmail = async ({ to, nombre, role, status, reason = '' 
   const transporter = createTransporter();
 
   if (!transporter) {
-    console.log(`[SIMULACIÓN CORREO] Para: ${to} | Asunto: ${subject} | Estado: ${status} (Configure SMTP_USER y SMTP_PASS en .env para envío real por Mailtrap)`);
+    console.log(`[SIMULACIÓN CORREO] Para: ${to} | Asunto: ${subject} | Estado: ${status}`);
     return { success: true, simulated: true };
   }
 
@@ -182,7 +176,6 @@ const sendCancellationEmail = async ({ to, studentNombre, tutorNombre, materia, 
       subject,
       html: htmlContent,
     });
-    // T-018.3: Registro y manejo de errores visible para validar la salida en Mailtrap
     console.log(`[TEST T-018.3] Correo de cancelación exitoso | Destinatario: ${to} | ID: ${info.messageId}`);
     return { success: true, messageId: info.messageId };
   } catch (error) {
@@ -191,7 +184,91 @@ const sendCancellationEmail = async ({ to, studentNombre, tutorNombre, materia, 
   }
 };
 
+/**
+ * HU-030: Envía correo de bienvenida con el Token de Verificación para el primer login
+ */
+const sendVerificationTokenEmail = async ({ to, nombre, role = 'student', token }) => {
+  const roleLabel = role === 'tutor' ? 'Tutor' : 'Estudiante';
+  const subject = 'Bienvenido a EduConnect — Tu Token de Verificación de Correo';
+  const from = process.env.SMTP_FROM || 'noreply@educonnect.local';
+
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+      <meta charset="UTF-8" />
+      <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f6f8; color: #1e293b; }
+        .container { max-width: 600px; margin: 30px auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: 1px solid #e2e8f0; }
+        .header { background-color: #0f766e; padding: 32px 24px; text-align: center; color: #ffffff; }
+        .logo-box { width: 56px; height: 56px; background-color: #14b8a6; border-radius: 14px; display: inline-block; text-align: center; font-size: 28px; font-weight: 900; color: #ffffff; margin-bottom: 12px; line-height: 56px; }
+        .header h1 { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.5px; }
+        .content { padding: 32px 28px; line-height: 1.6; }
+        .token-box { background-color: #f0fdf4; border: 2px dashed #0f766e; border-radius: 12px; padding: 20px; text-align: center; margin: 24px 0; }
+        .token-code { font-family: monospace; font-size: 32px; font-weight: 800; letter-spacing: 6px; color: #0f766e; margin: 8px 0; }
+        .steps { background-color: #f8fafc; border-left: 4px solid #0f766e; padding: 16px 20px; border-radius: 0 8px 8px 0; font-size: 14px; }
+        .footer { background-color: #f8fafc; padding: 20px; text-align: center; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <div class="logo-box">E</div>
+          <h1>EduConnect</h1>
+          <p style="margin: 6px 0 0; font-size: 13px; opacity: 0.9;">Plataforma de Gestión de Tutorías Académicas</p>
+        </div>
+        <div class="content">
+          <p>¡Hola <strong>${nombre || 'Usuario'}</strong>! Te damos una cordial bienvenida a <strong>EduConnect</strong>.</p>
+          <p>Hemos recibido exitosamente tu solicitud de registro como <strong>${roleLabel}</strong>. Para garantizar la seguridad de la plataforma y confirmar la validez de tu correo electrónico, hemos generado tu código único de verificación:</p>
+          
+          <div class="token-box">
+            <div style="font-size: 12px; text-transform: uppercase; font-weight: 700; color: #64748b;">Token de Verificación</div>
+            <div class="token-code">${token}</div>
+            <div style="font-size: 12px; color: #065f46;">Guarda este código para tu primer inicio de sesión</div>
+          </div>
+
+          <div class="steps">
+            <strong>Instrucciones para ingresar:</strong>
+            <ol style="margin: 8px 0 0; padding-left: 18px;">
+              <li>Espera la notificación de aprobación de tu cuenta por parte del Administrador.</li>
+              <li>Dirígete a la pantalla de Inicio de Sesión de EduConnect.</li>
+              <li>En tu <strong>primer inicio de sesión</strong>, ingresa tu correo, tu contraseña y el <strong>Token de Verificación (${token})</strong> mostrado arriba.</li>
+              <li>En tus siguientes accesos únicamente necesitarás tu correo y contraseña.</li>
+            </ol>
+          </div>
+        </div>
+        <div class="footer">
+          Remitente oficial: EduConnect · Este mensaje fue enviado a ${to} para validar tu registro.
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  const transporter = createTransporter();
+
+  if (!transporter) {
+    console.log(`[SIMULACIÓN TOKEN CORREO] Para: ${to} | Token: ${token}`);
+    return { success: true, simulated: true, token };
+  }
+
+  try {
+    const info = await transporter.sendMail({
+      from: `"EduConnect" <${from}>`,
+      to,
+      subject,
+      html: htmlContent,
+    });
+    console.log(`[CORREO TOKEN ENVIADO] ID: ${info.messageId} | Para: ${to}`);
+    return { success: true, messageId: info.messageId };
+  } catch (error) {
+    console.error(`[ERROR CORREO TOKEN] Fallo al enviar a ${to}:`, error.message);
+    return { success: false, error: error.message };
+  }
+};
+
 module.exports = {
   sendAccountDecisionEmail,
   sendCancellationEmail,
+  sendVerificationTokenEmail,
 };
