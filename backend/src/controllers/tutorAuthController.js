@@ -70,28 +70,43 @@ const validateTutorPayload = (payload) => {
   return { valid: true, tutor };
 };
 
-const removeUploadedPhoto = async (file) => {
+const removeUploadedFile = async (file) => {
   if (!file?.path) return;
   try {
     await fs.unlink(file.path);
   } catch (error) {
-    if (error.code !== 'ENOENT') console.error('No se pudo eliminar la fotografía:', error);
+    if (error.code !== 'ENOENT') {
+      console.error('No se pudo eliminar un archivo de registro:', error);
+    }
   }
+};
+
+const removeTutorUploads = async (req) => {
+  await Promise.all([
+    removeUploadedFile(req.file),
+    removeUploadedFile(req.tutorPhoto),
+  ]);
 };
 
 const registerTutor = async (req, res) => {
   if (!req.file) {
+    await removeUploadedFile(req.tutorPhoto);
+    return res.status(400).json({ message: 'El CV en formato PDF es obligatorio' });
+  }
+
+  if (!req.tutorPhoto) {
+    await removeUploadedFile(req.file);
     return res.status(400).json({ message: 'La fotografía del tutor es obligatoria' });
   }
 
   const validation = validateTutorPayload(req.body);
   if (!validation.valid) {
-    await removeUploadedPhoto(req.file);
+    await removeTutorUploads(req);
     return res.status(400).json({ message: validation.message });
   }
 
   const tutor = validation.tutor;
-  const fotografiaUrl = `/uploads/tutors/${req.file.filename}`;
+  const fotografiaUrl = `/uploads/tutors/${req.tutorPhoto.filename}`;
   let connection;
 
   try {
@@ -108,24 +123,24 @@ const registerTutor = async (req, res) => {
 
     if (duplicates[0].email_exists) {
       await connection.rollback();
-      await removeUploadedPhoto(req.file);
+      await removeTutorUploads(req);
       return res.status(409).json({ message: 'El correo ya está registrado' });
     }
     if (duplicates[0].carnet_exists) {
       await connection.rollback();
-      await removeUploadedPhoto(req.file);
+      await removeTutorUploads(req);
       return res.status(409).json({ message: 'El carnet ya está registrado' });
     }
     if (duplicates[0].identification_exists) {
       await connection.rollback();
-      await removeUploadedPhoto(req.file);
+      await removeTutorUploads(req);
       return res.status(409).json({ message: 'La identificación ya está registrada' });
     }
 
     const passwordHash = await hashPassword(tutor.password);
     const [userResult] = await connection.execute(
-      'INSERT INTO users (email, password_hash, role, status) VALUES (?, ?, ?, ?)',
-      [tutor.email, passwordHash, 'tutor', 'PENDING'],
+      'INSERT INTO users (email, password_hash, role, status, cv_pdf_url) VALUES (?, ?, ?, ?, ?)',
+      [tutor.email, passwordHash, 'tutor', 'PENDING', req.file.filename],
     );
 
     const [tutorProfileResult] = await connection.execute(
@@ -150,8 +165,6 @@ const registerTutor = async (req, res) => {
       ],
     );
 
-    // La especialidad declarada durante el registro es la primera materia
-    // asociada al tutor. HU-008 podrá agregar materias adicionales después.
     const [subjectResult] = await connection.execute(
       `INSERT INTO subjects (nombre) VALUES (?)
        ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id)`,
@@ -170,7 +183,7 @@ const registerTutor = async (req, res) => {
     });
   } catch (error) {
     if (connection) await connection.rollback();
-    await removeUploadedPhoto(req.file);
+    await removeTutorUploads(req);
     console.error('Error en registro de tutor:', error);
     return res.status(500).json({ message: 'Error interno del servidor' });
   } finally {

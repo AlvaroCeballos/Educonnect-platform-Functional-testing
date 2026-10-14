@@ -714,3 +714,73 @@ Como evidencia del proceso de estimación grupal, se utilizó una matriz de vota
 
 - [HU-003] Autenticación de administrador en dos pasos
 - [HU-012] Programar sesión de tutoría
+
+---
+
+# 3. Fase 2 — Paquete F: Feedback y CI/CD
+
+> Esta sección incorpora la distribución actualizada de `DistribucionTareas_Fase2 (1).md`. Para el Sprint 1 de Fase 2, Isai es responsable únicamente de HU-035 y HU-049. Las historias HU-036, HU-037 y HU-038 pertenecen al Sprint 2 y no forman parte de esta entrega.
+
+## 🟥 [HU-035] Calificación de tutores por estudiantes
+
+**Responsable:** Isai (Paquete F)
+
+**Como** estudiante que completó una sesión de tutoría
+
+**Quiero** calificar al tutor con una puntuación de 0 a 5 estrellas y un comentario opcional
+
+**Para** registrar mi retroalimentación sobre la atención recibida
+
+### Criterios de Aceptación
+
+- El formulario se muestra únicamente para sesiones del estudiante con estado `ATTENDED`.
+- La calificación debe ser un número entero entre 0 y 5, inclusive.
+- El sistema rechaza sesiones pendientes, canceladas, inexistentes o pertenecientes a otro estudiante.
+- Cada sesión puede tener como máximo una calificación.
+- La calificación y el comentario opcional se persisten en `reviews` y pueden consultarse desde el historial del estudiante.
+- Después de registrar la calificación, el historial muestra la valoración guardada y evita el registro duplicado.
+
+### Tareas técnicas
+
+- **T-035.1:** Formulario de calificación del tutor en el historial de sesiones atendidas.
+- **T-035.2:** Validación de pertenencia, estado `ATTENDED` y rango de estrellas.
+- **T-035.3:** Persistencia y consulta de calificaciones mediante API REST.
+
+### Tamaño: M
+
+### Dependencias
+
+- Sesiones existentes en estado `ATTENDED`, generadas por el flujo de atención de Nicole.
+
+---
+
+## 🟥 [HU-049] Pipeline CI/CD de Build y Test
+
+**Responsable:** Isai (Paquete F)
+
+**Como** equipo de desarrollo
+
+**Quiero** automatizar la construcción y las pruebas del backend en GitHub Actions
+
+**Para** detectar regresiones antes de integrar cambios en `main`
+
+### Criterios de Aceptación
+
+- El workflow `.github/workflows/backend-ci-cd.yml` se ejecuta al hacer `push` a `main`.
+- La etapa `Build` instala dependencias, construye la imagen Docker del backend y compila el frontend.
+- La etapa `Test` depende de `Build` y ejecuta `npm test` en el backend.
+- Un fallo en Build impide ejecutar Test.
+- No se almacenan credenciales sensibles en el repositorio.
+- La etapa Deploy queda planificada para el Sprint 2.
+
+### Tareas técnicas
+
+- **T-049.1:** Configurar el workflow y el job de Build.
+- **T-049.2:** Automatizar el job de pruebas unitarias.
+- **T-049.3:** Documentar la etapa Deploy como pendiente de Sprint 2.
+
+### Tamaño: M
+
+### Dependencias
+
+- Repositorio con `backend/package-lock.json`, `frontend/package-lock.json` y Dockerfile del backend.

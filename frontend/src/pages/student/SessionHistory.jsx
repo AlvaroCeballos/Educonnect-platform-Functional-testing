@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import Swal from 'sweetalert2';
 import api from '../../utils/api';
 
 const statusLabels = {
@@ -10,16 +11,54 @@ const statusLabels = {
 
 export default function SessionHistory() {
   const [sessions, setSessions] = useState([]);
+  const [ratings, setRatings] = useState({});
+  const [drafts, setDrafts] = useState({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.get('/sessions/me').then(({ data }) => {
-      const historial = (data.sessions || [])
+    Promise.all([api.get('/sessions/me'), api.get('/ratings/me')]).then(([sessionsResponse, ratingsResponse]) => {
+      const historial = (sessionsResponse.data.sessions || [])
         .filter((session) => session.status !== 'PENDING')
         .sort((a, b) => `${b.sessionDate}${b.startTime}`.localeCompare(`${a.sessionDate}${a.startTime}`));
+      const ratingMap = Object.fromEntries(
+        (ratingsResponse.data.ratings || []).map((rating) => [rating.sessionId, rating]),
+      );
       setSessions(historial);
+      setRatings(ratingMap);
     }).finally(() => setLoading(false));
   }, []);
+
+  const updateDraft = (sessionId, changes) => {
+    setDrafts((current) => ({
+      ...current,
+      [sessionId]: { rating: 0, comment: '', ...current[sessionId], ...changes },
+    }));
+  };
+
+  const submitRating = async (event, session) => {
+    event.preventDefault();
+    const draft = drafts[session.id] || { rating: 0, comment: '' };
+    try {
+      const { data } = await api.post(`/ratings/sessions/${session.id}`, {
+        rating: draft.rating,
+        comment: draft.comment.trim() || null,
+      });
+      setRatings((current) => ({ ...current, [session.id]: data.rating }));
+      setDrafts((current) => {
+        const next = { ...current };
+        delete next[session.id];
+        return next;
+      });
+      await Swal.fire({ icon: 'success', title: 'Calificación registrada', confirmButtonColor: '#167963' });
+    } catch (error) {
+      await Swal.fire({
+        icon: 'error',
+        title: 'No se pudo registrar la calificación',
+        text: error.response?.data?.message || 'Intenta de nuevo.',
+        confirmButtonColor: '#167963',
+      });
+    }
+  };
 
   return <main className="single-panel"><section className="form-panel schedule-panel">
     <div style={{ marginBottom: '14px' }}>
@@ -42,6 +81,48 @@ export default function SessionHistory() {
             )}
             {session.status === 'ATTENDED' && session.recommendations && (
               <p><strong>Recomendaciones:</strong> {session.recommendations}</p>
+            )}
+            {session.status === 'ATTENDED' && !ratings[session.id] && (
+              <form className="rating-panel" onSubmit={(event) => submitRating(event, session)}>
+                <strong>Califica al tutor</strong>
+                <div className="star-rating" aria-label="Selecciona una calificación de 0 a 5 estrellas">
+                  {[1, 2, 3, 4, 5].map((star) => {
+                    const selectedRating = drafts[session.id]?.rating ?? 0;
+                    return (
+                      <button
+                        key={star}
+                        className={`star-button${selectedRating >= star ? ' selected' : ''}`}
+                        type="button"
+                        aria-label={`${star} estrellas`}
+                        aria-pressed={selectedRating === star}
+                        onClick={() => updateDraft(session.id, { rating: star })}
+                      >
+                        {selectedRating >= star ? '★' : '☆'}
+                      </button>
+                    );
+                  })}
+                  <button
+                    className={`zero-rating${(drafts[session.id]?.rating ?? 0) === 0 ? ' selected' : ''}`}
+                    type="button"
+                    onClick={() => updateDraft(session.id, { rating: 0 })}
+                  >
+                    0 estrellas
+                  </button>
+                </div>
+                <textarea
+                  className="rating-comment"
+                  maxLength="1000"
+                  placeholder="Comentario opcional"
+                  value={drafts[session.id]?.comment ?? ''}
+                  onChange={(event) => updateDraft(session.id, { comment: event.target.value })}
+                />
+                <button className="submit-button rating-submit" type="submit">Enviar calificación</button>
+              </form>
+            )}
+            {session.status === 'ATTENDED' && ratings[session.id] && (
+              <p className="rating-summary">
+                <strong>Tu calificación:</strong> {'★'.repeat(ratings[session.id].rating)}{'☆'.repeat(5 - ratings[session.id].rating)}
+              </p>
             )}
           </div>
           <div className="session-actions">
