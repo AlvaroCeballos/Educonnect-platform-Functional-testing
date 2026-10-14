@@ -10,8 +10,8 @@ export default function TutorSessions() {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeSession, setActiveSession] = useState(null);
-  const [summary, setSummary] = useState('');
-  const [recommendations, setRecommendations] = useState('');
+  const [dificultadesDetectadas, setDificultadesDetectadas] = useState('');
+  const [recursos, setRecursos] = useState([]);
   const [submitError, setSubmitError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -39,8 +39,8 @@ export default function TutorSessions() {
 
   const openModal = (session) => {
     setActiveSession(session);
-    setSummary('');
-    setRecommendations('');
+    setDificultadesDetectadas('');
+    setRecursos([]);
     setSubmitError('');
     setIsModalOpen(true);
   };
@@ -53,21 +53,26 @@ export default function TutorSessions() {
 
   const handleAttend = async (e) => {
     e.preventDefault();
-    if (!summary.trim()) {
-        setSubmitError('El resumen es obligatorio para poder cerrar la sesión.');
-        return;
+    if (!dificultadesDetectadas.trim()) {
+      setSubmitError('Las dificultades identificadas son obligatorias.');
+      return;
     }
-    
+    if (recursos.length === 0) {
+      setSubmitError('Agregá al menos un recurso recomendado antes de guardar el plan.');
+      return;
+    }
+
     setSubmitting(true);
     setSubmitError('');
-    
+
     try {
-      await api.patch(`/sessions/${activeSession.id}/attend`, {
-        summary,
-        recommendations
+      await api.post('/study-plans', {
+        session_id: activeSession.id,
+        dificultades_detectadas: dificultadesDetectadas,
+        recursos,
       });
       setIsModalOpen(false);
-      fetchSessions(); 
+      fetchSessions();
     } catch (err) {
       setSubmitError(err.response?.data?.message || 'Error al procesar la solicitud.');
     } finally {
@@ -225,46 +230,46 @@ export default function TutorSessions() {
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-slate-700 mb-2">Resumen de la sesión <span className="text-red-500">*</span></label>
+                <label className="block text-sm font-bold text-slate-700 mb-2">Dificultades Identificadas <span className="text-red-500">*</span></label>
                 <textarea
-                  value={summary}
-                  onChange={(e) => setSummary(e.target.value)}
+                  value={dificultadesDetectadas}
+                  onChange={(e) => setDificultadesDetectadas(e.target.value)}
                   className="w-full border border-slate-300 p-3 rounded-lg focus:ring-2 focus:ring-emerald-600 outline-none resize-none text-sm"
                   rows="4"
-                  placeholder="Describe detalladamente los temas tratados, ejercicios resueltos y progreso..."
+                  placeholder="Describe los temas donde el estudiante presentó mayor dificultad (ej. Derivadas parciales, Sintaxis de Java, Redacción académica)..."
                 ></textarea>
               </div>
-              
+
               <div>
-                <label className="block text-sm font-bold text-slate-700 mb-2">Recomendaciones <span className="text-slate-400 font-normal">(Opcional)</span></label>
-                <textarea
-                  value={recommendations}
-                  onChange={(e) => setRecommendations(e.target.value)}
-                  className="w-full border border-slate-300 p-3 rounded-lg focus:ring-2 focus:ring-emerald-600 outline-none resize-none text-sm"
-                  rows="3"
-                  placeholder="Sugerencias de estudio, bibliografía o áreas a reforzar..."
-                ></textarea>
+                <label className="block text-sm font-bold text-slate-700 mb-2">Recursos Recomendados <span className="text-red-500">*</span></label>
+                <div className="border border-dashed border-slate-300 rounded-lg p-6 text-center bg-slate-50">
+                  <p className="text-sm text-slate-500 italic">
+                    {recursos.length === 0
+                      ? 'Agregá al menos un recurso (próximamente podrás agregarlos desde aquí).'
+                      : `${recursos.length} recurso(s) agregados`}
+                  </p>
+                </div>
               </div>
-              
+
               {submitError && (
                 <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-2">
                   {submitError}
                 </div>
               )}
-              
+
               <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
-                <button 
-                  type="button" 
-                  onClick={() => setIsModalOpen(false)} 
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
                   disabled={submitting}
                   className="px-5 py-2 border border-slate-300 text-slate-700 font-semibold rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50"
                 >
                   Cancelar
                 </button>
-                <button 
-                  type="submit" 
-                  disabled={submitting}
-                  className="px-5 py-2 bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700 transition-colors shadow-sm flex items-center gap-2 disabled:opacity-50"
+                <button
+                  type="submit"
+                  disabled={submitting || recursos.length === 0 || !dificultadesDetectadas.trim()}
+                  className="px-5 py-2 bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700 transition-colors shadow-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {submitting ? 'Guardando...' : 'Guardar y Atender'}
                 </button>
