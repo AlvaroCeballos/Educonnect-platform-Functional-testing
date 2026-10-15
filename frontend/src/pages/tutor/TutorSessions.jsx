@@ -72,6 +72,7 @@ export default function TutorSessions() {
         recursos,
       });
       setIsModalOpen(false);
+      setActiveTab('HISTORY');
       fetchSessions();
     } catch (err) {
       setSubmitError(err.response?.data?.message || 'Error al procesar la solicitud.');
@@ -212,21 +213,27 @@ export default function TutorSessions() {
       {/* Modal de Atender */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden zoom-in-95">
-            
-            <div className="px-6 py-4 bg-slate-900 text-white flex justify-between items-center">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col zoom-in-95">
+
+            <div className="px-6 py-4 bg-slate-900 text-white flex justify-between items-center flex-shrink-0 rounded-t-2xl">
               <div>
                 <span className="text-xs uppercase tracking-wider text-emerald-400 font-semibold block">Cierre de sesión</span>
                 <h3 className="font-bold text-lg">{activeSession?.materia}</h3>
               </div>
               <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-white text-xl">✕</button>
             </div>
-            
-            <form onSubmit={handleAttend} className="p-6 space-y-5">
-              <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 mb-4">
-                 <p className="text-sm text-slate-600">
-                   Estudiante: <strong className="text-slate-900">{activeSession?.studentNombre} {activeSession?.studentApellido}</strong>
-                 </p>
+
+            <form onSubmit={handleAttend} className="p-6 space-y-5 overflow-y-auto flex-1">
+              <div className="flex items-center gap-3 bg-gradient-to-r from-slate-50 to-slate-100 border border-slate-200 rounded-xl px-4 py-3 mb-4">
+                <div className="w-10 h-10 rounded-full bg-slate-800 text-white flex items-center justify-center font-bold text-sm flex-shrink-0">
+                  {`${activeSession?.studentNombre?.[0] ?? ''}${activeSession?.studentApellido?.[0] ?? ''}`.toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs uppercase tracking-wider text-slate-500 font-semibold">Estudiante</p>
+                  <p className="text-sm font-bold text-slate-900 truncate">
+                    {activeSession?.studentNombre} {activeSession?.studentApellido}
+                  </p>
+                </div>
               </div>
 
               <div>
@@ -241,14 +248,91 @@ export default function TutorSessions() {
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-slate-700 mb-2">Recursos Recomendados <span className="text-red-500">*</span></label>
-                <div className="border border-dashed border-slate-300 rounded-lg p-6 text-center bg-slate-50">
-                  <p className="text-sm text-slate-500 italic">
-                    {recursos.length === 0
-                      ? 'Agregá al menos un recurso (próximamente podrás agregarlos desde aquí).'
-                      : `${recursos.length} recurso(s) agregados`}
-                  </p>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-bold text-slate-700">Recursos Recomendados <span className="text-red-500">*</span></label>
+                  <button
+                    type="button"
+                    onClick={() => setRecursos([...recursos, { nombre_recurso: '', tipo_recurso: 'Texto', descripcion_uso: '' }])}
+                    className="text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-1.5 rounded-lg transition-colors"
+                  >
+                    + Agregar recurso
+                  </button>
                 </div>
+
+                {recursos.length === 0 ? (
+                  <div className="border border-dashed border-slate-300 rounded-lg p-6 text-center bg-slate-50">
+                    <p className="text-sm text-slate-500 italic">
+                      Agregá al menos un recurso recomendado para poder guardar el plan.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {recursos.map((recurso, idx) => (
+                      <div key={idx} className="border border-slate-200 bg-white rounded-lg p-4 relative">
+                        <div className="flex items-start justify-between mb-3">
+                          <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Recurso {idx + 1}</span>
+                          <button
+                            type="button"
+                            onClick={() => setRecursos(recursos.filter((_, i) => i !== idx))}
+                            className="text-xs font-bold text-red-600 hover:text-red-800 hover:bg-red-50 px-2 py-1 rounded transition-colors"
+                            aria-label={`Quitar recurso ${idx + 1}`}
+                          >
+                            ✕ Quitar
+                          </button>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+                          <div className="md:col-span-2">
+                            <label className="block text-xs font-semibold text-slate-600 mb-1">Nombre <span className="text-red-500">*</span></label>
+                            <input
+                              type="text"
+                              value={recurso.nombre_recurso}
+                              onChange={(e) => {
+                                const next = [...recursos];
+                                next[idx] = { ...next[idx], nombre_recurso: e.target.value };
+                                setRecursos(next);
+                              }}
+                              placeholder="Ej. Cálculo de Stewart - Cap. 14"
+                              className="w-full border border-slate-300 p-2 rounded-md text-sm focus:ring-2 focus:ring-emerald-600 outline-none"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-semibold text-slate-600 mb-1">Tipo <span className="text-red-500">*</span></label>
+                            <select
+                              value={recurso.tipo_recurso}
+                              onChange={(e) => {
+                                const next = [...recursos];
+                                next[idx] = { ...next[idx], tipo_recurso: e.target.value };
+                                setRecursos(next);
+                              }}
+                              className="w-full border border-slate-300 p-2 rounded-md text-sm bg-white focus:ring-2 focus:ring-emerald-600 outline-none"
+                            >
+                              <option value="Texto">Texto</option>
+                              <option value="Video">Video</option>
+                              <option value="PDF">PDF</option>
+                              <option value="Enlace">Enlace</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-semibold text-slate-600 mb-1">Descripción de uso <span className="text-red-500">*</span></label>
+                          <textarea
+                            value={recurso.descripcion_uso}
+                            onChange={(e) => {
+                              const next = [...recursos];
+                              next[idx] = { ...next[idx], descripcion_uso: e.target.value };
+                              setRecursos(next);
+                            }}
+                            placeholder='Ej. "Leer secciones 14.1 a 14.3", "Ver minuto 2:30 a 8:15"'
+                            rows="2"
+                            className="w-full border border-slate-300 p-2 rounded-md text-sm resize-none focus:ring-2 focus:ring-emerald-600 outline-none"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {submitError && (
@@ -268,7 +352,12 @@ export default function TutorSessions() {
                 </button>
                 <button
                   type="submit"
-                  disabled={submitting || recursos.length === 0 || !dificultadesDetectadas.trim()}
+                  disabled={
+                    submitting
+                    || recursos.length === 0
+                    || !dificultadesDetectadas.trim()
+                    || recursos.some((r) => !r.nombre_recurso.trim() || !r.descripcion_uso.trim())
+                  }
                   className="px-5 py-2 bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700 transition-colors shadow-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {submitting ? 'Guardando...' : 'Guardar y Atender'}
