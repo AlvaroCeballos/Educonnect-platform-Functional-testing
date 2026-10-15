@@ -188,21 +188,10 @@ export default function TutorSessions() {
                 )}
               </div>
 
-              {session.status === 'ATTENDED' && session.summary && (
-                <div className="mt-5 pt-4 border-t border-slate-100 bg-slate-50 p-4 rounded-xl">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Detalles de atención</h4>
-                  
-                  <div className="mb-3">
-                    <p className="text-sm font-bold text-slate-700 mb-1">Resumen:</p>
-                    <p className="text-sm text-slate-600 whitespace-pre-wrap">{session.summary}</p>
-                  </div>
-                  
-                  {session.recommendations && (
-                    <div>
-                      <p className="text-sm font-bold text-slate-700 mb-1">Recomendaciones:</p>
-                      <p className="text-sm text-slate-600 whitespace-pre-wrap">{session.recommendations}</p>
-                    </div>
-                  )}
+              {session.status === 'ATTENDED' && (
+                <div className="mt-5 pt-4 border-t border-slate-100 flex items-center gap-2 text-sm text-emerald-700">
+                  <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 font-bold text-xs">✓</span>
+                  <span>Plan de estudio registrado para esta sesión.</span>
                 </div>
               )}
             </div>
