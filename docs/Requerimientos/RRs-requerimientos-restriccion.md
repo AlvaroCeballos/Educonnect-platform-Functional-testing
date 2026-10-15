@@ -150,3 +150,33 @@
 
 ---
 
+### RR-013: Email no es editable
+**Descripción:** El correo electrónico no puede ser modificado en la actualización de perfil.
+
+**Restricción:**
+- `PUT /api/students/me/profile` ignora cualquier intento de cambiar `email`.
+- Solo nombre, apellido, carnet y contraseña son editables.
+
+**Aplica a:** HU-022.
+
+---
+
+### RR-014: Carnet único al actualizar
+**Descripción:** Al actualizar carnet, debe validarse que no esté duplicado.
+
+**Restricción:**
+- `PUT /api/students/me/profile` valida constraint `UNIQUE` en `student_profiles.carnet`.
+- Si carnet ya existe, rechaza con HTTP 409.
+
+**Aplica a:** HU-022 T-022.3.
+
+---
+
+### RR-015: Cambio de contraseña requiere mismos criterios
+**Descripción:** Si el estudiante cambia contraseña en perfil, debe cumplir las mismas reglas que al registrarse.
+
+**Restricción:**
+- Validación idéntica a RR-001 (8+ chars, mayúscula, minúscula, número).
+- Hash con bcrypt (10 rounds) antes de guardar.
+
+**Aplica a:** HU-022 T-022.3, T-022.4.

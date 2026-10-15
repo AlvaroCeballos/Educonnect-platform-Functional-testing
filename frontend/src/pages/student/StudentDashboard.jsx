@@ -109,6 +109,12 @@ export default function StudentDashboard() {
               Mis Sesiones
             </Link>
             <Link
+              to="/mi-plan"
+              className="text-sm font-medium text-slate-600 hover:text-emerald-700 transition-colors px-3 py-2 rounded-md hover:bg-slate-100"
+            >
+              Mi Plan
+            </Link>
+            <Link
               to="/student/profile"
               className="text-sm font-medium text-slate-600 hover:text-emerald-700 transition-colors px-3 py-2 rounded-md hover:bg-slate-100"
             >

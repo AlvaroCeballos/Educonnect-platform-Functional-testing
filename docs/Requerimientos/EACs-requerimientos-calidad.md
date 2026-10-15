@@ -174,3 +174,38 @@ Estructura de cada escenario:
 
 ---
 
+
+### EAC-USA-003: Perfil editable es intuitivo
+**Característica:** Usabilidad — Navegabilidad.
+
+- **Fuente:** Estudiante logueado quiere actualizar su perfil.
+- **Estímulo:** Navega a `/student/profile` y hace clic en "Editar Perfil".
+- **Artefacto:** Componente StudentProfile (HU-022).
+- **Entorno:** Navegador desktop.
+- **Respuesta esperada:** Formulario aparece con campos pre-llenados, botones claros (Guardar/Cancelar), indicación visual de campo no editable (email).
+- **Medida:** Estudiante completa cambios en < 2 minutos. Email claramente marcado como no editable.
+
+---
+
+### EAC-CONF-004: Actualización de perfil es transaccional
+**Característica:** Confiabilidad — Recuperación ante fallos.
+
+- **Fuente:** Estudiante actualiza nombre, apellido y carnet simultáneamente.
+- **Estímulo:** `PUT /api/students/me/profile` falla a mitad del proceso.
+- **Artefacto:** Backend transacciones, base de datos.
+- **Entorno:** Fallo de red o servidor durante UPDATE.
+- **Respuesta esperada:** Ningún cambio se guarda; perfil queda en estado anterior.
+- **Medida:** 100% de actualizaciones son atómicas. Fallo parcial = rollback automático.
+
+---
+
+### EAC-SEG-006: Cambio de contraseña valida la nueva
+**Característica:** Seguridad — Integridad.
+
+- **Fuente:** Estudiante quiere cambiar contraseña en perfil.
+- **Estímulo:** `PUT /api/students/me/profile` con `newPassword` y `confirmPassword`.
+- **Artefacto:** Validación en cliente y servidor, bcrypt.
+- **Entorno:** Operación normal.
+- **Respuesta esperada:** Servidor valida que ambas coincidan y cumplen criterios (8+ chars, mayúscula, minúscula, número). Si no, rechaza con HTTP 400.
+- **Medida:** 100% de cambios de contraseña débiles rechazados. Contraseña nueva siempre hasheada con bcrypt antes de guardar.
+
