@@ -1,5 +1,5 @@
 const pool = require('../config/db');
-const { validateStudyPlanPayload } = require('../utils/studyPlan');
+const { validateStudyPlanPayload, canAttendSession } = require('../utils/studyPlan');
 
 const resolveTutorProfileId = (req) => Number(req.user?.tutorId || req.user?.id);
 
@@ -31,7 +31,7 @@ const createStudyPlan = async (req, res, next) => {
       await connection.rollback();
       return res.status(403).json({ message: 'No tienes permiso para atender esta sesión' });
     }
-    if (session.status !== 'PENDING') {
+    if (!canAttendSession(session.status)) {
       await connection.rollback();
       return res.status(409).json({ message: `La sesión no está pendiente (estado actual: ${session.status})` });
     }

@@ -1,5 +1,10 @@
 const TIPOS_RECURSO_VALIDOS = ['Texto', 'Video', 'PDF', 'Enlace'];
 
+const SESSION_STATES_READY_FOR_PLAN = ['PENDING'];
+
+const canAttendSession = (currentStatus) =>
+  SESSION_STATES_READY_FOR_PLAN.includes(currentStatus);
+
 const isNonEmptyString = (value) => typeof value === 'string' && value.trim().length > 0;
 
 const validateResource = (recurso, index) => {
@@ -57,5 +62,6 @@ const validateStudyPlanPayload = (body) => {
 
 module.exports = {
   TIPOS_RECURSO_VALIDOS,
+  canAttendSession,
   validateStudyPlanPayload,
 };
