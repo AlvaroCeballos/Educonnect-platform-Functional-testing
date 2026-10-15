@@ -3,6 +3,12 @@ const { validateStudyPlanPayload, canAttendSession } = require('../utils/studyPl
 
 const resolveTutorProfileId = (req) => Number(req.user?.tutorId || req.user?.id);
 
+const resolveStudentProfileId = async (req) => {
+  if (req.user?.studentId) return Number(req.user.studentId);
+  const [rows] = await pool.execute('SELECT id FROM student_profiles WHERE user_id = ?', [req.user.id]);
+  return rows[0]?.id ?? null;
+};
+
 const createStudyPlan = async (req, res, next) => {
   const validation = validateStudyPlanPayload(req.body);
   if (!validation.valid) return res.status(400).json({ message: validation.message });
@@ -83,6 +89,70 @@ const createStudyPlan = async (req, res, next) => {
   }
 };
 
+const getMyStudyPlans = async (req, res, next) => {
+  try {
+    const studentId = await resolveStudentProfileId(req);
+    if (!studentId) return res.status(401).json({ message: 'La sesión no identifica al estudiante' });
+
+    const [planRows] = await pool.execute(
+      `SELECT
+         sp.id,
+         sp.session_id,
+         sess.session_date,
+         CONCAT(tp.nombre, ' ', tp.apellido) AS tutor_name,
+         tp.especialidad                     AS tutor_specialty,
+         tp.identificacion                   AS tutor_identification,
+         sp.dificultades_detectadas,
+         sp.created_at
+       FROM study_plans sp
+       INNER JOIN sessions sess       ON sp.session_id = sess.id
+       INNER JOIN tutor_profiles tp   ON sess.tutor_id = tp.id
+       WHERE sess.student_id = ?
+       ORDER BY sp.created_at DESC`,
+      [studentId],
+    );
+
+    if (planRows.length === 0) return res.json({ plans: [] });
+
+    const planIds = planRows.map((p) => p.id);
+    const [recursoRows] = await pool.query(
+      `SELECT study_plan_id, nombre_recurso, tipo_recurso, descripcion_uso
+         FROM study_resources
+        WHERE study_plan_id IN (?)
+        ORDER BY study_plan_id, id`,
+      [planIds],
+    );
+
+    const recursosPorPlan = recursoRows.reduce((acc, r) => {
+      const list = acc.get(r.study_plan_id) || [];
+      list.push({
+        nombre_recurso: r.nombre_recurso,
+        tipo_recurso: r.tipo_recurso,
+        descripcion_uso: r.descripcion_uso,
+      });
+      acc.set(r.study_plan_id, list);
+      return acc;
+    }, new Map());
+
+    const plans = planRows.map((p) => ({
+      id: p.id,
+      session_id: p.session_id,
+      session_date: p.session_date,
+      tutor_name: p.tutor_name,
+      tutor_specialty: p.tutor_specialty,
+      tutor_identification: p.tutor_identification,
+      dificultades_detectadas: p.dificultades_detectadas,
+      recursos: recursosPorPlan.get(p.id) || [],
+      created_at: p.created_at,
+    }));
+
+    return res.json({ plans });
+  } catch (error) {
+    return next(error);
+  }
+};
+
 module.exports = {
   createStudyPlan,
+  getMyStudyPlans,
 };
