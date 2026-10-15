@@ -51,12 +51,51 @@ export default function StudentStudyPlans() {
         )}
 
         {!loading && !error && plans.length === 0 && (
-          <div style={{ padding: '32px', background: '#f8fafc', border: '1px dashed #cbd5e1', borderRadius: '12px', textAlign: 'center', color: '#64748b' }}>
-            <p style={{ fontSize: '15px', margin: 0 }}>Todavía no tienes planes de estudio asignados.</p>
-            <p style={{ fontSize: '13px', marginTop: '8px' }}>Cuando un tutor marque una de tus sesiones como atendida, el plan aparecerá acá.</p>
+          <div style={{
+            padding: '48px 32px',
+            background: 'linear-gradient(135deg, #f0fdfa 0%, #ecfdf5 100%)',
+            border: '1px solid #a7f3d0',
+            borderRadius: '16px',
+            textAlign: 'center',
+          }}>
+            <div style={{
+              width: '80px',
+              height: '80px',
+              margin: '0 auto 20px',
+              background: 'white',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 2px 8px rgba(16, 185, 129, 0.15)',
+            }}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#0f766e" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                <line x1="9" y1="7" x2="15" y2="7" />
+                <line x1="9" y1="11" x2="15" y2="11" />
+              </svg>
+            </div>
+            <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#0f172a', margin: '0 0 8px' }}>
+              Aún no tienes planes de estudio
+            </h3>
+            <p style={{ fontSize: '14px', color: '#475569', margin: 0, maxWidth: '420px', marginInline: 'auto', lineHeight: 1.5 }}>
+              Cuando un tutor marque una de tus sesiones como atendida, el plan con las dificultades identificadas y los recursos recomendados aparecerá acá.
+            </p>
             <Link
               to="/reservar"
-              style={{ display: 'inline-block', marginTop: '16px', padding: '10px 20px', background: '#0f766e', color: 'white', borderRadius: '8px', textDecoration: 'none', fontWeight: 600, fontSize: '14px' }}
+              style={{
+                display: 'inline-block',
+                marginTop: '24px',
+                padding: '12px 24px',
+                background: '#0f766e',
+                color: 'white',
+                borderRadius: '10px',
+                textDecoration: 'none',
+                fontWeight: 600,
+                fontSize: '14px',
+                boxShadow: '0 2px 6px rgba(15, 118, 110, 0.25)',
+              }}
             >
               Reservar una sesión
             </Link>
