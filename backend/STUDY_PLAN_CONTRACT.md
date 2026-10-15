@@ -11,25 +11,31 @@ pertenece a un estudiante y a un tutor. No existe plan sin sesión. Al guardarse
 el plan, la sesión transita a `ATTENDED` dentro de la misma transacción; si la
 transición falla, el plan no se persiste.
 
-Tablas que se asumen en `backend/init.sql` (las define el Paquete B / Xavi):
+Tablas en `backend/init.sql` (DDL vigente de Fase 2):
 
-- `study_plans(id, session_id UNIQUE, difficulties TEXT NOT NULL, created_at)`
-- `study_resources(id, study_plan_id, name, type ENUM('TEXTO','VIDEO','PDF','ENLACE'), instruction TEXT, position)`
+- `study_plans(id, session_id UNIQUE, dificultades_detectadas TEXT NOT NULL, created_at, updated_at)`
+- `study_resources(id, study_plan_id, nombre_recurso VARCHAR(255), tipo_recurso ENUM('Texto','Video','PDF','Enlace'), descripcion_uso TEXT, created_at)`
 
 `session_id` es `UNIQUE`: una sesión tiene **un solo plan**. Un segundo intento
 de atender la misma sesión debe fallar con error de duplicado, no sobrescribir.
 
+El orden de los recursos se preserva por el `id` autoincrement en el orden en
+que se insertan (sin columna `position`); el controlador inserta en el orden
+del array del payload.
+
 ## Tipos admitidos de recurso
 
-El campo `type` sólo acepta cuatro valores literales, en MAYÚSCULAS:
+El campo `tipo_recurso` sólo acepta cuatro valores literales, con capitalización
+exacta como está en el ENUM:
 
-- `TEXTO`
-- `VIDEO`
+- `Texto`
+- `Video`
 - `PDF`
-- `ENLACE`
+- `Enlace`
 
-Cualquier otro valor se rechaza con `400 Bad Request`. Esta regla la cubre la
-prueba unitaria **PU-23**.
+Cualquier otro valor (incluyendo variantes de capitalización como `texto` o
+`TEXTO`) se rechaza con `400 Bad Request`. Esta regla la cubre la prueba
+unitaria **PU-23**.
 
 ## Endpoint 1 — Crear plan al atender (HU-032)
 
@@ -43,17 +49,17 @@ Cuerpo:
 ```json
 {
   "session_id": 42,
-  "difficulties": "Derivadas parciales y regla de la cadena",
-  "resources": [
+  "dificultades_detectadas": "Derivadas parciales y regla de la cadena",
+  "recursos": [
     {
-      "name": "Cálculo de Stewart - Capítulo 14",
-      "type": "TEXTO",
-      "instruction": "Leer secciones 14.1 a 14.3"
+      "nombre_recurso": "Cálculo de Stewart - Capítulo 14",
+      "tipo_recurso": "Texto",
+      "descripcion_uso": "Leer secciones 14.1 a 14.3"
     },
     {
-      "name": "Video 3Blue1Brown - Chain rule",
-      "type": "VIDEO",
-      "instruction": "Ver minuto 2:30 a 8:15"
+      "nombre_recurso": "Video 3Blue1Brown - Chain rule",
+      "tipo_recurso": "Video",
+      "descripcion_uso": "Ver minuto 2:30 a 8:15"
     }
   ]
 }
@@ -65,18 +71,17 @@ sin tocar la base):
 1. `session_id` existe y pertenece al tutor autenticado (autorización pura).
 2. La sesión está actualmente en estado `PENDING`. Una sesión `ATTENDED`,
    `CANCELLED_BY_STUDENT` o `CANCELLED_BY_TUTOR` no se puede atender de nuevo.
-3. `difficulties` es un string no vacío (trim > 0 caracteres) — **PU-21**.
-4. `resources` es un array con **al menos 1 elemento**.
-5. Cada recurso tiene `name` no vacío, `type` ∈ ENUM válido, `instruction` no
-   vacío — **PU-22**.
-6. `position` lo asigna el backend según el orden del array, el cliente no lo
-   envía.
+3. `dificultades_detectadas` es un string no vacío (trim > 0 caracteres) —
+   **PU-21**.
+4. `recursos` es un array con **al menos 1 elemento**.
+5. Cada recurso tiene `nombre_recurso` no vacío, `tipo_recurso` ∈ ENUM válido,
+   `descripcion_uso` no vacío — **PU-22**.
 
 Operación atómica (una sola transacción con `BEGIN` / `COMMIT`):
 
 1. `SELECT ... FOR UPDATE` sobre la fila de la sesión.
-2. `INSERT INTO study_plans (...)`.
-3. `INSERT INTO study_resources (...)` por cada recurso.
+2. `INSERT INTO study_plans (session_id, dificultades_detectadas)`.
+3. `INSERT INTO study_resources (study_plan_id, nombre_recurso, tipo_recurso, descripcion_uso)` por cada recurso en el orden del array.
 4. `UPDATE sessions SET status = 'ATTENDED' WHERE id = ?` — la sesión queda
    atendida sólo si todos los pasos anteriores tuvieron éxito. Esta
    transición la cubre **PU-24**.
@@ -89,12 +94,12 @@ Respuesta `201 Created`:
 {
   "id": 17,
   "session_id": 42,
-  "difficulties": "...",
-  "resources": [
-    { "id": 55, "name": "...", "type": "TEXTO", "instruction": "...", "position": 1 },
-    { "id": 56, "name": "...", "type": "VIDEO", "instruction": "...", "position": 2 }
+  "dificultades_detectadas": "...",
+  "recursos": [
+    { "id": 55, "nombre_recurso": "...", "tipo_recurso": "Texto", "descripcion_uso": "..." },
+    { "id": 56, "nombre_recurso": "...", "tipo_recurso": "Video", "descripcion_uso": "..." }
   ],
-  "created_at": "2026-10-10T21:30:00Z"
+  "created_at": "2026-10-14T21:30:00Z"
 }
 ```
 
@@ -122,9 +127,9 @@ Respuesta `200 OK`:
       "tutor_name": "Carlos Pérez",
       "tutor_specialty": "Matemática",
       "tutor_identification": "T-001-2023",
-      "difficulties": "...",
-      "resources": [ { "name": "...", "type": "...", "instruction": "..." } ],
-      "created_at": "2026-10-10T21:30:00Z"
+      "dificultades_detectadas": "...",
+      "recursos": [ { "nombre_recurso": "...", "tipo_recurso": "Texto", "descripcion_uso": "..." } ],
+      "created_at": "2026-10-14T21:30:00Z"
     }
   ]
 }
@@ -148,8 +153,8 @@ alimenta):
 
 - **Encabezado:** "EduConnect", fecha de emisión, teléfono de contacto de la
   plataforma.
-- **Cuerpo:** Tabla con las columnas `Nombre | Tipo | Instrucción` para cada
-  recurso recomendado.
+- **Cuerpo:** Tabla con las columnas `Nombre | Tipo | Descripción de uso` para
+  cada recurso recomendado.
 - **Pie / sello del tutor:** nombre completo, especialidad, número de
   identificación.
 
@@ -164,8 +169,10 @@ alimenta):
 ## Notas para los equipos que trabajan sobre este contrato
 
 - **Paquete B** (modelo de datos): las tablas `study_plans` y `study_resources`
-  se crean en `backend/init.sql` siguiendo el shape definido arriba, incluyendo
-  el ENUM `TEXTO|VIDEO|PDF|ENLACE` y el `UNIQUE` sobre `session_id`.
+  ya están aplicadas en `backend/init.sql` por el commit `734fadd`.
+  Convención: nombres de columna en español y ENUM `Texto|Video|PDF|Enlace` en
+  capitalización inicial. El payload JSON del endpoint refleja la misma
+  convención para evitar mapeo.
 - **Paquete A** (autenticación): el middleware JWT ya embebe `tutorId` y
   `studentId` en el payload — convención consolidada en Fase 1,
   `authController.js:203` emite el token del estudiante con
