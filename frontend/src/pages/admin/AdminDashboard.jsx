@@ -4,6 +4,7 @@ import Swal from 'sweetalert2';
 import api from '../../utils/api';
 import { generateTutorsDemandBlob } from '../../utils/pdfReportGenerator';
 import PendingStudents from '../../components/admin/PendingStudents';
+import MetricsPanel from '../../components/admin/MetricsPanel';
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -736,8 +737,16 @@ export default function AdminDashboard() {
             Reporte Materias (HU-027)
             <span className="admin-tab-count">{totalSessionsAllSubjects}</span>
           </button>
+          <button
+            type="button"
+            className={`admin-tab ${activeTab === 'metrics' ? 'active' : ''}`}
+            onClick={() => setActiveTab('metrics')}
+          >
+            Métricas
+          </button>
         </div>
 
+        {activeTab === 'metrics' && <MetricsPanel />}
         {/* TAB 1: MÓDULO DE ESTUDIANTES (HU-004 y HU-024) */}
         {activeTab === 'students' && (
           <div>
