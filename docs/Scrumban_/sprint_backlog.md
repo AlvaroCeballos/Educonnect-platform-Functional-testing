@@ -173,3 +173,18 @@ La distribución vigente asigna a Isai las historias **HU-019** y **HU-023** dur
 - Integración: merge realizado en `develop` mediante el commit `0955b3b` (`merge: integrar sprint 2 de isai`).
 - Trello: `T-019.1–T-019.3` y `T-023.1–T-023.3` verificados en la lista `DONE`.
 - Bloqueo funcional restante: la prueba end-to-end con MySQL depende de levantar la instancia local; no bloquea las pruebas unitarias ni la compilación.
+
+## Verificación actual — Sprint 2, Paquete F (Isai)
+
+La revisión directa del tablero y del repositorio confirmó que las tarjetas `T-036.1–T-036.3`,
+`T-037.1–T-037.3` y `T-038.1–T-038.3` no eran únicamente un atraso visual: antes de esta rama
+no existían las rutas ni las vistas completas para reportes disciplinarios y calificación tutor→estudiante.
+
+| Historia | Tareas | Evidencia de avance | Estado |
+| :--- | :--- | :--- | :---: |
+| HU-036 | T-036.1–T-036.3 | Formulario estudiante, catálogo, validación de sesión `ATTENDED` y persistencia `incident_reports` | En progreso |
+| HU-037 | T-037.1–T-037.3 | Formulario tutor, validación 0–5 y separación de calificaciones por `reviewer_role` | En progreso |
+| HU-038 | T-038.1–T-038.3 | Formulario tutor, catálogo, validación de sesión `ATTENDED` y persistencia `incident_reports` | En progreso |
+
+La implementación se desarrolla en la rama `sprint2/isai-hu036-hu037-hu038` a partir de `develop`.
+La validación funcional con datos reales requiere ejecutar la migración de Fase 2 y disponer de sesiones `ATTENDED`.

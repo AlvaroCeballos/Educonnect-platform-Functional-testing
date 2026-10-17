@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import api from '../../utils/api';
+import IncidentReportForm from '../../components/IncidentReportForm';
 
 const statusLabels = {
   ATTENDED: 'Atendida',
@@ -12,11 +13,12 @@ const statusLabels = {
 export default function SessionHistory() {
   const [sessions, setSessions] = useState([]);
   const [ratings, setRatings] = useState({});
+  const [incidents, setIncidents] = useState({});
   const [drafts, setDrafts] = useState({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([api.get('/sessions/me'), api.get('/ratings/me')]).then(([sessionsResponse, ratingsResponse]) => {
+    Promise.all([api.get('/sessions/me'), api.get('/ratings/me'), api.get('/incidents/me')]).then(([sessionsResponse, ratingsResponse, incidentsResponse]) => {
       const historial = (sessionsResponse.data.sessions || [])
         .filter((session) => session.status !== 'PENDING')
         .sort((a, b) => `${b.sessionDate}${b.startTime}`.localeCompare(`${a.sessionDate}${a.startTime}`));
@@ -25,6 +27,9 @@ export default function SessionHistory() {
       );
       setSessions(historial);
       setRatings(ratingMap);
+      setIncidents(Object.fromEntries(
+        (incidentsResponse.data.incidents || []).map((incident) => [incident.sessionId, incident]),
+      ));
     }).finally(() => setLoading(false));
   }, []);
 
@@ -123,6 +128,13 @@ export default function SessionHistory() {
               <p className="rating-summary">
                 <strong>Tu calificación:</strong> {'★'.repeat(ratings[session.id].rating)}{'☆'.repeat(5 - ratings[session.id].rating)}
               </p>
+            )}
+            {session.status === 'ATTENDED' && !incidents[session.id] && (
+              <IncidentReportForm
+                role="student"
+                sessionId={session.id}
+                onSubmitted={(incident) => setIncidents((current) => ({ ...current, [session.id]: incident }))}
+              />
             )}
           </div>
           <div className="session-actions">

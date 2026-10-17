@@ -18,6 +18,12 @@ CREATE TABLE IF NOT EXISTS study_plans (
     ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- HU-037: permite una calificación independiente por participante de la sesión.
+ALTER TABLE reviews
+  DROP INDEX uq_reviews_session,
+  ADD COLUMN reviewer_role ENUM('student', 'tutor') NOT NULL DEFAULT 'student' AFTER tutor_id,
+  ADD UNIQUE KEY uq_reviews_session_reviewer (session_id, reviewer_role);
+
 CREATE TABLE IF NOT EXISTS study_resources (
   id               INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   study_plan_id    INT UNSIGNED NOT NULL,

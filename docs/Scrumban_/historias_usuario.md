@@ -754,6 +754,99 @@ Como evidencia del proceso de estimación grupal, se utilizó una matriz de vota
 
 ---
 
+## 🟨 [HU-036] Reporte disciplinario contra tutores
+
+**Responsable:** Isai (Paquete F)
+
+**Como** estudiante que completó una sesión de tutoría
+
+**Quiero** reportar al tutor cuando exista una falta disciplinaria
+
+**Para** dejar constancia de la situación y permitir su revisión administrativa
+
+### Criterios de Aceptación
+
+- El formulario se muestra únicamente para sesiones propias con estado `ATTENDED`.
+- La categoría debe pertenecer al catálogo oficial de faltas contra tutores.
+- El motivo es obligatorio y debe contener al menos 10 caracteres.
+- El reporte se persiste con estado `PENDING` y no se permite duplicar el reporte del mismo estudiante para la misma sesión.
+
+### Tareas técnicas
+
+- **T-036.1:** Formulario de denuncia contra tutores.
+- **T-036.2:** Validaciones de sesión, categoría y motivo.
+- **T-036.3:** Persistencia y seguimiento inicial de la denuncia.
+
+### Tamaño: M
+
+### Dependencias
+
+- Sesiones existentes en estado `ATTENDED`.
+
+---
+
+## 🟨 [HU-037] Calificación de estudiantes por tutores
+
+**Responsable:** Isai (Paquete F)
+
+**Como** tutor que completó una sesión
+
+**Quiero** calificar al estudiante con una puntuación de 0 a 5 estrellas y un comentario opcional
+
+**Para** registrar retroalimentación sobre su participación
+
+### Criterios de Aceptación
+
+- El formulario se muestra únicamente para sesiones atendidas propias del tutor.
+- La calificación debe ser un número entero entre 0 y 5, inclusive.
+- La calificación y el comentario se persisten sin impedir que el estudiante registre su propia calificación al tutor.
+- Cada tutor puede calificar una sola vez a cada estudiante por sesión.
+
+### Tareas técnicas
+
+- **T-037.1:** Formulario de calificación del estudiante.
+- **T-037.2:** Validación de sesión atendida y estrellas.
+- **T-037.3:** Persistencia y consulta de calificaciones.
+
+### Tamaño: M
+
+### Dependencias
+
+- Sesiones existentes en estado `ATTENDED`.
+
+---
+
+## 🟨 [HU-038] Reporte disciplinario contra estudiantes
+
+**Responsable:** Isai (Paquete F)
+
+**Como** tutor que completó una sesión de tutoría
+
+**Quiero** reportar al estudiante cuando exista una falta disciplinaria
+
+**Para** dejar constancia de la situación y permitir su revisión administrativa
+
+### Criterios de Aceptación
+
+- El formulario se muestra únicamente para sesiones propias con estado `ATTENDED`.
+- La categoría debe pertenecer al catálogo oficial de faltas contra estudiantes.
+- El motivo es obligatorio y debe contener al menos 10 caracteres.
+- El reporte se persiste con estado `PENDING` y no se permite duplicar el reporte del mismo tutor para la misma sesión.
+
+### Tareas técnicas
+
+- **T-038.1:** Formulario de denuncia contra estudiantes.
+- **T-038.2:** Validaciones de sesión, categoría y motivo.
+- **T-038.3:** Persistencia y seguimiento inicial de la denuncia.
+
+### Tamaño: M
+
+### Dependencias
+
+- Sesiones existentes en estado `ATTENDED`.
+
+---
+
 ## 🟥 [HU-049] Pipeline CI/CD de Build y Test
 
 **Responsable:** Isai (Paquete F)

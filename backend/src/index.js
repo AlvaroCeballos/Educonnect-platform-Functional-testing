@@ -23,6 +23,7 @@ app.use('/api/reports', require('./routes/reports'));
 app.use('/api/tutors', require('./routes/tutors'));
 app.use('/api/sessions', require('./routes/sessions'));
 app.use('/api/ratings', require('./routes/ratings'));
+app.use('/api/incidents', require('./routes/incidents'));
 app.use('/api/documents', require('./routes/documents'));
 app.use('/api/study-plans', require('./routes/studyPlans'));
 

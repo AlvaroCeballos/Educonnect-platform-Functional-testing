@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../../utils/api';
+import IncidentReportForm from '../../components/IncidentReportForm';
+import StudentRatingForm from '../../components/StudentRatingForm';
 
 export default function TutorSessions() {
   const [sessions, setSessions] = useState([]);
@@ -19,13 +21,25 @@ export default function TutorSessions() {
   const [sessionToCancel, setSessionToCancel] = useState(null);
   const [cancelError, setCancelError] = useState('');
   const [canceling, setCanceling] = useState(false);
+  const [ratings, setRatings] = useState({});
+  const [incidents, setIncidents] = useState({});
 
   const fetchSessions = async () => {
     setLoading(true);
     setError('');
     try {
-      const response = await api.get('/sessions/tutor/me');
+      const [response, ratingsResponse, incidentsResponse] = await Promise.all([
+        api.get('/sessions/tutor/me'),
+        api.get('/ratings/tutor/me'),
+        api.get('/incidents/tutor/me'),
+      ]);
       setSessions(response.data.sessions);
+      setRatings(Object.fromEntries(
+        (ratingsResponse.data.ratings || []).map((rating) => [rating.sessionId, rating]),
+      ));
+      setIncidents(Object.fromEntries(
+        (incidentsResponse.data.incidents || []).map((incident) => [incident.sessionId, incident]),
+      ));
     } catch (err) {
       setError('No se pudieron cargar tus sesiones.');
     } finally {
@@ -193,6 +207,19 @@ export default function TutorSessions() {
                   <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 font-bold text-xs">✓</span>
                   <span>Plan de estudio registrado para esta sesión.</span>
                 </div>
+              )}
+              {session.status === 'ATTENDED' && !ratings[session.id] && (
+                <StudentRatingForm
+                  sessionId={session.id}
+                  onSubmitted={(rating) => setRatings((current) => ({ ...current, [session.id]: rating }))}
+                />
+              )}
+              {session.status === 'ATTENDED' && !incidents[session.id] && (
+                <IncidentReportForm
+                  role="tutor"
+                  sessionId={session.id}
+                  onSubmitted={(incident) => setIncidents((current) => ({ ...current, [session.id]: incident }))}
+                />
               )}
             </div>
           ))}

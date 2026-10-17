@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { canRateSession, validateRatingPayload } = require('../src/utils/rating');
+const { canRateSession, canRateStudentSession, validateRatingPayload } = require('../src/utils/rating');
 
 test('acepta calificaciones enteras desde 0 hasta 5', () => {
   assert.equal(validateRatingPayload({ rating: 0 }).valid, true);
@@ -19,4 +19,11 @@ test('solo permite calificar sesiones atendidas del estudiante autenticado', () 
   assert.equal(canRateSession({ studentId: 7, status: 'ATTENDED' }, 7), true);
   assert.equal(canRateSession({ studentId: 7, status: 'PENDING' }, 7), false);
   assert.equal(canRateSession({ studentId: 8, status: 'ATTENDED' }, 7), false);
+});
+
+test('solo permite al tutor calificar al estudiante de una sesión atendida propia', () => {
+  const attendedSession = { tutorId: 20, status: 'ATTENDED' };
+  assert.equal(canRateStudentSession(attendedSession, 20), true);
+  assert.equal(canRateStudentSession(attendedSession, 99), false);
+  assert.equal(canRateStudentSession({ ...attendedSession, status: 'PENDING' }, 20), false);
 });

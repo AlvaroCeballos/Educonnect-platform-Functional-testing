@@ -559,3 +559,10 @@
 - La rama `sprint2/isai-hu019-hu023` fue integrada en `develop` mediante `0955b3b`.
 - Las tarjetas de las tareas de HU-019 y HU-023 permanecen en `DONE` en Trello.
 - La validación end-to-end queda condicionada únicamente a disponer de una instancia MySQL local activa.
+
+### Registro de avance — HU-036, HU-037 y HU-038 (17 de octubre de 2026)
+
+- **Revisión:** el filtro de Trello por miembro confirmó 9 tareas de Isai en `SPRINT BACKLOG / TO-DO`: `T-036.1–T-036.3`, `T-037.1–T-037.3` y `T-038.1–T-038.3`.
+- **Validación contra el repositorio:** la base de datos ya contemplaba `incident_reports` y existían validadores unitarios, pero faltaban las rutas, controladores y formularios completos para el flujo estudiante↔tutor. Por tanto, las tarjetas sí representaban trabajo pendiente.
+- **Trabajo iniciado:** se creó la rama `sprint2/isai-hu036-hu037-hu038`; se agregó el flujo de reportes disciplinarios para ambos roles y la calificación tutor→estudiante con persistencia independiente por participante.
+- **Verificación:** las pruebas del backend pasan y el frontend compila. La prueba funcional completa queda pendiente de ejecutar con la migración aplicada y sesiones `ATTENDED` en MySQL.
