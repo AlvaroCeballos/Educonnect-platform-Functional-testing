@@ -37,6 +37,20 @@ docker compose down
 
 No se debe usar `docker compose down -v` salvo que se quiera borrar el volumen y recrear el esquema desde cero.
 
+### Instancia temporal de MySQL sin Docker en Windows
+
+Para validar localmente los flujos de la Fase 2 también se puede utilizar una instancia
+temporal de MySQL Server instalada en el equipo. En la validación del 17 de octubre de
+2026 se utilizó MySQL 8.4 en `127.0.0.1:3307`, con un directorio de datos temporal fuera
+del repositorio. El backend se conectó usando las variables `DB_HOST`, `DB_PORT`,
+`DB_USER`, `DB_PASSWORD` y `DB_NAME` del archivo `.env`.
+
+La base se inicializó con `backend/init.sql` y se cargaron datos de prueba de
+`backend/seeds_fase2_metrics.sql`. Esta instancia es únicamente para pruebas locales;
+no forma parte del despliegue ni reemplaza la base de datos del ambiente productivo.
+Al finalizar la validación, se puede detener el proceso `mysqld` y eliminar el directorio
+temporal de datos.
+
 ## Variables de entorno
 
 | Variable | Uso |
