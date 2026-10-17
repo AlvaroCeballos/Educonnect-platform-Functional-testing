@@ -864,13 +864,13 @@ Como evidencia del proceso de estimación grupal, se utilizó una matriz de vota
 - La etapa `Test` depende de `Build` y ejecuta `npm test` en el backend.
 - Un fallo en Build impide ejecutar Test.
 - No se almacenan credenciales sensibles en el repositorio.
-- La etapa Deploy queda planificada para el Sprint 2.
+- La etapa Deploy se ejecuta únicamente en `main`, después de que `Build` y `Test` finalicen correctamente.
 
 ### Tareas técnicas
 
 - **T-049.1:** Configurar el workflow y el job de Build.
 - **T-049.2:** Automatizar el job de pruebas unitarias.
-- **T-049.3:** Documentar la etapa Deploy como pendiente de Sprint 2.
+- **T-049.3:** Configurar la etapa Deploy condicionada a `main` y documentar sus secretos de conexión.
 
 ### Tamaño: M
 

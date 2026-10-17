@@ -143,7 +143,7 @@ La distribución actualizada de Fase 2 redefine el alcance de Isai para este Spr
 | HU-035 | T-035.3 — Persistencia y consulta de calificaciones | Isai | 🟥 Alta | Implementada |
 | HU-049 | T-049.1 — Workflow de Build | Isai | 🟥 Alta | Implementada |
 | HU-049 | T-049.2 — Workflow de Test | Isai | 🟥 Alta | Implementada |
-| HU-049 | T-049.3 — Deploy en `main` | Isai | 🟥 Alta | Pendiente Sprint 2 |
+| HU-049 | T-049.3 — Deploy en `main` | Isai | 🟥 Alta | En progreso |
 
 ## Evidencia técnica del cierre parcial
 
