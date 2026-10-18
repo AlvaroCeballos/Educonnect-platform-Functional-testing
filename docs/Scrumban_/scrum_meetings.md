@@ -327,9 +327,9 @@
 - **¿Tengo algún impedimento?:** Ninguno; asegurando el atributo `readOnly` en el campo del correo tanto en frontend como en el backend.
 
 #### 3. Isai Patzán
-- **¿Qué hice ayer?:** Apoyé la revisión de índices en la base de datos para optimizar las consultas agregadas del sistema.
-- **¿Qué voy a hacer hoy?:** Realizar pruebas de consistencia sobre el módulo de horarios y asistir en la preparación de datos para reportes.
-- **¿Tengo algún impedimento?:** Ninguno; scripts de migración estabilizados.
+- **¿Qué hice ayer?:** Revisé la distribución del Sprint 2, actualicé `develop` y confirmé que mi alcance correspondía a HU-019 y HU-023.
+- **¿Qué voy a hacer hoy?:** Verificar la carga y actualización del horario del tutor (`T-019.1`, `T-019.2`, `T-019.3`).
+- **¿Tengo algún impedimento?:** Ninguno; la API y el formulario de horario ya estaban disponibles para revisión.
 
 #### 4. Yury
 - **¿Qué hice ayer?:** Diseñé la distribución de controles para la búsqueda avanzada de tutores (`T-010.1`).
@@ -364,9 +364,9 @@
 - **¿Tengo algún impedimento?:** Ninguno; controlando que contraseñas vacías no sobreescriban el hash existente.
 
 #### 3. Isai Patzán
-- **¿Qué hice ayer?:** Validé la estructura de almacenamiento de reportes y agregaciones en la base de datos.
-- **¿Qué voy a hacer hoy?:** Apoyar a Alvaro en la optimización de las consultas SQL para el ranking de tutores con más atenciones (`T-026.1`).
-- **¿Tengo algún impedimento?:** Ninguno; probando agrupaciones `COUNT()` y filtros de estado "Atendida".
+- **¿Qué hice ayer?:** Verifiqué la regla de integridad de HU-019 para impedir que una sesión `PENDING` quede fuera del nuevo rango de atención.
+- **¿Qué voy a hacer hoy?:** Revisar la consulta y actualización del perfil del tutor (`T-023.1`, `T-023.2`).
+- **¿Tengo algún impedimento?:** Ninguno; el correo se mantiene fuera de los campos actualizables.
 
 #### 4. Yury
 - **¿Qué hice ayer?:** Conecté los selectores de búsqueda avanzada con el backend (`T-010.2`).
@@ -401,9 +401,9 @@
 - **¿Tengo algún impedimento?:** Ninguno; elaborando el borrador del documento de heurísticas UX.
 
 #### 3. Isai Patzán
-- **¿Qué hice ayer?:** Diseñé el query de agrupación para el reporte de tutores destacados (`T-026.1`) .
-- **¿Qué voy a hacer hoy?:** Apoyar a Yury en la construcción de la consulta agregada para el Reporte 2 de materias con mayor demanda (`T-027.1`) .
-- **¿Tengo algún impedimento?:** Ninguno; verificando conteo de tutorías solicitadas por asignatura.
+- **¿Qué hice ayer?:** Revisé el endpoint de consulta del perfil y la persistencia de los campos profesionales del tutor.
+- **¿Qué voy a hacer hoy?:** Reforzar la validación de contraseña y correo inmutable, y preparar pruebas para HU-023 (`T-023.3`, `T-023.4`).
+- **¿Tengo algún impedimento?:** Ninguno; se reutiliza la validación de complejidad de contraseña existente.
 
 #### 4. Yury
 - **¿Qué hice ayer?:** Concluí la interfaz de filtros combinables y estados vacíos (`T-010.3`, `T-010.4`) .
@@ -438,9 +438,9 @@
 - **¿Tengo algún impedimento?:** Ninguno; capturando pantallas reales de la plataforma para los manuales.
 
 #### 3. Isai Patzán
-- **¿Qué hice ayer?:** Verifiqué la precisión de los cálculos estadísticos en la base de datos para ambos reportes .
-- **¿Qué voy a hacer hoy?:** Elaborar la documentación del Manual Técnico enfocada en el esquema de base de datos y scripts de despliegue.
-- **¿Tengo algún impedimento?:** Ninguno; exportando diagramas ER actualizados.
+- **¿Qué hice ayer?:** Integré la validación reutilizable del perfil y cubrí los casos de correo bloqueado, campos obligatorios y contraseña débil.
+- **¿Qué voy a hacer hoy?:** Ejecutar la batería de pruebas del backend y revisar el formulario de perfil y horario en el build del frontend.
+- **¿Tengo algún impedimento?:** Ninguno en el código; la validación aislada no requiere conexión a la base de datos.
 
 #### 4. Yury
 - **¿Qué hice ayer?:** Concluí pruebas de búsqueda avanzada (`T-010.5`) y la consulta del reporte de materias (`T-027.1`) .
@@ -475,9 +475,9 @@
 - **¿Tengo algún impedimento?:** Ninguno; seleccionados: visibilidad de estado, prevención de errores, consistencia, control de usuario, reconocimiento y estética minimalista.
 
 #### 3. Isai Patzán
-- **¿Qué hice ayer?:** Redacté las secciones de arquitectura de datos y variables de entorno del manual técnico.
-- **¿Qué voy a hacer hoy?:** Verificar que el archivo `docker-compose.yml` levante limpiamente frontend, backend y base de datos con un solo comando.
-- **¿Tengo algún impedimento?:** Ninguno; validado en contenedores limpios sin volúmenes residuales.
+- **¿Qué hice ayer?:** Ejecuté las pruebas del backend y confirmé la compilación del frontend después de instalar las dependencias declaradas.
+- **¿Qué voy a hacer hoy?:** Documentar el estado de HU-019 y HU-023, sus evidencias y el único bloqueo de entorno para la prueba end-to-end.
+- **¿Tengo algún impedimento?:** La instancia MySQL local no está disponible en el puerto configurado; no afecta las pruebas unitarias ni el build.
 
 #### 4. Yury
 - **¿Qué hice ayer?:** Implementé el Reporte 2 de materias con mayor demanda (`T-027.2`, `T-027.3`) .
@@ -512,9 +512,9 @@
 - **¿Tengo algún impedimento?:** Ninguno; enlaces validados en GitHub.
 
 #### 3. Isai Patzán
-- **¿Qué hice ayer?:** Completé el manual técnico con la guía de despliegue mediante Docker Compose.
-- **¿Qué voy a hacer hoy?:** Ejecutar una prueba limpia de clonación y levantamiento con `docker-compose up` desde cero en un ambiente aislado.
-- **¿Tengo algún impedimento?:** Ninguno; contenedores levantando en menos de 90 segundos.
+- **¿Qué hice ayer?:** Cerré la documentación técnica del paquete B y dejé trazabilidad de las tareas `T-019.1–T-019.3` y `T-023.1–T-023.4`.
+- **¿Qué voy a hacer hoy?:** Entregar la rama para revisión y solicitar la integración a `develop` una vez revisados los cambios.
+- **¿Tengo algún impedimento?:** Solo queda pendiente ejecutar la prueba funcional con MySQL levantado; el código y las pruebas automatizadas están listos.
 
 #### 4. Yury
 - **¿Qué hice ayer?:** Pasé a `DONE` el módulo de búsqueda avanzada y el reporte analítico de materias (`HU-010`, `HU-027`).

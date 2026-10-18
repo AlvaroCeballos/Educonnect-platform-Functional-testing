@@ -1,8 +1,9 @@
 const pool = require('../config/db');
-const { hashPassword, validatePasswordStrength } = require('../utils/password');
+const { hashPassword } = require('../utils/password');
+const { TUTOR_PROFILE_FIELDS, validateTutorProfilePayload } = require('../utils/tutorProfile');
 
 const getTutorId = (req) => Number(req.user?.tutorId || req.user?.id);
-const fields = ['nombre', 'apellido', 'carnet', 'identificacion', 'fecha_nacimiento', 'genero', 'especialidad', 'direccion_tutoria', 'anio_inicio_experiencia', 'universidad'];
+const fields = TUTOR_PROFILE_FIELDS;
 
 const getMyProfile = async (req, res, next) => {
   const tutorId = getTutorId(req);
@@ -15,10 +16,9 @@ const getMyProfile = async (req, res, next) => {
 
 const updateMyProfile = async (req, res, next) => {
   const tutorId = getTutorId(req);
-  if (req.body?.email !== undefined) return res.status(400).json({ message: 'El correo electrónico no se puede modificar' });
-  const values = fields.map((field) => req.body?.[field]);
-  if (values.some((value) => value === undefined || String(value).trim() === '')) return res.status(400).json({ message: 'Todos los datos del perfil son obligatorios' });
-  if (req.body.password) { const check = validatePasswordStrength(String(req.body.password)); if (!check.valid) return res.status(400).json({ message: check.message }); }
+  const validation = validateTutorProfilePayload(req.body);
+  if (!validation.valid) return res.status(400).json({ message: validation.message });
+  const { values } = validation;
   let connection;
   try {
     connection = await pool.getConnection();
