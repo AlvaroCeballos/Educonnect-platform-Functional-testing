@@ -143,7 +143,7 @@ La distribución actualizada de Fase 2 redefine el alcance de Isai para este Spr
 | HU-035 | T-035.3 — Persistencia y consulta de calificaciones | Isai | 🟥 Alta | Implementada |
 | HU-049 | T-049.1 — Workflow de Build | Isai | 🟥 Alta | Implementada |
 | HU-049 | T-049.2 — Workflow de Test | Isai | 🟥 Alta | Implementada |
-| HU-049 | T-049.3 — Deploy en `main` | Isai | 🟥 Alta | Pendiente Sprint 2 |
+| HU-049 | T-049.3 — Deploy en `main` | Isai | 🟥 Alta | En progreso |
 
 ## Evidencia técnica del cierre parcial
 
@@ -172,4 +172,5 @@ La distribución vigente asigna a Isai las historias **HU-019** y **HU-023** dur
 - Frontend: build de producción exitoso después de instalar las dependencias declaradas en `frontend/package-lock.json`.
 - Integración: merge realizado en `develop` mediante el commit `0955b3b` (`merge: integrar sprint 2 de isai`).
 - Trello: `T-019.1–T-019.3` y `T-023.1–T-023.3` verificados en la lista `DONE`.
+- HU-049/T-049.3: workflow de Deploy configurado, pendiente de `DEPLOY_*` y de un servidor de producción para ejecutar la primera entrega real.
 - Bloqueo funcional restante: la prueba end-to-end con MySQL depende de levantar la instancia local; no bloquea las pruebas unitarias ni la compilación.

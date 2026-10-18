@@ -558,4 +558,6 @@
 
 - La rama `sprint2/isai-hu019-hu023` fue integrada en `develop` mediante `0955b3b`.
 - Las tarjetas de las tareas de HU-019 y HU-023 permanecen en `DONE` en Trello.
-- La validación end-to-end queda condicionada únicamente a disponer de una instancia MySQL local activa.
+- La revisión del tablero detectó que `T-049.3 — Workflow CI/CD para deploy en main` todavía permanece en `SPRINT BACKLOG / TO-DO`.
+- Se inició el trabajo de T-049.3 en la rama `sprint2/isai-t0493-deploy`; el workflow ya incluye el job `deploy` condicionado a `main` y dependiente de `build` y `test`.
+- La validación end-to-end y el despliegue real quedan condicionados a disponer de una instancia MySQL local y de los secretos/servidor de producción.

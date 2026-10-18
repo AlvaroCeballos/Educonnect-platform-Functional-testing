@@ -36,8 +36,9 @@ El workflow `.github/workflows/backend-ci-cd.yml` se dispara con `push` a `main`
 
 1. `build`: instala dependencias del backend, construye la imagen Docker y compila el frontend.
 2. `test`: depende de `build`, instala las dependencias y ejecuta `npm test`.
+3. `deploy`: depende de `build` y `test`, y se ejecuta únicamente después de un `push` a `main`. Usa el entorno protegido `production` y una conexión SSH para actualizar el checkout remoto y levantar Docker Compose.
 
-La etapa `deploy` no se activa en este Sprint 1; queda reservada para el Sprint 2. Las credenciales y variables sensibles deben configurarse como GitHub Secrets, nunca dentro del YAML o del código fuente.
+La etapa `deploy` requiere configurar en GitHub los secretos `DEPLOY_HOST`, `DEPLOY_USERNAME`, `DEPLOY_SSH_KEY`, `DEPLOY_PORT` y `DEPLOY_PATH`. Las credenciales y variables sensibles no deben guardarse dentro del YAML ni del código fuente. La prueba real queda pendiente hasta disponer de un servidor y esos secretos.
 
 ## Verificación local
 
