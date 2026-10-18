@@ -151,3 +151,23 @@ La distribución actualizada de Fase 2 redefine el alcance de Isai para este Spr
 - Frontend: `npm run build` ejecutado correctamente.
 - Workflow: `.github/workflows/backend-ci-cd.yml` contiene los jobs secuenciales `build` y `test`.
 - Bloqueo de integración: la validación funcional completa de HU-035 requiere sesiones `ATTENDED` disponibles en la base de datos; la API ya valida ese estado y no bloquea el desarrollo del pipeline.
+
+## Verificación actual — Sprint 2, Paquete B (Isai)
+
+La distribución vigente asigna a Isai las historias **HU-019** y **HU-023** durante el Sprint 2. La base funcional ya se encontraba integrada en `develop`; en esta iteración se verificó el alcance, se reforzó la validación reutilizable del perfil y se agregó cobertura específica para los criterios de aceptación.
+
+| Historia | Tarea | Evidencia verificada | Estado |
+| :--- | :--- | :--- | :---: |
+| HU-019 | T-019.1 — Cargar y editar horario | `GET/PUT /api/tutors/me/schedules` y formulario de edición | Verificada |
+| HU-019 | T-019.2 — Detectar conflictos con sesiones pendientes | Rechazo `409` si una cita `PENDING` queda fuera del nuevo rango | Verificada |
+| HU-019 | T-019.3 — Persistir horario válido | Transacción que desactiva el horario anterior y guarda los nuevos días | Verificada |
+| HU-023 | T-023.1 — Consultar perfil del tutor | `GET /api/tutors/me/profile` con correo de solo lectura | Verificada |
+| HU-023 | T-023.2 — Actualizar datos profesionales | `PUT /api/tutors/me/profile` con campos permitidos y persistencia | Verificada |
+| HU-023 | T-023.3 — Proteger correo y contraseña | Correo inmutable y contraseña validada antes de aplicar hash | Verificada |
+| HU-023 | T-023.4 — Pruebas de validación | `tutorProfileValidation.test.js` cubre datos válidos, correo, campos obligatorios y contraseña | Implementada |
+
+### Resultado de verificación
+
+- Backend: **61 pruebas exitosas**.
+- Frontend: build de producción exitoso después de instalar las dependencias declaradas en `frontend/package-lock.json`.
+- Bloqueo funcional restante: la prueba end-to-end con MySQL depende de levantar la instancia local; no bloquea las pruebas unitarias ni la compilación.
