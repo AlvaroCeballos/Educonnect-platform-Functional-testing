@@ -170,4 +170,6 @@ La distribución vigente asigna a Isai las historias **HU-019** y **HU-023** dur
 
 - Backend: **61 pruebas exitosas**.
 - Frontend: build de producción exitoso después de instalar las dependencias declaradas en `frontend/package-lock.json`.
+- Integración: merge realizado en `develop` mediante el commit `0955b3b` (`merge: integrar sprint 2 de isai`).
+- Trello: `T-019.1–T-019.3` y `T-023.1–T-023.3` verificados en la lista `DONE`.
 - Bloqueo funcional restante: la prueba end-to-end con MySQL depende de levantar la instancia local; no bloquea las pruebas unitarias ni la compilación.

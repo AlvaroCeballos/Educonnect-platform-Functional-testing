@@ -553,3 +553,9 @@
   - El marco de trabajo SCRUM, complementado con las 5 columnas del tablero Kanban (`TO-DO`, `BLOCKED`, `IN PROGRESS`, `TEST/QA`, `DEPLOY`), brindó trazabilidad y transparencia absoluta en el avance individual y grupal.
   - Se aseguró el cumplimiento integral de los requisitos de eliminación de la rúbrica (Dockerización completa, base de datos relacional operativa con passwords cifrados, Git Flow con tags semánticos y 12 dailies documentados con progresión real).
   - El sistema **EduConnect** se encuentra completamente operativo y listo para la defensa y calificación presencial.
+
+### Actualización de cierre — Paquete B de Isai
+
+- La rama `sprint2/isai-hu019-hu023` fue integrada en `develop` mediante `0955b3b`.
+- Las tarjetas de las tareas de HU-019 y HU-023 permanecen en `DONE` en Trello.
+- La validación end-to-end queda condicionada únicamente a disponer de una instancia MySQL local activa.
