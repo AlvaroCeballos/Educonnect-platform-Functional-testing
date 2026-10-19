@@ -123,3 +123,50 @@ test('PU-14/15: rechaza acciones de resolución no permitidas en el payload (400
   assert.equal(invalidAction.statusCode, 400);
   assert.match(invalidAction.message, /Acción no válida/i);
 });
+
+// ----------------------------------------------------
+// HU-044: Denuncias contra estudiantes por tutores
+// ----------------------------------------------------
+test('HU-044: verifica transición a DISMISSED al desestimar una denuncia contra estudiante', () => {
+  const pendingStudentIncident = {
+    id: 201,
+    reportedUserId: 88,
+    reportedUserStatus: 'APPROVED',
+    status: 'PENDING',
+    category: 'Falta de respeto o indisciplina',
+    reporterRole: 'tutor',
+  };
+
+  const resolution = processIncidentResolution(pendingStudentIncident, {
+    action: 'DISMISS',
+    notes: 'Aclaración dialogada entre las partes; no amerita sanción administrativa.',
+  });
+
+  assert.equal(resolution.success, true);
+  assert.equal(resolution.statusCode, 200);
+  assert.equal(resolution.incident.status, 'DISMISSED');
+  assert.equal(resolution.reportedUser.status, 'APPROVED'); // El estudiante NO es sancionado
+  assert.equal(resolution.incident.adminNotes, 'Aclaración dialogada entre las partes; no amerita sanción administrativa.');
+});
+
+test('HU-044: verifica transición a RESOLVED_BANNED y baja automática del estudiante infractor (DISABLED)', () => {
+  const pendingStudentIncident = {
+    id: 202,
+    reportedUserId: 88,
+    reportedUserStatus: 'APPROVED',
+    status: 'PENDING',
+    category: 'Agresión verbal o física',
+    reporterRole: 'tutor',
+  };
+
+  const resolution = processIncidentResolution(pendingStudentIncident, {
+    action: 'BAN',
+    notes: 'Conducta grave constatada en la sesión presencial.',
+  });
+
+  assert.equal(resolution.success, true);
+  assert.equal(resolution.statusCode, 200);
+  assert.equal(resolution.incident.status, 'RESOLVED_BANNED');
+  assert.equal(resolution.reportedUser.status, 'DISABLED'); // El estudiante pasa automáticamente a DISABLED
+});
+
