@@ -12,7 +12,7 @@ const getTutorRatingsReport = async (req, res, next) => {
               COALESCE(AVG(r.rating), 0) AS promedio, COUNT(r.id) AS total
          FROM tutor_profiles tp
          JOIN users u ON u.id = tp.user_id AND u.status = 'APPROVED'
-         LEFT JOIN reviews r ON r.tutor_id = tp.id
+         LEFT JOIN reviews r ON r.tutor_id = tp.id AND r.reviewer_role = 'student'
         GROUP BY tp.id
         ORDER BY promedio DESC, total DESC`,
     );
