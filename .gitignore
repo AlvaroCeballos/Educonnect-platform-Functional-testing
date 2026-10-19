@@ -42,6 +42,10 @@ docker-compose.override.yml
 # Material de Apoyo y Enunciados
 MaterialApoyo/
 Enunciado.md
+EnunciadoFase2.md
+EnunciadoFase2*.md
+01_ELECCION_DE_PAQUETES*.md
+DistribucionTareas*.md
 
 # Archivos locales de pnpm (para no causar conflictos con el equipo)
 pnpm-lock.yaml

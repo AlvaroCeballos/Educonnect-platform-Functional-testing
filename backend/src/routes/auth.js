@@ -3,10 +3,11 @@ const multer = require('multer');
 const { registerStudent, loginAdmin, loginAdmin2FA, loginStudent } = require('../controllers/authController');
 const { registerTutor } = require('../controllers/tutorAuthController');
 const { loginTutor } = require('../controllers/tutorLoginController');
-const { uploadTutorPhoto } = require('../middlewares/tutorPhoto');
+const { uploadTutorRegistrationFiles } = require('../middlewares/tutorRegistrationUpload');
+const { uploadStudentRegistrationFiles } = require('../middlewares/studentRegistrationUpload');
 const { authenticateJWT, authorizeAdmin } = require('../middlewares/authJWT');
 
-// Configurar multer para procesar archivos en memoria
+// Configurar multer para procesar archivos en memoria (2FA Admin)
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 },
@@ -19,13 +20,13 @@ const upload = multer({
   },
 });
 
-// HU-001: Registro de estudiante
-router.post('/register/student', registerStudent);
+// HU-001 + HU-028 + HU-030: Registro de estudiante con fotografía y carnet PDF
+router.post('/register/student', uploadStudentRegistrationFiles, registerStudent);
 
 // HU-003 Fase 1: Login de administrador
 router.post('/login/admin', loginAdmin);
 
-// HU-006: Login de estudiante (T-006.1, T-006.2)
+// HU-006: Login de estudiante
 router.post('/login/student', loginStudent);
 
 // HU-003 Fase 2: Validación del archivo 2FA
@@ -44,8 +45,8 @@ router.get('/admin/profile', authenticateJWT, authorizeAdmin, async (req, res) =
   }
 });
 
-// HU-002: Registro de tutor
-router.post('/register/tutor', uploadTutorPhoto.single('fotografia'), registerTutor);
+// HU-002 + HU-029: Registro de tutor
+router.post('/register/tutor', uploadTutorRegistrationFiles, registerTutor);
 
 // HU-007: Login de tutor
 router.post('/login/tutor', loginTutor);

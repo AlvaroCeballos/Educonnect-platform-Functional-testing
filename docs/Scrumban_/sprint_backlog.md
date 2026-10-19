@@ -129,3 +129,47 @@ Las 41 tareas técnicas planificadas y concluidas durante el Sprint 2 se estruct
 | **Tareas en DONE** | 50 (100%) | 41 (100%) | **91 (100%)** |
 | **Tareas Bloqueadas (BLOCKED)** | 0 | 0 | **0** |
 | **Deuda Técnica Pendiente** | 0% | 0% | **0%** |
+
+---
+
+# Actualización vigente — Fase 2, Sprint 1, Paquete F
+
+La distribución actualizada de Fase 2 redefine el alcance de Isai para este Sprint 1. El trabajo activo se limita a las historias HU-035 y HU-049; HU-036, HU-037, HU-038 y el despliegue final de CI/CD se mantienen en el Sprint 2.
+
+| Historia | Tarea | Responsable | Prioridad | Estado de implementación |
+| :--- | :--- | :--- | :---: | :---: |
+| HU-035 | T-035.1 — Formulario de calificación | Isai | 🟥 Alta | Implementada |
+| HU-035 | T-035.2 — Validación de sesión atendida y estrellas 0–5 | Isai | 🟥 Alta | Implementada |
+| HU-035 | T-035.3 — Persistencia y consulta de calificaciones | Isai | 🟥 Alta | Implementada |
+| HU-049 | T-049.1 — Workflow de Build | Isai | 🟥 Alta | Implementada |
+| HU-049 | T-049.2 — Workflow de Test | Isai | 🟥 Alta | Implementada |
+| HU-049 | T-049.3 — Deploy en `main` | Isai | 🟥 Alta | Pendiente Sprint 2 |
+
+## Evidencia técnica del cierre parcial
+
+- Backend: `npm test` ejecutado con 32 pruebas exitosas.
+- Frontend: `npm run build` ejecutado correctamente.
+- Workflow: `.github/workflows/backend-ci-cd.yml` contiene los jobs secuenciales `build` y `test`.
+- Bloqueo de integración: la validación funcional completa de HU-035 requiere sesiones `ATTENDED` disponibles en la base de datos; la API ya valida ese estado y no bloquea el desarrollo del pipeline.
+
+## Verificación actual — Sprint 2, Paquete B (Isai)
+
+La distribución vigente asigna a Isai las historias **HU-019** y **HU-023** durante el Sprint 2. La base funcional ya se encontraba integrada en `develop`; en esta iteración se verificó el alcance, se reforzó la validación reutilizable del perfil y se agregó cobertura específica para los criterios de aceptación.
+
+| Historia | Tarea | Evidencia verificada | Estado |
+| :--- | :--- | :--- | :---: |
+| HU-019 | T-019.1 — Cargar y editar horario | `GET/PUT /api/tutors/me/schedules` y formulario de edición | Verificada |
+| HU-019 | T-019.2 — Detectar conflictos con sesiones pendientes | Rechazo `409` si una cita `PENDING` queda fuera del nuevo rango | Verificada |
+| HU-019 | T-019.3 — Persistir horario válido | Transacción que desactiva el horario anterior y guarda los nuevos días | Verificada |
+| HU-023 | T-023.1 — Consultar perfil del tutor | `GET /api/tutors/me/profile` con correo de solo lectura | Verificada |
+| HU-023 | T-023.2 — Actualizar datos profesionales | `PUT /api/tutors/me/profile` con campos permitidos y persistencia | Verificada |
+| HU-023 | T-023.3 — Proteger correo y contraseña | Correo inmutable y contraseña validada antes de aplicar hash | Verificada |
+| HU-023 | T-023.4 — Pruebas de validación | `tutorProfileValidation.test.js` cubre datos válidos, correo, campos obligatorios y contraseña | Implementada |
+
+### Resultado de verificación
+
+- Backend: **61 pruebas exitosas**.
+- Frontend: build de producción exitoso después de instalar las dependencias declaradas en `frontend/package-lock.json`.
+- Integración: merge realizado en `develop` mediante el commit `0955b3b` (`merge: integrar sprint 2 de isai`).
+- Trello: `T-019.1–T-019.3` y `T-023.1–T-023.3` verificados en la lista `DONE`.
+- Bloqueo funcional restante: la prueba end-to-end con MySQL depende de levantar la instancia local; no bloquea las pruebas unitarias ni la compilación.

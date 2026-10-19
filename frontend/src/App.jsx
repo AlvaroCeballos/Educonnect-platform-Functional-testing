@@ -11,6 +11,7 @@ import StudentDashboard from './pages/student/StudentDashboard';
 import BookSession from './pages/student/BookSession';
 import MySessions from './pages/student/MySessions';
 import SessionHistory from './pages/student/SessionHistory';
+import StudentStudyPlans from './pages/student/StudentStudyPlans';
 import TutorSessions from './pages/tutor/TutorSessions';
 import StudentProfile from './pages/student/StudentProfile';
 import TutorDashboard from './pages/tutor/TutorDashboard'; // <-- Importamos el nuevo dashboard
@@ -85,6 +86,7 @@ export default function App() {
       <Route path="/mis-sesiones" element={<ProtectedRoute><MySessions /></ProtectedRoute>} />
       <Route path="/my-sessions" element={<ProtectedRoute><MySessions /></ProtectedRoute>} />
       <Route path="/historial" element={<ProtectedRoute><SessionHistory /></ProtectedRoute>} />
+      <Route path="/mi-plan" element={<ProtectedRoute><StudentStudyPlans /></ProtectedRoute>} />
       
       {/* Rutas del Tutor */}
       <Route path="/tutor/dashboard" element={<ProtectedRoute><TutorDashboard /></ProtectedRoute>} /> {/* <-- Nueva ruta del Dashboard */}
