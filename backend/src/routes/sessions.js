@@ -8,6 +8,7 @@ const {
   attendSession
 } = require('../controllers/sessionController');
 const { authenticate, mockStudent, mockTutor } = require('../middlewares/auth');
+const { createIncident } = require('../controllers/incidentController');
 
 const studentAuth = (req, res, next) => {
   const authHeader = req.headers['authorization'];
@@ -40,5 +41,7 @@ router.patch('/:id/cancel', studentAuth, cancelSession);
 router.get('/tutor/me', tutorAuth, getTutorSessions); // T-015.3: GET para el historial
 router.patch('/:id/cancel/tutor', tutorAuth, cancelSessionByTutor);
 router.patch('/:id/attend', tutorAuth, attendSession); // T-015.3: PATCH para marcar atencion
+router.post('/:sessionId/report-tutor', studentAuth, createIncident('student'));
+router.post('/:sessionId/report-student', tutorAuth, createIncident('tutor'));
 
 module.exports = router;

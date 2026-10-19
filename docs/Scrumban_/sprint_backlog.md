@@ -143,7 +143,7 @@ La distribución actualizada de Fase 2 redefine el alcance de Isai para este Spr
 | HU-035 | T-035.3 — Persistencia y consulta de calificaciones | Isai | 🟥 Alta | Implementada |
 | HU-049 | T-049.1 — Workflow de Build | Isai | 🟥 Alta | Implementada |
 | HU-049 | T-049.2 — Workflow de Test | Isai | 🟥 Alta | Implementada |
-| HU-049 | T-049.3 — Deploy en `main` | Isai | 🟥 Alta | Pendiente Sprint 2 |
+| HU-049 | T-049.3 — Deploy en `main` | Isai | 🟥 Alta | En progreso |
 
 ## Evidencia técnica del cierre parcial
 
@@ -174,6 +174,28 @@ La distribución vigente asigna a Isai las historias **HU-019** y **HU-023** dur
 - Trello: `T-019.1–T-019.3` y `T-023.1–T-023.3` verificados en la lista `DONE`.
 - Bloqueo funcional restante: la prueba end-to-end con MySQL depende de levantar la instancia local; no bloquea las pruebas unitarias ni la compilación.
 
+## Verificación actual — Sprint 2, Paquete F (Isai)
+
+La revisión directa del tablero y del repositorio confirmó que las tarjetas `T-036.1–T-036.3`,
+`T-037.1–T-037.3` y `T-038.1–T-038.3` no eran únicamente un atraso visual: antes de esta rama
+no existían las rutas ni las vistas completas para reportes disciplinarios y calificación tutor→estudiante.
+
+| Historia | Tareas | Evidencia de avance | Estado |
+| :--- | :--- | :--- | :---: |
+| HU-036 | T-036.1–T-036.3 | Formulario estudiante, catálogo, validación de sesión `ATTENDED` y persistencia `incident_reports` | Lista para TEST/QA |
+| HU-037 | T-037.1–T-037.3 | Formulario tutor, validación 0–5 y separación de calificaciones por `reviewer_role` | Lista para TEST/QA |
+| HU-038 | T-038.1–T-038.3 | Formulario tutor, catálogo, validación de sesión `ATTENDED` y persistencia `incident_reports` | Lista para TEST/QA |
+
+La implementación se encuentra en la rama `sprint2/isai-hu036-hu037-hu038`, actualizada con `origin/develop` hasta `d28b20e`.
+La suite backend completa quedó en **79 pruebas exitosas y 0 fallos**, incluyendo validaciones de reportes, calificaciones, moderación y flujo E2E-03; el frontend compila correctamente.
+La validación funcional con datos reales requiere ejecutar la migración de Fase 2 y disponer de sesiones `ATTENDED`, por lo que las tarjetas pasan a TEST/QA para revisión del equipo.
+
+### Tarea adicional de CI/CD
+
+| Historia | Tarea | Evidencia | Estado |
+| :--- | :--- | :--- | :---: |
+| HU-049 | T-049.3 — Workflow CI/CD para deploy en `main` | Job condicionado a `main`, entorno `production` y despliegue SSH mediante secretos `DEPLOY_*` | Implementada; pendiente de infraestructura productiva |
+
 ---
 
 ## Verificación actual — Sprint 2, Paquete C (Alvaro Ceballos)
@@ -196,4 +218,3 @@ La distribución oficial de Fase 2 asigna a Alvaro las historias **HU-042** (Ges
 - **Frontend:** Build de producción exitoso con Vite (`pnpm build` completado en 15.18s).
 - **Integración Git:** Ramas `feature/hu-042-edicion-tutores#202300673` y `feature/hu-044-denuncias-estudiantes#202300673` integradas limpiamente en `develop`.
 - **Cierre Técnico:** Cobertura de las pruebas oficiales `PU-11` a `PU-15`, más pruebas de moderación bidireccional y flujo `E2E-03`.
-
