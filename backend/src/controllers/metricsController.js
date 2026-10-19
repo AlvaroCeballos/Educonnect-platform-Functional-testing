@@ -1,7 +1,6 @@
 const pool = require('../config/db');
-
 const {
-  groupSessionsByPeriod, cancellationRateBySubject, demandBySchedule,
+  groupSessionsByPeriod, cancellationRateBySubject, demandBySchedule, weightedAverage,
 } = require('../utils/metrics');
 
 // HU-045: promedio de calificaciones de tutores activos (APPROVED)
@@ -24,6 +23,49 @@ const getTutorRatingsReport = async (req, res, next) => {
     res.json({ tutorsRatings });
   } catch (err) { next(err); }
 };
+
+// HU-046: promedio de calificaciones de estudiantes activos (APPROVED),
+// a partir de las calificaciones que les asignaron los tutores (reviewer_role = 'tutor').
+// Se agrupa por tutor y se pondera por la cantidad de calificaciones (PU-18),
+// lo que equivale al promedio de todas las calificaciones recibidas.
+const getStudentRatingsReport = async (req, res, next) => {
+  try {
+    const [students] = await pool.execute(
+      `SELECT sp.id, sp.nombre, sp.apellido, sp.carnet
+         FROM student_profiles sp
+         JOIN users u ON u.id = sp.user_id AND u.status = 'APPROVED'`,
+    );
+    const [groups] = await pool.execute(
+      `SELECT r.student_id, SUM(r.rating) AS suma, COUNT(*) AS total
+         FROM reviews r
+        WHERE r.reviewer_role = 'tutor'
+        GROUP BY r.student_id, r.tutor_id`,
+    );
+
+    const byStudent = new Map();
+    for (const g of groups) {
+      const total = Number(g.total);
+      const items = byStudent.get(g.student_id) || [];
+      items.push({ rating: Number(g.suma) / total, weight: total });
+      byStudent.set(g.student_id, items);
+    }
+
+    const studentsRatings = students
+      .map((s) => {
+        const items = byStudent.get(s.id) || [];
+        return {
+          ...s,
+          promedio: weightedAverage(items),
+          total: items.reduce((acc, i) => acc + i.weight, 0),
+          tutores: items.length,
+        };
+      })
+      .sort((a, b) => b.promedio - a.promedio || b.total - a.total);
+
+    res.json({ studentsRatings });
+  } catch (err) { next(err); }
+};
+
 
 // HU-047: ?granularity=week|month&month=YYYY-MM
 const getSessionsEvolutionReport = async (req, res, next) => {
@@ -87,4 +129,5 @@ const getDemandedSchedulesReport = async (req, res, next) => {
 module.exports = {
   getTutorRatingsReport, getSessionsEvolutionReport,
   getCancellationsBySubjectReport, getDemandedSchedulesReport,
+  getStudentRatingsReport,
 };
