@@ -17,16 +17,16 @@ EduConnect es una solución web integral diseñada para transformar y optimizar 
 
 ---
 
-## 2. Integrantes del Equipo
+## 2. Integrantes del Equipo (Fase 2)
 
-| No. | Nombre Completo | Carnet / ID | Rol Scrum | Paquete Técnico Asignado |
-| :-: | :--- | :---: | :---: | :--- |
-| 1 | **Alvaro Ceballos** | **Scrum Master** & Dev | **Paquete C:** Administración de Usuarios y Reportes |
-| 2 | **Katheryn / Wade** | Developer | **Paquete A:** Identidad y Autenticación |
-| 3 | **Isai Patzán Tzic** | Developer | **Paquete B:** Tutor: Identidad y Horarios |
-| 4 | **Yury** | Developer | **Paquete D:** Descubrimiento y Disponibilidad |
-| 5 | **Yulianne Nicole López Elias** | Developer | **Paquete E:** Sesiones del Estudiante |
-| 6 | **Xavi Alexander De León Perdomo** | **Product Owner** & Dev | **Paquete F:** Sesiones del Tutor y Notificaciones |
+| No. | Integrante | Rol Scrum | Carnet | Paquete Asignado (Fase 2) | Historias / Responsabilidades |
+| :-: | :--- | :---: | :---: | :--- | :--- |
+| 1 | **Alvaro Ceballos** | **Scrum Master** & Dev | 202300673 | **Paquete C:** Moderación, Denuncias y Cuentas | HU-041, HU-042, HU-043, HU-044, PU-11 a PU-15, E2E-03, Evaluación SM, README |
+| 2 | **Yury** | Developer | — | **Paquete A:** Identidad, Tokens y PDFs Estudiante | HU-028, HU-030, HU-031, PU-01 a PU-05, E2E-01, Requerimientos (RRs, EACs) |
+| 3 | **Xavi Alexander De León** | Developer | — | **Paquete B:** CV Tutor, Visores PDF y Despliegue | HU-029, HU-039, HU-040, HU-050, PU-06 a PU-10, E2E-02, init.sql, DER 3FN |
+| 4 | **Wade / Katheryn** | Developer | — | **Paquete D:** Métricas, Calificaciones y Reportes F2 | HU-045, HU-046, HU-047, HU-048, PU-16 a PU-20, E2E-04, Nielsen UI/UX, Figma |
+| 5 | **Nicole López** | Developer | — | **Paquete E:** Planes Estructurados y Constancia PDF | HU-032, HU-033, HU-034, PU-21 a PU-25, E2E-05, RFs, Manual de Usuario |
+| 6 | **Isai Patzán** | **Product Owner** & Dev | — | **Paquete F:** Feedback y Pipeline CI/CD | HU-035, HU-036, HU-037, HU-038, HU-049, PU-26 a PU-30, E2E-06, CI/CD Runner |
 
 ---
 
@@ -35,21 +35,21 @@ EduConnect es una solución web integral diseñada para transformar y optimizar 
 Toda la documentación técnica, casos de uso, requerimientos y gestión ágil del proyecto se encuentra centralizada en la carpeta [`docs/`](docs/):
 
 ### Metodología y Gestión de Proyecto (Scrumban)
-* [`docs/Scrumban2/README.md`](docs/Scrumban2/README.md): Guía metodológica general del proceso Scrumban.
-* [`docs/Scrumban2/historias_usuario.md`](docs/Scrumban2/historias_usuario.md): Product Backlog con 27 Historias de Usuario priorizadas, criterios de aceptación y matrices de estimación consensuada en Excel.
-* [`docs/Scrumban2/sprint_backlog.md`](docs/Scrumban2/sprint_backlog.md): Sprint Goals, alcance y desglose de las 91 tareas técnicas para los Sprints 1 y 2.
-* [`docs/Scrumban2/tablero_kanban.md`](docs/Scrumban2/tablero_kanban.md): Modelo Kanban en Trello, flujo de 5 columnas, etiquetas y capturas de evolución.
-* [`docs/Scrumban2/scrum_meetings.md`](docs/Scrumban2/scrum_meetings.md): Bitácora de 16 eventos Scrum (2 Plannings, 12 Dailies con 6 integrantes y 2 Retrospectivas) con enlaces a evidencias PDF.
-* [`docs/Scrumban2/listaTareas.md`](docs/Scrumban2/listaTareas.md): Listado de 91 tareas técnicas sincronizadas con Trello.
-* [`docs/Evaluacion_SM.md`](docs/Evaluacion_SM.md): Evaluación formal de desempeño emitida por el Scrum Master (100/100 para todos los integrantes).
+* [`docs/Scrumban_/README.md`](docs/Scrumban_/README.md): Guía metodológica general del proceso Scrumban.
+* [`docs/Scrumban_/historias_usuario.md`](docs/Scrumban_/historias_usuario.md): Product Backlog con Historias de Usuario priorizadas y criterios de aceptación Gherkin.
+* [`docs/Scrumban_/sprint_backlog.md`](docs/Scrumban_/sprint_backlog.md): Sprint Goals, alcance y desglose de tareas técnicas con verificación de Paquete C.
+* [`docs/Scrumban_/tablero_kanban.md`](docs/Scrumban_/tablero_kanban.md): Modelo Kanban en Trello, flujo de 5 columnas normativas y evidencias.
+* [`docs/Scrumban_/scrum_meetings.md`](docs/Scrumban_/scrum_meetings.md): Bitácora de eventos Scrum (Plannings, Dailies y Retrospectivas) con enlaces a grabaciones.
+* [`docs/Evaluacion_SM.md`](docs/Evaluacion_SM.md): Evaluación formal de desempeño emitida por el Scrum Master (100/100 para todos los integrantes con desglose de 4 dimensiones).
 
 ### Arquitectura, Requerimientos y Casos de Uso
 * [`docs/Arquitectura_y_BaseDatos/manual_tecnico.md`](docs/Arquitectura_y_BaseDatos/manual_tecnico.md): Manual técnico de arquitectura, Docker, endpoints y seguridad 2FA.
-* [`docs/Arquitectura_y_BaseDatos/diagrama_entidad_relacion.md`](docs/Arquitectura_y_BaseDatos/diagrama_entidad_relacion.md): Modelo relacional y esquema físico de base de datos MySQL 8.0.
+* [`docs/Arquitectura_y_BaseDatos/diagrama_entidad_relacion.md`](docs/Arquitectura_y_BaseDatos/diagrama_entidad_relacion.md): Modelo relacional y esquema físico de base de datos MySQL 8.0 en 3FN.
 * [`docs/Casos_de_uso/0.1-core.md`](docs/Casos_de_uso/0.1-core.md): Caso de uso core del negocio.
 * [`docs/Casos_de_uso/0.2-primera-descomposicion.md`](docs/Casos_de_uso/0.2-primera-descomposicion.md): Primera descomposición funcional del sistema.
 * [`docs/Casos_de_uso/0.3-cun-expandidos.md`](docs/Casos_de_uso/0.3-cun-expandidos.md): Casos de uso expandidos por módulo.
-* [`docs/Casos_de_uso/0.3-descripciones-textuales.md`](docs/Casos_de_uso/0.3-descripciones-textuales.md): Descripciones textuales formales de los casos de uso.
+* [`docs/Casos_de_uso/0.3-descripciones-textuales.md`](docs/Casos_de_uso/0.3-descripciones-textuales.md): Descripciones textuales formales de 11 campos para todos los paquetes (incluyendo CU-ADM-08 a CU-ADM-11 de Paquete C).
+* [`docs/Requerimientos/RFs-requerimientos-funcionales.md`](docs/Requerimientos/RFs-requerimientos-funcionales.md): Matriz de requerimientos funcionales.
 * [`docs/Requerimientos/RRs-requerimientos-restriccion.md`](docs/Requerimientos/RRs-requerimientos-restriccion.md): Requerimientos de restricción.
 * [`docs/Requerimientos/EACs-requerimientos-calidad.md`](docs/Requerimientos/EACs-requerimientos-calidad.md): Escenarios de atributos de calidad (ISO/IEC 25010).
 
