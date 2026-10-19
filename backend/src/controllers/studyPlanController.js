@@ -1,5 +1,6 @@
 const pool = require('../config/db');
 const { validateStudyPlanPayload, canAttendSession } = require('../utils/studyPlan');
+const { generateCertificatePDF, validateCertificatePayload } = require('../utils/certificatePdf');
 
 const resolveTutorProfileId = (req) => Number(req.user?.tutorId || req.user?.id);
 
@@ -198,8 +199,39 @@ const getMyStudyPlans = async (req, res, next) => {
   }
 };
 
+const downloadCertificate = async (req, res, next) => {
+  try {
+    const studentId = await resolveStudentProfileId(req);
+    if (!studentId) return res.status(401).json({ message: 'La sesión no identifica al estudiante' });
+
+    const planId = Number(req.params.planId);
+    if (!Number.isInteger(planId) || planId < 1) {
+      return res.status(400).json({ message: 'El identificador del plan debe ser un entero positivo' });
+    }
+
+    const plan = await fetchStudyPlanByIdForStudent(planId, studentId);
+    if (!plan) {
+      return res.status(404).json({ message: 'El plan de estudio no existe o no te pertenece' });
+    }
+
+    const validation = validateCertificatePayload(plan);
+    if (!validation.valid) {
+      return res.status(500).json({ message: `No se puede generar la constancia: ${validation.message}` });
+    }
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="constancia-sesion-${plan.session_id}.pdf"`);
+
+    generateCertificatePDF(plan, res);
+  } catch (error) {
+    if (res.headersSent) return;
+    return next(error);
+  }
+};
+
 module.exports = {
   createStudyPlan,
   getMyStudyPlans,
   fetchStudyPlanByIdForStudent,
+  downloadCertificate,
 };
