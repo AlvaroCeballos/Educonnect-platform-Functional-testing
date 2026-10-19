@@ -188,3 +188,26 @@ no existían las rutas ni las vistas completas para reportes disciplinarios y ca
 
 La implementación se desarrolla en la rama `sprint2/isai-hu036-hu037-hu038` a partir de `develop`.
 La validación funcional con datos reales requiere ejecutar la migración de Fase 2 y disponer de sesiones `ATTENDED`.
+
+---
+
+## Verificación actual — Sprint 2, Paquete C (Alvaro Ceballos)
+
+La distribución oficial de Fase 2 asigna a Alvaro las historias **HU-042** (Gestión y edición de tutores aprobados) y **HU-044** (Panel de moderación y resolución de denuncias contra estudiantes), completando con ello el 100% del alcance de Moderación, Cuentas y Denuncias del Paquete C.
+
+| Historia | Tarea | Evidencia verificada | Estado |
+| :--- | :--- | :--- | :---: |
+| **HU-042** | T-042.1 — Edición de perfil de tutor por admin | `PUT /api/admin/users/:id/tutor-profile` con correo inmutable y actualización en `tutor_profiles` | **DONE** |
+| **HU-042** | T-042.2 — Reglas de validación y protección de correo | Rechazo 400 ante intento de modificar correo; validación de especialidad, carnet y año de experiencia | **DONE** |
+| **HU-042** | T-042.3 — Componente visual de edición y dossier modal | Botón "Editar" en tabla de tutores aprobados y acción "Editar Perfil" en dossier SweetAlert2 | **DONE** |
+| **HU-044** | T-044.1 — Consulta de denuncias contra estudiantes | `GET /api/admin/reports/students` con filtro por estado (`PENDING`, `RESOLVED_BANNED`, `DISMISSED`) | **DONE** |
+| **HU-044** | T-044.2 — Resolución disciplinaria unificada | `PATCH /api/admin/reports/:id/resolve` (sanción con baja a `DISABLED` y notificación SMTP o desestimación) | **DONE** |
+| **HU-044** | T-044.3 — Panel visual de denuncias de estudiantes | Subpestaña "Denuncias Recibidas (HU-044)" en módulo Estudiantes con tabla, badges y filtros | **DONE** |
+| **E2E-03** | T-E2E.3 — Flujo de moderación y sanción | Spec Cypress `e2e-03-moderacion-sancion.cy.js` y runner de integración `e2e03Flow.test.js` | **DONE** |
+
+### Resultado de verificación global
+
+- **Backend:** **78 pruebas unitarias y de integración exitosas al 100% (0 fallos)** ejecutadas con `pnpm test`.
+- **Frontend:** Build de producción exitoso con Vite (`pnpm build` completado en 15.18s).
+- **Integración Git:** Ramas `feature/hu-042-edicion-tutores#202300673` y `feature/hu-044-denuncias-estudiantes#202300673` integradas limpiamente en `develop`.
+- **Cierre Técnico:** Cobertura de las pruebas oficiales `PU-11` a `PU-15`, más pruebas de moderación bidireccional y flujo `E2E-03`.
