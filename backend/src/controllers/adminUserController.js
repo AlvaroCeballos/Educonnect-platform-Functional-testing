@@ -617,6 +617,154 @@ const updateStudentProfileByAdmin = async (req, res) => {
 };
 
 /**
+ * HU-042: Actualizar información del perfil de un tutor por el Administrador
+ * PUT /api/admin/users/:id/tutor-profile
+ * PUT /api/admin/tutors/:id
+ * Regla de inmutabilidad (PU-11 / seguridad): El correo electrónico no se puede modificar.
+ */
+const updateTutorProfileByAdmin = async (req, res) => {
+  const userId = Number(req.params.id);
+  const {
+    nombre,
+    apellido,
+    carnet,
+    identificacion,
+    especialidad,
+    universidad,
+    direccion_tutoria,
+    anio_inicio_experiencia,
+    genero,
+    fecha_nacimiento,
+    fotografia_url,
+    email,
+  } = req.body || {};
+
+  if (!Number.isInteger(userId) || userId < 1) {
+    return res.status(400).json({ message: 'El identificador de usuario no es válido' });
+  }
+
+  if (!nombre || !apellido || !carnet || !especialidad) {
+    return res.status(400).json({ message: 'Nombre, apellido, carnet y especialidad son obligatorios' });
+  }
+
+  const currentYear = new Date().getFullYear();
+  if (anio_inicio_experiencia && Number(anio_inicio_experiencia) > currentYear) {
+    return res.status(400).json({ message: 'El año de inicio de experiencia no puede ser en el futuro' });
+  }
+
+  let conn;
+  try {
+    conn = await pool.getConnection();
+
+    // 1. Verificar existencia del usuario con rol tutor
+    const [userRows] = await conn.execute(
+      `SELECT u.id, u.email, u.status, tp.id AS profile_id
+         FROM users u
+         LEFT JOIN tutor_profiles tp ON tp.user_id = u.id
+        WHERE u.id = ? AND u.role = 'tutor'`,
+      [userId]
+    );
+
+    if (userRows.length === 0) {
+      return res.status(404).json({ message: 'Tutor no encontrado' });
+    }
+
+    const currentTutor = userRows[0];
+
+    // Regla de inmutabilidad estricta del correo electrónico
+    if (
+      email !== undefined &&
+      email !== null &&
+      String(email).trim().toLowerCase() !== String(currentTutor.email).trim().toLowerCase()
+    ) {
+      return res.status(400).json({
+        message: 'El correo electrónico no puede ser modificado por políticas de seguridad e inmutabilidad',
+      });
+    }
+
+    // 2. Verificar conflicto de carnet con otro tutor
+    const [carnetConflict] = await conn.execute(
+      'SELECT id FROM tutor_profiles WHERE carnet = ? AND user_id != ?',
+      [String(carnet).trim(), userId]
+    );
+    if (carnetConflict.length > 0) {
+      return res.status(409).json({ message: 'El carnet ya se encuentra registrado por otro tutor' });
+    }
+
+    // 3. Verificar conflicto de identificación/DPI con otro tutor si fue enviada
+    if (identificacion) {
+      const [idConflict] = await conn.execute(
+        'SELECT id FROM tutor_profiles WHERE identificacion = ? AND user_id != ?',
+        [String(identificacion).trim(), userId]
+      );
+      if (idConflict.length > 0) {
+        return res.status(409).json({ message: 'La identificación (DPI) ya se encuentra registrada por otro tutor' });
+      }
+    }
+
+    const validGenders = new Set(['M', 'F', 'OTHER', 'UNSPECIFIED']);
+    const normalizedGender = validGenders.has(String(genero || '').toUpperCase())
+      ? String(genero).toUpperCase()
+      : 'UNSPECIFIED';
+
+    await conn.execute(
+      `UPDATE tutor_profiles
+          SET nombre = ?,
+              apellido = ?,
+              carnet = ?,
+              identificacion = COALESCE(?, identificacion),
+              especialidad = ?,
+              universidad = COALESCE(?, universidad),
+              direccion_tutoria = COALESCE(?, direccion_tutoria),
+              anio_inicio_experiencia = COALESCE(?, anio_inicio_experiencia),
+              genero = COALESCE(?, genero),
+              fecha_nacimiento = COALESCE(?, fecha_nacimiento),
+              fotografia_url = COALESCE(?, fotografia_url)
+        WHERE user_id = ?`,
+      [
+        String(nombre).trim(),
+        String(apellido).trim(),
+        String(carnet).trim(),
+        identificacion ? String(identificacion).trim() : null,
+        String(especialidad).trim(),
+        universidad ? String(universidad).trim() : null,
+        direccion_tutoria ? String(direccion_tutoria).trim() : null,
+        anio_inicio_experiencia ? Number(anio_inicio_experiencia) : null,
+        genero ? normalizedGender : null,
+        fecha_nacimiento || null,
+        fotografia_url ? String(fotografia_url).trim() : null,
+        userId,
+      ]
+    );
+
+    return res.json({
+      message: 'Perfil de tutor actualizado exitosamente',
+      tutor: {
+        userId,
+        email: currentTutor.email,
+        nombre: String(nombre).trim(),
+        apellido: String(apellido).trim(),
+        carnet: String(carnet).trim(),
+        identificacion: identificacion ? String(identificacion).trim() : undefined,
+        especialidad: String(especialidad).trim(),
+        universidad: universidad ? String(universidad).trim() : null,
+        direccion_tutoria: direccion_tutoria ? String(direccion_tutoria).trim() : null,
+        anio_inicio_experiencia: anio_inicio_experiencia ? Number(anio_inicio_experiencia) : null,
+        genero: normalizedGender,
+        fecha_nacimiento: fecha_nacimiento || null,
+        fotografia_url: fotografia_url ? String(fotografia_url).trim() : null,
+      },
+    });
+  } catch (error) {
+    console.error('Error actualizando perfil de tutor:', error);
+    return res.status(500).json({ message: 'No fue posible actualizar el perfil del tutor' });
+  } finally {
+    if (conn) conn.release();
+  }
+};
+
+
+/**
  * HU-043: Listar denuncias disciplinarias contra tutores
  * GET /api/admin/reports/tutors
  */
@@ -817,6 +965,7 @@ module.exports = {
   getTopTutorsReport,
   getSubjectsDemandReport,
   updateStudentProfileByAdmin,
+  updateTutorProfileByAdmin,
   listTutorIncidents,
   resolveTutorIncident,
 };

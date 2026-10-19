@@ -10,6 +10,7 @@ const {
   disableUser,
   getTopTutorsReport,
   updateStudentProfileByAdmin,
+  updateTutorProfileByAdmin,
   listTutorIncidents,
   resolveTutorIncident,
 } = require('../controllers/adminUserController');
@@ -28,6 +29,10 @@ router.put('/users/:id/disable', disableUser);
 // HU-041: Edición de perfil de estudiantes por Administrador (correo inmutable)
 router.put('/users/:id/student-profile', updateStudentProfileByAdmin);
 router.put('/students/:id', updateStudentProfileByAdmin);
+
+// HU-042: Edición de perfil de tutores por Administrador (correo inmutable)
+router.put('/users/:id/tutor-profile', updateTutorProfileByAdmin);
+router.put('/tutors/:id', updateTutorProfileByAdmin);
 
 // HU-043: Panel de moderación y denuncias contra tutores
 router.get('/reports/tutors', listTutorIncidents);
