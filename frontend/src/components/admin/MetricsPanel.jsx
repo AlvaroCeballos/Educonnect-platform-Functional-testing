@@ -5,6 +5,7 @@ import {
   LineElement, Filler, Tooltip, Legend,
 } from 'chart.js';
 import api from '../../utils/api';
+import ReportsF2Panel from './ReportsF2Panel';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Filler, Tooltip, Legend);
 
@@ -130,7 +131,11 @@ export default function MetricsPanel() {
             <Line data={chartData} options={options} aria-label="Gráfico de evolución de sesiones atendidas" />
           </div>
         )}
+        
       </section>
+
+      <ReportsF2Panel />
+
     </div>
   );
 }
