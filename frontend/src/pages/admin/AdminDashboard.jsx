@@ -190,9 +190,9 @@ export default function AdminDashboard() {
         </div>
       `,
       showCancelButton: true,
-      showConfirmButton: tutor.status !== 'APPROVED',
+      showConfirmButton: true,
       showDenyButton: tutor.status !== 'APPROVED',
-      confirmButtonText: 'Aceptar Tutor',
+      confirmButtonText: tutor.status === 'APPROVED' ? 'Editar Perfil' : 'Aceptar Tutor',
       denyButtonText: 'Rechazar Tutor',
       cancelButtonText: 'Cerrar',
       confirmButtonColor: '#167963',
@@ -204,6 +204,10 @@ export default function AdminDashboard() {
           handleApprove(tutor);
         } else if (result.isDenied) {
           handleReject(tutor);
+        }
+      } else {
+        if (result.isConfirmed) {
+          handleOpenEditTutor(tutor);
         }
       }
     });
