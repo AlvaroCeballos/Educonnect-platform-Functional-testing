@@ -12,7 +12,10 @@ const {
   updateStudentProfileByAdmin,
   updateTutorProfileByAdmin,
   listTutorIncidents,
+  listStudentIncidents,
+  resolveIncident,
   resolveTutorIncident,
+  resolveStudentIncident,
 } = require('../controllers/adminUserController');
 
 router.use(authenticateJWT, authorizeAdmin);
@@ -37,10 +40,16 @@ router.put('/tutors/:id', updateTutorProfileByAdmin);
 // HU-043: Panel de moderación y denuncias contra tutores
 router.get('/reports/tutors', listTutorIncidents);
 router.get('/incidents/tutors', listTutorIncidents);
-router.patch('/reports/:id/resolve', resolveTutorIncident);
-router.put('/reports/:id/resolve', resolveTutorIncident);
-router.patch('/incidents/:id/resolve', resolveTutorIncident);
-router.put('/incidents/:id/resolve', resolveTutorIncident);
+
+// HU-044: Panel de moderación y denuncias contra estudiantes
+router.get('/reports/students', listStudentIncidents);
+router.get('/incidents/students', listStudentIncidents);
+
+// HU-043 / HU-044: Resolución unificada de denuncias disciplinarias
+router.patch('/reports/:id/resolve', resolveIncident);
+router.put('/reports/:id/resolve', resolveIncident);
+router.patch('/incidents/:id/resolve', resolveIncident);
+router.put('/incidents/:id/resolve', resolveIncident);
 
 // HU-026: Reporte de demanda de tutores
 router.get('/reports/top-tutors', getTopTutorsReport);
