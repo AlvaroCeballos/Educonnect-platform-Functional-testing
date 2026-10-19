@@ -10,7 +10,7 @@ services:
       MYSQL_USER: ${DB_USER}
       MYSQL_PASSWORD: ${DB_PASSWORD}
     ports:
-      - "3306:3306"
+      - "${DB_EXTERNAL_PORT:-3307}:3306"
     volumes:
       # Esquema inicial de la Fase 0. Se ejecuta al crear el volumen por primera vez.
       - ./backend/init.sql:/docker-entrypoint-initdb.d/001-init.sql:ro

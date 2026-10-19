@@ -40,6 +40,21 @@ export default function AdminDashboard() {
     fotografia_url: '',
   });
   const [savingEdit, setSavingEdit] = useState(false);
+  const [editingTutor, setEditingTutor] = useState(null);
+  const [editTutorForm, setEditTutorForm] = useState({
+    nombre: '',
+    apellido: '',
+    carnet: '',
+    identificacion: '',
+    especialidad: '',
+    universidad: '',
+    direccion_tutoria: '',
+    anio_inicio_experiencia: '',
+    genero: 'UNSPECIFIED',
+    fecha_nacimiento: '',
+    fotografia_url: '',
+  });
+  const [savingTutorEdit, setSavingTutorEdit] = useState(false);
 
   const loadUsers = useCallback(async () => {
     try {
@@ -175,9 +190,9 @@ export default function AdminDashboard() {
         </div>
       `,
       showCancelButton: true,
-      showConfirmButton: tutor.status !== 'APPROVED',
+      showConfirmButton: true,
       showDenyButton: tutor.status !== 'APPROVED',
-      confirmButtonText: 'Aceptar Tutor',
+      confirmButtonText: tutor.status === 'APPROVED' ? 'Editar Perfil' : 'Aceptar Tutor',
       denyButtonText: 'Rechazar Tutor',
       cancelButtonText: 'Cerrar',
       confirmButtonColor: '#167963',
@@ -189,6 +204,10 @@ export default function AdminDashboard() {
           handleApprove(tutor);
         } else if (result.isDenied) {
           handleReject(tutor);
+        }
+      } else {
+        if (result.isConfirmed) {
+          handleOpenEditTutor(tutor);
         }
       }
     });
@@ -324,6 +343,49 @@ export default function AdminDashboard() {
       });
     } finally {
       setSavingEdit(false);
+    }
+  };
+
+  const handleOpenEditTutor = (tutor) => {
+    setEditingTutor(tutor);
+    setEditTutorForm({
+      nombre: tutor.nombre || '',
+      apellido: tutor.apellido || '',
+      carnet: tutor.carnet || '',
+      identificacion: tutor.identificacion || '',
+      especialidad: tutor.especialidad || '',
+      universidad: tutor.universidad || '',
+      direccion_tutoria: tutor.direccion_tutoria || '',
+      anio_inicio_experiencia: tutor.anio_inicio_experiencia || '',
+      genero: tutor.genero || 'UNSPECIFIED',
+      fecha_nacimiento: tutor.fecha_nacimiento ? String(tutor.fecha_nacimiento).substring(0, 10) : '',
+      fotografia_url: tutor.fotografia_url || '',
+    });
+  };
+
+  const handleSaveEditTutor = async (e) => {
+    e.preventDefault();
+    if (!editingTutor) return;
+    setSavingTutorEdit(true);
+    try {
+      const res = await api.put(`/admin/users/${editingTutor.id}/tutor-profile`, editTutorForm);
+      await Swal.fire({
+        icon: 'success',
+        title: 'Tutor actualizado',
+        text: res.data.message || 'Los datos del tutor han sido actualizados exitosamente.',
+        confirmButtonColor: '#167963',
+      });
+      setEditingTutor(null);
+      await loadUsers();
+    } catch (err) {
+      await Swal.fire({
+        icon: 'error',
+        title: 'Error al actualizar',
+        text: err.response?.data?.message || 'No fue posible guardar los cambios.',
+        confirmButtonColor: '#167963',
+      });
+    } finally {
+      setSavingTutorEdit(false);
     }
   };
 
@@ -1068,6 +1130,14 @@ export default function AdminDashboard() {
                                 </button>
                                 <button
                                   type="button"
+                                  className="edit-button"
+                                  title="Editar perfil del tutor (HU-042)"
+                                  onClick={() => handleOpenEditTutor(tutor)}
+                                >
+                                  Editar
+                                </button>
+                                <button
+                                  type="button"
                                   className="disable-button"
                                   disabled={actionId === tutor.id}
                                   title="Dar de baja lógica a este tutor"
@@ -1789,6 +1859,186 @@ export default function AdminDashboard() {
                     className="admin-button-primary"
                   >
                     {savingEdit ? 'Guardando...' : 'Guardar Cambios'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL HU-042: Edición de perfil de tutor (correo inmutable) */}
+        {editingTutor && (
+          <div className="admin-modal-overlay" onClick={() => setEditingTutor(null)}>
+            <div className="admin-modal-card" onClick={(e) => e.stopPropagation()}>
+              <div className="admin-modal-header">
+                <div>
+                  <h3>Editar Perfil de Tutor (HU-042)</h3>
+                  <p>Modifica la información profesional y académica. El correo electrónico institucional es inmutable.</p>
+                </div>
+                <button
+                  type="button"
+                  className="admin-modal-close"
+                  onClick={() => setEditingTutor(null)}
+                  title="Cerrar modal"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveEditTutor} className="admin-modal-form">
+                <div className="admin-form-group">
+                  <label>
+                    Correo Electrónico
+                    <span className="badge-immutable">Inmutable</span>
+                  </label>
+                  <input
+                    type="email"
+                    value={editingTutor.email}
+                    disabled
+                    className="admin-input-disabled"
+                  />
+                  <small className="admin-input-hint">
+                    Por normativas de seguridad e identidad docente, el correo no puede ser modificado.
+                  </small>
+                </div>
+
+                <div className="admin-form-row">
+                  <div className="admin-form-group">
+                    <label>Nombre *</label>
+                    <input
+                      type="text"
+                      required
+                      value={editTutorForm.nombre}
+                      onChange={(e) => setEditTutorForm({ ...editTutorForm, nombre: e.target.value })}
+                      className="admin-input"
+                    />
+                  </div>
+                  <div className="admin-form-group">
+                    <label>Apellido *</label>
+                    <input
+                      type="text"
+                      required
+                      value={editTutorForm.apellido}
+                      onChange={(e) => setEditTutorForm({ ...editTutorForm, apellido: e.target.value })}
+                      className="admin-input"
+                    />
+                  </div>
+                </div>
+
+                <div className="admin-form-row">
+                  <div className="admin-form-group">
+                    <label>Carnet Universitario *</label>
+                    <input
+                      type="text"
+                      required
+                      value={editTutorForm.carnet}
+                      onChange={(e) => setEditTutorForm({ ...editTutorForm, carnet: e.target.value })}
+                      className="admin-input"
+                      style={{ fontFamily: 'monospace', fontWeight: 'bold' }}
+                    />
+                  </div>
+                  <div className="admin-form-group">
+                    <label>Identificación (DPI) *</label>
+                    <input
+                      type="text"
+                      required
+                      value={editTutorForm.identificacion}
+                      onChange={(e) => setEditTutorForm({ ...editTutorForm, identificacion: e.target.value })}
+                      className="admin-input"
+                      style={{ fontFamily: 'monospace' }}
+                      placeholder="CUI / DPI"
+                    />
+                  </div>
+                </div>
+
+                <div className="admin-form-row">
+                  <div className="admin-form-group">
+                    <label>Especialidad Principal *</label>
+                    <input
+                      type="text"
+                      required
+                      value={editTutorForm.especialidad}
+                      onChange={(e) => setEditTutorForm({ ...editTutorForm, especialidad: e.target.value })}
+                      className="admin-input"
+                      placeholder="Ej. Física Fundamental, Cálculo..."
+                    />
+                  </div>
+                  <div className="admin-form-group">
+                    <label>Año Inicio Experiencia</label>
+                    <input
+                      type="number"
+                      min="1980"
+                      max={new Date().getFullYear()}
+                      value={editTutorForm.anio_inicio_experiencia}
+                      onChange={(e) => setEditTutorForm({ ...editTutorForm, anio_inicio_experiencia: e.target.value })}
+                      className="admin-input"
+                      placeholder={`Ej. ${new Date().getFullYear() - 3}`}
+                    />
+                  </div>
+                </div>
+
+                <div className="admin-form-row">
+                  <div className="admin-form-group">
+                    <label>Universidad / Institución</label>
+                    <input
+                      type="text"
+                      value={editTutorForm.universidad}
+                      onChange={(e) => setEditTutorForm({ ...editTutorForm, universidad: e.target.value })}
+                      className="admin-input"
+                      placeholder="Ej. Universidad de San Carlos de Guatemala"
+                    />
+                  </div>
+                  <div className="admin-form-group">
+                    <label>Modalidad / Dirección de Atención</label>
+                    <input
+                      type="text"
+                      value={editTutorForm.direccion_tutoria}
+                      onChange={(e) => setEditTutorForm({ ...editTutorForm, direccion_tutoria: e.target.value })}
+                      className="admin-input"
+                      placeholder="Ej. Edificio T-3 USAC / En línea"
+                    />
+                  </div>
+                </div>
+
+                <div className="admin-form-row">
+                  <div className="admin-form-group">
+                    <label>Género</label>
+                    <select
+                      value={editTutorForm.genero}
+                      onChange={(e) => setEditTutorForm({ ...editTutorForm, genero: e.target.value })}
+                      className="admin-select"
+                    >
+                      <option value="UNSPECIFIED">No especificado</option>
+                      <option value="M">Masculino</option>
+                      <option value="F">Femenino</option>
+                      <option value="OTHER">Otro</option>
+                    </select>
+                  </div>
+                  <div className="admin-form-group">
+                    <label>Fecha de Nacimiento</label>
+                    <input
+                      type="date"
+                      value={editTutorForm.fecha_nacimiento}
+                      onChange={(e) => setEditTutorForm({ ...editTutorForm, fecha_nacimiento: e.target.value })}
+                      className="admin-input"
+                    />
+                  </div>
+                </div>
+
+                <div className="admin-modal-footer">
+                  <button
+                    type="button"
+                    className="admin-button-secondary"
+                    onClick={() => setEditingTutor(null)}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={savingTutorEdit}
+                    className="admin-button-primary"
+                  >
+                    {savingTutorEdit ? 'Guardando...' : 'Guardar Cambios'}
                   </button>
                 </div>
               </form>
