@@ -157,3 +157,26 @@ Estudiantes y tutores deben cumplir:
 - `DISABLED`: desactivado. Acceso denegado.
 
 Solo usuarios `APPROVED` pueden loguearse exitosamente.
+
+
+# FASE 2 
+
+## Módulo de Seguridad, Tokens Criptográficos y Carga de Archivos (Paquete A)
+
+### 1. Generación y Validación de Tokens Alfanuméricos
+* **Entropía Segura:** Se utiliza el módulo nativo `crypto.randomBytes` para generar tokens de 6 caracteres basados en el alfabeto base 32 sin caracteres ambiguos (`ABCDEFGHJKLMNPQRSTUVWXYZ23456789`).
+* **Ciclo de Verificación Dual:**
+  * Al registrarse un usuario se inserta con `email_verified = FALSE` y `verification_token = <TOKEN>`.
+  * En el primer inicio de sesión, el backend compara de forma insensible a mayúsculas el token ingresado y valida que `status = 'APPROVED'`.
+  * Tras la validación exitosa, se ejecuta:
+    ```sql
+    UPDATE users SET email_verified = TRUE, verification_token = NULL WHERE id = ?;
+    ```
+  * En llamadas subsecuentes, al detectar `email_verified = TRUE`, no se solicita token.
+
+### 2. Gestión de Subida de Archivos y Nomenclatura UUID
+* **Multer Storage:** Configurado en `studentRegistrationUpload.js` para almacenar los archivos en:
+  * Fotografías: `/uploads/students/`
+  * Carnets escaneados: `/uploads/documents/carnets/`
+* **Nombres Inmutables:** Los archivos se renombran como `${Date.now()}-${crypto.randomUUID()}.pdf` para evitar colisiones y sobreescrituras accidentales.
+* **Filtro MIME:** Validación a nivel de cabecera que rechaza cualquier archivo que no coincida con `application/pdf` para carnets o `image/jpeg, image/png, image/webp` para fotos, con un límite físico de 5 MB.

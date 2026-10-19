@@ -1,4 +1,4 @@
-# Escenarios de Atributos de Calidad (EACs) — ISO/IEC 25010 
+# Escenarios de Atributos de Calidad (EACs) — ISO/IEC 25010 (FASE 2 ABAJO)
 
 ## Introducción
 
@@ -209,3 +209,64 @@ Estructura de cada escenario:
 - **Respuesta esperada:** Servidor valida que ambas coincidan y cumplen criterios (8+ chars, mayúscula, minúscula, número). Si no, rechaza con HTTP 400.
 - **Medida:** 100% de cambios de contraseña débiles rechazados. Contraseña nueva siempre hasheada con bcrypt antes de guardar.
 
+# FASE 2
+
+# Escenarios de Atributos de Calidad (EACs) — ISO/IEC 25010
+
+**Proyecto:** EduConnect  
+**Responsable:** Yury Alexander Cruz García (Carnet: 202300359)  
+
+---
+
+## 1. Escenario 1: Seguridad — Validación de Token en Primer Inicio de Sesión
+* **Característica ISO 25010:** Seguridad (Confidencialidad e Integridad).
+* **Fuente del estímulo:** Usuario recién registrado intentando acceder al sistema.
+* **Estímulo:** Solicitud de inicio de sesión ingresando correo, contraseña y token de verificación.
+* **Artefacto:** Controlador de autenticación (`authController.js`) y base de datos MySQL (`users`).
+* **Entorno:** Operación normal de la plataforma.
+* **Respuesta esperada:** El sistema valida que el token coincida con el hash generado, que no haya expirado y que la cuenta tenga estado `APPROVED`. Si alguna condición no se cumple, rechaza el acceso con un mensaje específico. Si es exitoso, marca `email_verified = TRUE` y remueve el token temporal.
+* **Medida de respuesta:** 0% de accesos no verificados permitidos; verificación completada en menos de 300 ms.
+
+---
+
+## 2. Escenario 2: Seguridad — Filtrado Estricto de Carga de Documentos PDF
+* **Característica ISO 25010:** Seguridad (Protección contra malware / Validación de entrada).
+* **Fuente del estímulo:** Usuario malintencionado intentando subir un script o ejecutable como carnet.
+* **Estímulo:** Envío de formulario multipart con un archivo renombrado a `.pdf` pero con tipo MIME `application/x-msdownload` o imagen.
+* **Artefacto:** Middleware de subida `studentRegistrationUpload.js` con `Multer`.
+* **Entorno:** Proceso de registro de estudiantes en frontend.
+* **Respuesta esperada:** El middleware analiza el MIME-Type real del encabezado; al detectar discrepancia, interrumpe la carga de inmediato, no guarda el archivo en disco y devuelve código HTTP 400.
+* **Medida de respuesta:** 100% de archivos que no sean `application/pdf` rechazados; respuesta de error emitida en menos de 100 ms.
+
+---
+
+## 3. Escenario 3: Usabilidad — Prevención de Errores en Selección de Horarios
+* **Característica ISO 25010:** Usabilidad (Operabilidad y Prevención de errores de usuario).
+* **Fuente del estímulo:** Estudiante consultando la disponibilidad de un tutor para reservar.
+* **Estímulo:** Selección de una fecha y visualización de bloques horarios.
+* **Artefacto:** Componente modal `TutorScheduleModal.jsx` y endpoint `/api/tutors/:id/availability`.
+* **Entorno:** Concurrencia habitual de reservas académicas.
+* **Respuesta esperada:** Los bloques ocupados o fuera de la jornada del tutor se renderizan atenuados, deshabilitados para selección y con la insignia `✕ Ocupado`, impidiendo colisiones antes del envío.
+* **Medida de respuesta:** 0 intentos de colisión intencionales permitidos en frontend; tiempo de renderizado de la cuadrícula $< 500$ ms.
+
+---
+
+## 4. Escenario 4: Rendimiento — Visualización Embebida de Expedientes Académicos
+* **Característica ISO 25010:** Eficiencia de Desempeño (Comportamiento temporal).
+* **Fuente del estímulo:** Administrador auditando una solicitud de ingreso pendiente.
+* **Estímulo:** Apertura del expediente de estudiante o tutor con visor PDF incrustado.
+* **Artefacto:** Servidor de archivos estáticos Express y visor embebido `<iframe>`.
+* **Entorno:** Conexión de red estándar.
+* **Respuesta esperada:** El documento PDF se transmite en streaming continuo con cabeceras `Content-Type: application/pdf` para que el motor nativo del navegador lo renderice sin descargas intermedias en disco.
+* **Medida de respuesta:** Primer renderizado del documento PDF en el visor en menos de 1.5 segundos para archivos de hasta 5 MB.
+
+---
+
+## 5. Escenario 5: Mantenibilidad / Fiabilidad — Automatización en Pipeline CI/CD
+* **Característica ISO 25010:** Fiabilidad (Tolerancia a fallos y Madurez).
+* **Fuente del estímulo:** Desarrollador realizando integración de código mediante push a `main`.
+* **Estímulo:** Ejecución automática del workflow de GitHub Actions.
+* **Artefacto:** Pipeline `.github/workflows/backend-ci-cd.yml` en runner `ubuntu-latest`.
+* **Entorno:** Integración continua automatizada.
+* **Respuesta esperada:** Si alguna de las pruebas unitarias falla en el paso `Test`, el pipeline detiene inmediatamente el trabajo y bloquea la etapa de `Deploy`, notificando el error en el log de GitHub.
+* **Medida de respuesta:** Detección de fallos y detención del pipeline en menos de 2 minutos; 0 despliegues en producción con pruebas rotas.
