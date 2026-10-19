@@ -185,6 +185,64 @@ const updateStudentStatus = async (req, res) => {
   }
 };
 
+const updateTutorStatus = async (req, res) => {
+  const userId = Number(req.params.id);
+  const status = String(req.body?.status || '').toUpperCase();
+  const reason = String(req.body?.reason || '').trim();
+
+  if (!Number.isInteger(userId) || userId < 1) {
+    return res.status(400).json({ message: 'El identificador de usuario no es válido' });
+  }
+  if (!['APPROVED', 'REJECTED'].includes(status)) {
+    return res.status(400).json({ message: 'El estado debe ser APPROVED o REJECTED' });
+  }
+
+  try {
+    const [tutors] = await pool.execute(
+      `SELECT u.id, u.email, tp.nombre, tp.apellido
+       FROM users u
+       INNER JOIN tutor_profiles tp ON tp.user_id = u.id
+       WHERE u.id = ? AND u.role = 'tutor' AND u.status = 'PENDING'
+       LIMIT 1`,
+      [userId],
+    );
+
+    if (tutors.length === 0) {
+      return res.status(404).json({ message: 'Tutor pendiente no encontrado' });
+    }
+
+    const [result] = await pool.execute(
+      `UPDATE users
+       SET status = ?
+       WHERE id = ? AND role = 'tutor' AND status = 'PENDING'`,
+      [status, userId],
+    );
+
+    if (result.affectedRows !== 1) {
+      return res.status(404).json({ message: 'Tutor pendiente no encontrado' });
+    }
+
+    const targetTutor = tutors[0];
+    sendAccountDecisionEmail({
+      to: targetTutor.email,
+      nombre: [targetTutor.nombre, targetTutor.apellido].filter(Boolean).join(' ') || 'Tutor',
+      role: 'tutor',
+      status,
+      reason,
+    }).catch((mailError) => {
+      console.error('Error notificando la decisión de aprobación de tutor:', mailError);
+    });
+
+    return res.json({
+      message: `Tutor ${status === 'APPROVED' ? 'aprobado' : 'rechazado'} exitosamente`,
+      user: { id: targetTutor.id, email: targetTutor.email, role: 'tutor', status },
+    });
+  } catch (error) {
+    console.error('Error actualizando estado del tutor:', error);
+    return res.status(500).json({ message: 'No fue posible actualizar el estado del tutor' });
+  }
+};
+
 const updateUserStatus = async (req, res) => {
   const userId = Number(req.params.id);
   const status = String(req.body?.status || '').toUpperCase();
@@ -753,6 +811,7 @@ module.exports = {
   listPendingStudents,
   listPendingTutors,
   updateStudentStatus,
+  updateTutorStatus,
   updateUserStatus,
   disableUser,
   getTopTutorsReport,

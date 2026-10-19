@@ -6,6 +6,7 @@ const {
   listPendingTutors,
   updateStudentStatus,
   updateUserStatus,
+  updateTutorStatus,
   disableUser,
   getTopTutorsReport,
   updateStudentProfileByAdmin,
@@ -17,6 +18,7 @@ router.use(authenticateJWT, authorizeAdmin);
 router.get('/students/pending', listPendingStudents);
 router.put('/students/:id/status', updateStudentStatus);
 router.get('/tutors/pending', listPendingTutors);
+router.put('/tutors/:id/status', updateTutorStatus);
 router.get('/users', listUsers);
 router.patch('/users/:id/status', updateUserStatus);
 router.put('/users/:id/status', updateUserStatus);

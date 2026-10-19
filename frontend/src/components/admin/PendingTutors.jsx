@@ -30,10 +30,11 @@ const formatGender = (gender) => {
   return 'No especificado';
 };
 
-export default function PendingTutors() {
+export default function PendingTutors({ onStatusChange }) {
   const [tutors, setTutors] = useState([]);
   const [selectedTutor, setSelectedTutor] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -61,15 +62,41 @@ export default function PendingTutors() {
     };
   }, []);
 
+  const handleDecision = async (status) => {
+    if (!selectedTutor || submitting) return;
+
+    setSubmitting(true);
+    setError('');
+    try {
+      await api.put(`/admin/tutors/${selectedTutor.id}/status`, { status });
+      setTutors((currentTutors) =>
+        currentTutors.filter((tutor) => tutor.id !== selectedTutor.id),
+      );
+      setSelectedTutor(null);
+      if (typeof onStatusChange === 'function') {
+        onStatusChange();
+      }
+    } catch (requestError) {
+      setError(
+        requestError.response?.data?.message
+          || 'No fue posible actualizar el estado del tutor.',
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const pdfUrl = resolveTutorCvUrl(selectedTutor?.cv_pdf_url);
+
   return (
     <>
       <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
         <header className="border-b border-slate-200 px-5 py-4">
           <h2 className="text-lg font-semibold text-slate-900">
-            Solicitudes de Registro de Tutores (HU-040)
+            Tutores pendientes de aprobación (HU-040)
           </h2>
           <p className="mt-1 text-sm text-slate-600">
-            Revisa la fotografía, datos profesionales y el CV en formato PDF antes de aprobar o rechazar cada solicitud.
+            Revisa la fotografía, credenciales y el CV en visor PDF incrustado antes de aceptar o rechazar cada solicitud.
           </p>
         </header>
 
@@ -80,10 +107,10 @@ export default function PendingTutors() {
         )}
 
         {loading ? (
-          <p className="p-5 text-sm text-slate-600">Cargando solicitudes de tutores…</p>
+          <p className="p-5 text-sm text-slate-600">Cargando solicitudes…</p>
         ) : tutors.length === 0 ? (
           <p className="p-5 text-sm text-slate-600">
-            No hay solicitudes de tutores pendientes de aprobación.
+            No hay tutores pendientes de aprobación.
           </p>
         ) : (
           <div className="overflow-x-auto">
@@ -95,7 +122,7 @@ export default function PendingTutors() {
                   <th scope="col" className="px-5 py-3">Género</th>
                   <th scope="col" className="px-5 py-3">Especialidad</th>
                   <th scope="col" className="px-5 py-3">Correo</th>
-                  <th scope="col" className="px-5 py-3">CV PDF</th>
+                  <th scope="col" className="px-5 py-3">Documento</th>
                   <th scope="col" className="px-5 py-3">Acción</th>
                 </tr>
               </thead>
@@ -137,19 +164,15 @@ export default function PendingTutors() {
                       </td>
                       <td className="px-5 py-4">{tutor.email}</td>
                       <td className="px-5 py-4">
-                        {tutor.cv_pdf_url ? (
-                          <span className="text-xs font-semibold text-emerald-700">CV disponible</span>
-                        ) : (
-                          <span className="text-xs text-amber-700">Sin CV</span>
-                        )}
+                        {tutor.cv_pdf_url ? 'PDF disponible' : 'Sin PDF'}
                       </td>
                       <td className="px-5 py-4">
                         <button
                           type="button"
                           onClick={() => setSelectedTutor(tutor)}
-                          className="rounded-lg bg-emerald-700 px-3 py-2 font-medium text-white hover:bg-emerald-800"
+                          className="rounded-lg bg-emerald-700 px-3 py-2 font-medium text-white hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:ring-offset-2"
                         >
-                          Revisar CV
+                          Revisar
                         </button>
                       </td>
                     </tr>
@@ -166,7 +189,7 @@ export default function PendingTutors() {
           className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-slate-950/60 p-4"
           role="presentation"
           onMouseDown={(event) => {
-            if (event.target === event.currentTarget) setSelectedTutor(null);
+            if (event.target === event.currentTarget && !submitting) setSelectedTutor(null);
           }}
         >
           <section
@@ -178,7 +201,7 @@ export default function PendingTutors() {
             <header className="flex items-start justify-between border-b border-slate-200 px-5 py-4">
               <div>
                 <h2 id="tutor-review-title" className="text-lg font-semibold text-slate-900">
-                  Revisar solicitud y CV del tutor
+                  Revisar tutor
                 </h2>
                 <p className="mt-1 text-sm text-slate-600">
                   {[selectedTutor.nombre, selectedTutor.apellido].filter(Boolean).join(' ')}
@@ -190,22 +213,47 @@ export default function PendingTutors() {
               <button
                 type="button"
                 onClick={() => setSelectedTutor(null)}
+                disabled={submitting}
                 aria-label="Cerrar"
-                className="rounded-md px-2 py-1 text-xl text-slate-500 hover:bg-slate-100 hover:text-slate-800"
+                className="rounded-md px-2 py-1 text-xl text-slate-500 hover:bg-slate-100 hover:text-slate-800 disabled:opacity-50"
               >
                 ×
               </button>
             </header>
 
             <div className="p-5">
-              {selectedTutor.cv_pdf_url ? (
-                <PdfViewer pdfUrl={resolveTutorCvUrl(selectedTutor.cv_pdf_url)} />
+              {pdfUrl ? (
+                <PdfViewer pdfUrl={pdfUrl} />
               ) : (
                 <p className="rounded-lg bg-amber-50 p-4 text-sm text-amber-800">
-                  No se encontró un archivo PDF de CV para esta solicitud.
+                  No se encontró un PDF del CV para esta solicitud.
+                </p>
+              )}
+              {error && (
+                <p role="alert" className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">
+                  {error}
                 </p>
               )}
             </div>
+
+            <footer className="flex justify-end gap-3 border-t border-slate-200 px-5 py-4">
+              <button
+                type="button"
+                onClick={() => handleDecision('REJECTED')}
+                disabled={submitting}
+                className="rounded-lg border border-red-300 px-4 py-2 font-medium text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {submitting ? 'Procesando…' : 'Rechazar'}
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDecision('APPROVED')}
+                disabled={submitting}
+                className="rounded-lg bg-emerald-700 px-4 py-2 font-medium text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {submitting ? 'Procesando…' : 'Aceptar'}
+              </button>
+            </footer>
           </section>
         </div>
       )}
