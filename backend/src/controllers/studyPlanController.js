@@ -89,6 +89,52 @@ const createStudyPlan = async (req, res, next) => {
   }
 };
 
+const fetchStudyPlanByIdForStudent = async (planId, studentId) => {
+  const [planRows] = await pool.execute(
+    `SELECT
+       sp.id,
+       sp.session_id,
+       sess.session_date,
+       CONCAT(tp.nombre, ' ', tp.apellido) AS tutor_name,
+       tp.especialidad                     AS tutor_specialty,
+       tp.identificacion                   AS tutor_identification,
+       sp.dificultades_detectadas,
+       sp.created_at
+     FROM study_plans sp
+     INNER JOIN sessions sess       ON sp.session_id = sess.id
+     INNER JOIN tutor_profiles tp   ON sess.tutor_id = tp.id
+     WHERE sp.id = ? AND sess.student_id = ?
+     LIMIT 1`,
+    [planId, studentId],
+  );
+  const plan = planRows[0];
+  if (!plan) return null;
+
+  const [recursoRows] = await pool.execute(
+    `SELECT nombre_recurso, tipo_recurso, descripcion_uso
+       FROM study_resources
+      WHERE study_plan_id = ?
+      ORDER BY id`,
+    [plan.id],
+  );
+
+  return {
+    id: plan.id,
+    session_id: plan.session_id,
+    session_date: plan.session_date,
+    tutor_name: plan.tutor_name,
+    tutor_specialty: plan.tutor_specialty,
+    tutor_identification: plan.tutor_identification,
+    dificultades_detectadas: plan.dificultades_detectadas,
+    recursos: recursoRows.map((r) => ({
+      nombre_recurso: r.nombre_recurso,
+      tipo_recurso: r.tipo_recurso,
+      descripcion_uso: r.descripcion_uso,
+    })),
+    created_at: plan.created_at,
+  };
+};
+
 const getMyStudyPlans = async (req, res, next) => {
   try {
     const studentId = await resolveStudentProfileId(req);
@@ -155,4 +201,5 @@ const getMyStudyPlans = async (req, res, next) => {
 module.exports = {
   createStudyPlan,
   getMyStudyPlans,
+  fetchStudyPlanByIdForStudent,
 };
