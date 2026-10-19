@@ -17,11 +17,19 @@ export default function MetricsPanel() {
   const [loading, setLoading] = useState(true);
   const [ratingsError, setRatingsError] = useState('');
   const [evolutionError, setEvolutionError] = useState('');
+  const [students, setStudents] = useState([]);
+  const [studentsError, setStudentsError] = useState('');
 
   useEffect(() => {
     api.get('/reports/tutors-ratings')
       .then(({ data }) => setTutors(data.tutorsRatings || []))
       .catch(() => setRatingsError('No se pudo cargar el promedio de calificaciones.'));
+  }, []);
+  
+  useEffect(() => {
+    api.get('/reports/students-ratings')
+      .then(({ data }) => setStudents(data.studentsRatings || []))
+      .catch(() => setStudentsError('No se pudo cargar el promedio de calificaciones de estudiantes.'));
   }, []);
 
   const loadEvolution = useCallback(async () => {
@@ -84,6 +92,40 @@ export default function MetricsPanel() {
               ))}
               {tutors.length === 0 && !ratingsError && (
                 <tr><td colSpan={4} className="py-4 text-center text-slate-500">No hay tutores activos.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section className="bg-white rounded-2xl border border-slate-200 p-5">
+        <h2 className="text-lg font-semibold text-slate-800 mb-1">Promedio de calificaciones de estudiantes</h2>
+        <p className="text-sm text-slate-500 mb-3">Calculado con las calificaciones asignadas por los tutores.</p>
+        {studentsError && <p className="text-sm text-red-600">{studentsError}</p>}
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm" data-testid="students-ratings-table">
+            <thead>
+              <tr className="text-left text-slate-500 border-b">
+                <th className="py-2">Estudiante</th><th>Carnet</th>
+                <th className="text-right">Promedio</th>
+                <th className="text-right">Calificaciones</th>
+                <th className="text-right">Tutores</th>
+              </tr>
+            </thead>
+            <tbody>
+              {students.map((s) => (
+                <tr key={s.id} className="border-b last:border-0">
+                  <td className="py-2">{s.nombre} {s.apellido}</td>
+                  <td>{s.carnet}</td>
+                  <td className="text-right font-medium">
+                    {s.total ? `${s.promedio.toFixed(2)} ★` : 'Sin calificaciones'}
+                  </td>
+                  <td className="text-right">{s.total}</td>
+                  <td className="text-right">{s.tutores}</td>
+                </tr>
+              ))}
+              {students.length === 0 && !studentsError && (
+                <tr><td colSpan={5} className="py-4 text-center text-slate-500">No hay estudiantes activos.</td></tr>
               )}
             </tbody>
           </table>
