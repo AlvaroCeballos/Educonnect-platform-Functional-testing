@@ -182,12 +182,19 @@ no existían las rutas ni las vistas completas para reportes disciplinarios y ca
 
 | Historia | Tareas | Evidencia de avance | Estado |
 | :--- | :--- | :--- | :---: |
-| HU-036 | T-036.1–T-036.3 | Formulario estudiante, catálogo, validación de sesión `ATTENDED` y persistencia `incident_reports` | En progreso |
-| HU-037 | T-037.1–T-037.3 | Formulario tutor, validación 0–5 y separación de calificaciones por `reviewer_role` | En progreso |
-| HU-038 | T-038.1–T-038.3 | Formulario tutor, catálogo, validación de sesión `ATTENDED` y persistencia `incident_reports` | En progreso |
+| HU-036 | T-036.1–T-036.3 | Formulario estudiante, catálogo, validación de sesión `ATTENDED` y persistencia `incident_reports` | Lista para TEST/QA |
+| HU-037 | T-037.1–T-037.3 | Formulario tutor, validación 0–5 y separación de calificaciones por `reviewer_role` | Lista para TEST/QA |
+| HU-038 | T-038.1–T-038.3 | Formulario tutor, catálogo, validación de sesión `ATTENDED` y persistencia `incident_reports` | Lista para TEST/QA |
 
-La implementación se desarrolla en la rama `sprint2/isai-hu036-hu037-hu038` a partir de `develop`.
-La validación funcional con datos reales requiere ejecutar la migración de Fase 2 y disponer de sesiones `ATTENDED`.
+La implementación se encuentra en la rama `sprint2/isai-hu036-hu037-hu038`, actualizada con `origin/develop` hasta `d28b20e`.
+La suite backend completa quedó en **79 pruebas exitosas y 0 fallos**, incluyendo validaciones de reportes, calificaciones, moderación y flujo E2E-03; el frontend compila correctamente.
+La validación funcional con datos reales requiere ejecutar la migración de Fase 2 y disponer de sesiones `ATTENDED`, por lo que las tarjetas pasan a TEST/QA para revisión del equipo.
+
+### Tarea adicional de CI/CD
+
+| Historia | Tarea | Evidencia | Estado |
+| :--- | :--- | :--- | :---: |
+| HU-049 | T-049.3 — Workflow CI/CD para deploy en `main` | Job condicionado a `main`, entorno `production` y despliegue SSH mediante secretos `DEPLOY_*` | Implementada; pendiente de infraestructura productiva |
 
 ---
 
