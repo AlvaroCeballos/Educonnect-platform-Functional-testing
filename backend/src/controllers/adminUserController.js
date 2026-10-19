@@ -25,6 +25,8 @@ const listUsers = async (req, res) => {
         u.role,
         u.status,
         u.created_at,
+        u.carnet_pdf_url,
+        u.cv_pdf_url,
         COALESCE(sp.nombre, tp.nombre) AS nombre,
         COALESCE(sp.apellido, tp.apellido) AS apellido,
         COALESCE(sp.carnet, tp.carnet) AS carnet,
@@ -93,6 +95,40 @@ const listPendingStudents = async (_req, res) => {
   }
 };
 
+const listPendingTutors = async (_req, res) => {
+  try {
+    const [tutors] = await pool.execute(
+      `SELECT
+         u.id,
+         u.email,
+         u.status,
+         u.created_at,
+         u.cv_pdf_url,
+         tp.id AS tutor_profile_id,
+         tp.nombre,
+         tp.apellido,
+         tp.carnet,
+         tp.identificacion,
+         tp.genero,
+         tp.fecha_nacimiento,
+         tp.fotografia_url,
+         tp.especialidad,
+         tp.direccion_tutoria,
+         tp.anio_inicio_experiencia,
+         tp.universidad
+       FROM users u
+       INNER JOIN tutor_profiles tp ON tp.user_id = u.id
+       WHERE u.status = 'PENDING' AND u.role = 'tutor'
+       ORDER BY u.created_at ASC, u.id ASC`,
+    );
+
+    return res.json({ tutors });
+  } catch (error) {
+    console.error('Error listando tutores pendientes:', error);
+    return res.status(500).json({ message: 'No fue posible cargar los tutores pendientes' });
+  }
+};
+
 const updateStudentStatus = async (req, res) => {
   const userId = Number(req.params.id);
   const status = String(req.body?.status || '').toUpperCase();
@@ -146,6 +182,64 @@ const updateStudentStatus = async (req, res) => {
   } catch (error) {
     console.error('Error actualizando estado del estudiante:', error);
     return res.status(500).json({ message: 'No fue posible actualizar el estado del estudiante' });
+  }
+};
+
+const updateTutorStatus = async (req, res) => {
+  const userId = Number(req.params.id);
+  const status = String(req.body?.status || '').toUpperCase();
+  const reason = String(req.body?.reason || '').trim();
+
+  if (!Number.isInteger(userId) || userId < 1) {
+    return res.status(400).json({ message: 'El identificador de usuario no es válido' });
+  }
+  if (!['APPROVED', 'REJECTED'].includes(status)) {
+    return res.status(400).json({ message: 'El estado debe ser APPROVED o REJECTED' });
+  }
+
+  try {
+    const [tutors] = await pool.execute(
+      `SELECT u.id, u.email, tp.nombre, tp.apellido
+       FROM users u
+       INNER JOIN tutor_profiles tp ON tp.user_id = u.id
+       WHERE u.id = ? AND u.role = 'tutor' AND u.status = 'PENDING'
+       LIMIT 1`,
+      [userId],
+    );
+
+    if (tutors.length === 0) {
+      return res.status(404).json({ message: 'Tutor pendiente no encontrado' });
+    }
+
+    const [result] = await pool.execute(
+      `UPDATE users
+       SET status = ?
+       WHERE id = ? AND role = 'tutor' AND status = 'PENDING'`,
+      [status, userId],
+    );
+
+    if (result.affectedRows !== 1) {
+      return res.status(404).json({ message: 'Tutor pendiente no encontrado' });
+    }
+
+    const targetTutor = tutors[0];
+    sendAccountDecisionEmail({
+      to: targetTutor.email,
+      nombre: [targetTutor.nombre, targetTutor.apellido].filter(Boolean).join(' ') || 'Tutor',
+      role: 'tutor',
+      status,
+      reason,
+    }).catch((mailError) => {
+      console.error('Error notificando la decisión de aprobación de tutor:', mailError);
+    });
+
+    return res.json({
+      message: `Tutor ${status === 'APPROVED' ? 'aprobado' : 'rechazado'} exitosamente`,
+      user: { id: targetTutor.id, email: targetTutor.email, role: 'tutor', status },
+    });
+  } catch (error) {
+    console.error('Error actualizando estado del tutor:', error);
+    return res.status(500).json({ message: 'No fue posible actualizar el estado del tutor' });
   }
 };
 
@@ -715,7 +809,9 @@ const resolveTutorIncident = async (req, res) => {
 module.exports = {
   listUsers,
   listPendingStudents,
+  listPendingTutors,
   updateStudentStatus,
+  updateTutorStatus,
   updateUserStatus,
   disableUser,
   getTopTutorsReport,
