@@ -25,6 +25,8 @@ const listUsers = async (req, res) => {
         u.role,
         u.status,
         u.created_at,
+        u.carnet_pdf_url,
+        u.cv_pdf_url,
         COALESCE(sp.nombre, tp.nombre) AS nombre,
         COALESCE(sp.apellido, tp.apellido) AS apellido,
         COALESCE(sp.carnet, tp.carnet) AS carnet,
@@ -90,6 +92,40 @@ const listPendingStudents = async (_req, res) => {
   } catch (error) {
     console.error('Error listando estudiantes pendientes:', error);
     return res.status(500).json({ message: 'No fue posible cargar los estudiantes pendientes' });
+  }
+};
+
+const listPendingTutors = async (_req, res) => {
+  try {
+    const [tutors] = await pool.execute(
+      `SELECT
+         u.id,
+         u.email,
+         u.status,
+         u.created_at,
+         u.cv_pdf_url,
+         tp.id AS tutor_profile_id,
+         tp.nombre,
+         tp.apellido,
+         tp.carnet,
+         tp.identificacion,
+         tp.genero,
+         tp.fecha_nacimiento,
+         tp.fotografia_url,
+         tp.especialidad,
+         tp.direccion_tutoria,
+         tp.anio_inicio_experiencia,
+         tp.universidad
+       FROM users u
+       INNER JOIN tutor_profiles tp ON tp.user_id = u.id
+       WHERE u.status = 'PENDING' AND u.role = 'tutor'
+       ORDER BY u.created_at ASC, u.id ASC`,
+    );
+
+    return res.json({ tutors });
+  } catch (error) {
+    console.error('Error listando tutores pendientes:', error);
+    return res.status(500).json({ message: 'No fue posible cargar los tutores pendientes' });
   }
 };
 
@@ -715,6 +751,7 @@ const resolveTutorIncident = async (req, res) => {
 module.exports = {
   listUsers,
   listPendingStudents,
+  listPendingTutors,
   updateStudentStatus,
   updateUserStatus,
   disableUser,

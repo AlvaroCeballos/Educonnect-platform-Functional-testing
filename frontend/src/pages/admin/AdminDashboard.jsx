@@ -4,6 +4,7 @@ import Swal from 'sweetalert2';
 import api from '../../utils/api';
 import { generateTutorsDemandBlob } from '../../utils/pdfReportGenerator';
 import PendingStudents from '../../components/admin/PendingStudents';
+import PendingTutors from '../../components/admin/PendingTutors';
 import MetricsPanel from '../../components/admin/MetricsPanel';
 
 export default function AdminDashboard() {
@@ -939,124 +940,7 @@ export default function AdminDashboard() {
             </div>
 
             {tutorView === 'pending' && (
-              <section className="admin-table-card">
-                <div className="admin-tab-header">
-                  <h3>Solicitudes de Registro de Tutores (HU-005)</h3>
-                  <p>Revisa la fotografía obligatoria, especialidad y credenciales profesionales del tutor.</p>
-                </div>
-
-                {pendingTutors.length === 0 ? (
-                  <div className="admin-empty">No hay solicitudes de tutores pendientes de aprobación.</div>
-                ) : (
-                  <div className="admin-table-wrap">
-                    <table className="admin-table">
-                      <thead>
-                        <tr>
-                          <th>Tutor</th>
-                          <th>Carnet / Identificación</th>
-                          <th>Especialidad / Exp.</th>
-                          <th>Universidad / Modalidad</th>
-                          <th>Fecha Solicitud</th>
-                          <th>Acciones</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {pendingTutors.map((tutor) => (
-                          <tr key={tutor.id}>
-                            <td>
-                              <div className="admin-user-info">
-                                <div
-                                  className="admin-avatar-wrapper"
-                                  onClick={() => handleViewTutorDetails(tutor)}
-                                  title="Ver expediente del tutor"
-                                >
-                                  {tutor.fotografia_url ? (
-                                    <img
-                                      src={resolveMediaUrl(tutor.fotografia_url)}
-                                      alt="Foto Tutor"
-                                      className="admin-user-avatar tutor-avatar"
-                                      onError={(e) => {
-                                        e.target.style.display = 'none';
-                                        if (e.target.nextSibling) e.target.nextSibling.style.display = 'flex';
-                                      }}
-                                    />
-                                  ) : null}
-                                  <div
-                                    className="admin-avatar-placeholder tutor"
-                                    style={{ display: tutor.fotografia_url ? 'none' : 'flex' }}
-                                  >
-                                    {(tutor.nombre?.[0] || 'T').toUpperCase()}
-                                  </div>
-                                </div>
-                                <div>
-                                  <strong>
-                                    {[tutor.nombre, tutor.apellido].filter(Boolean).join(' ') || 'Sin nombre'}
-                                  </strong>
-                                  <span>{tutor.email}</span>
-                                  <span style={{ fontSize: '11px', color: '#64748b' }}>
-                                    {formatGender(tutor.genero)}
-                                  </span>
-                                </div>
-                              </div>
-                            </td>
-                            <td>
-                              <div>
-                                <strong>Carnet: {tutor.carnet || '—'}</strong>
-                                <span style={{ fontSize: '11px', color: '#64748b', display: 'block' }}>
-                                  DPI: {tutor.identificacion || '—'}
-                                </span>
-                              </div>
-                            </td>
-                            <td>
-                              <span className="badge-specialty">{tutor.especialidad || 'General'}</span>
-                              {tutor.anio_inicio_experiencia && (
-                                <span style={{ fontSize: '11px', color: '#475569', display: 'block', marginTop: '4px' }}>
-                                  Desde {tutor.anio_inicio_experiencia} ({new Date().getFullYear() - Number(tutor.anio_inicio_experiencia)} años exp.)
-                                </span>
-                              )}
-                            </td>
-                            <td>
-                              <strong style={{ fontSize: '13px', color: '#0f766e' }}>{tutor.universidad || '—'}</strong>
-                              <span style={{ fontSize: '12px', color: '#334155', display: 'block' }}>
-                                {tutor.direccion_tutoria || 'Online'}
-                              </span>
-                            </td>
-                            <td>{formatDate(tutor.created_at)}</td>
-                            <td>
-                              <div className="admin-actions">
-                                <button
-                                  type="button"
-                                  className="detail-button"
-                                  title="Ver expediente completo"
-                                  onClick={() => handleViewTutorDetails(tutor)}
-                                >
-                                  Detalle
-                                </button>
-                                <button
-                                  type="button"
-                                  className="approve-button"
-                                  disabled={actionId === tutor.id}
-                                  onClick={() => handleApprove(tutor)}
-                                >
-                                  {actionId === tutor.id ? '...' : 'Aceptar'}
-                                </button>
-                                <button
-                                  type="button"
-                                  className="reject-button"
-                                  disabled={actionId === tutor.id}
-                                  onClick={() => handleReject(tutor)}
-                                >
-                                  {actionId === tutor.id ? '...' : 'Rechazar'}
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </section>
+              <PendingTutors onStatusChange={loadUsers} />
             )}
 
             {tutorView === 'approved' && (
