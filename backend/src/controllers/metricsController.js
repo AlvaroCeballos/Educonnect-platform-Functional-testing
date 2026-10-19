@@ -1,5 +1,8 @@
 const pool = require('../config/db');
-const { groupSessionsByPeriod } = require('../utils/metrics');
+
+const {
+  groupSessionsByPeriod, cancellationRateBySubject, demandBySchedule,
+} = require('../utils/metrics');
 
 // HU-045: promedio de calificaciones de tutores activos (APPROVED)
 const getTutorRatingsReport = async (req, res, next) => {
@@ -43,4 +46,45 @@ const getSessionsEvolutionReport = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
-module.exports = { getTutorRatingsReport, getSessionsEvolutionReport };
+// Filtro opcional ?month=YYYY-MM compartido por los reportes HU-048
+const monthFilter = (month) => {
+  if (!month) return { clause: '', params: [] };
+  if (!/^\d{4}-\d{2}$/.test(month)) return { error: 'month debe tener formato YYYY-MM' };
+  return { clause: " WHERE DATE_FORMAT(s.session_date, '%Y-%m') = ?", params: [month] };
+};
+
+// HU-048a: materias con mayor tasa de cancelación
+const getCancellationsBySubjectReport = async (req, res, next) => {
+  try {
+    const { month } = req.query;
+    const f = monthFilter(month);
+    if (f.error) return res.status(400).json({ message: f.error });
+    const [rows] = await pool.execute(
+      `SELECT sub.nombre AS subject, s.status
+         FROM sessions s
+         JOIN subjects sub ON sub.id = s.subject_id${f.clause}`,
+      f.params,
+    );
+    res.json({ month: month || null, cancellations: cancellationRateBySubject(rows) });
+  } catch (err) { next(err); }
+};
+
+
+// HU-048b: horarios más demandados
+const getDemandedSchedulesReport = async (req, res, next) => {
+  try {
+    const { month } = req.query;
+    const f = monthFilter(month);
+    if (f.error) return res.status(400).json({ message: f.error });
+    const [rows] = await pool.execute(
+      `SELECT s.start_time FROM sessions s${f.clause}`,
+      f.params,
+    );
+    res.json({ month: month || null, schedules: demandBySchedule(rows) });
+  } catch (err) { next(err); }
+};
+
+module.exports = {
+  getTutorRatingsReport, getSessionsEvolutionReport,
+  getCancellationsBySubjectReport, getDemandedSchedulesReport,
+};

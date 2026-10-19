@@ -1,7 +1,8 @@
 const router = require('express').Router();
 const { authenticateJWT, authorizeAdmin } = require('../middlewares/authJWT');
 const { getTopTutorsReport, getSubjectsDemandReport } = require('../controllers/adminUserController');
-const { getTutorRatingsReport, getSessionsEvolutionReport } = require('../controllers/metricsController');
+const { getTutorRatingsReport, getSessionsEvolutionReport, getCancellationsBySubjectReport, getDemandedSchedulesReport } = require('../controllers/metricsController');
+
 
 router.use(authenticateJWT, authorizeAdmin);
 
@@ -18,5 +19,9 @@ router.get('/tutors-ratings', getTutorRatingsReport);
 
 // HU-047: evolución temporal de sesiones
 router.get('/sessions-evolution', getSessionsEvolutionReport);
+
+// HU-048: reporte analítico F2-2
+router.get('/cancellations-by-subject', getCancellationsBySubjectReport);
+router.get('/demanded-schedules', getDemandedSchedulesReport);
 
 module.exports = router;
