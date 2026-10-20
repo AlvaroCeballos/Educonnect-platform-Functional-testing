@@ -17,7 +17,9 @@
  *   - Intercepta endpoints con bugs conocidos (ratings 500) para no romper la vista.
  *   - Requisitos previos (solo una vez por entorno):
  *       1. Docker arriba (frontend 3000, backend 5000, mysql).
- *       2. Cuentas test con email_verified=1 (ver docs/evidencias/npm-test-output.log).
+ *       2. Cargar los seeds del test (crea usuarios sofia.tutora, sofia.estudiante,
+ *          materia Física, horario y sesión PENDING sin tocar datos existentes):
+ *            docker compose exec -T db sh -c 'mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE"' < backend/seeds_e2e.sql
  */
 
 describe('E2E-05: Creación de plan estructurado y generación de constancia PDF', () => {
@@ -51,7 +53,7 @@ describe('E2E-05: Creación de plan estructurado y generación de constancia PDF
         const pendiente = (lista.body.sessions || []).find((s) => s.status === 'PENDING');
         if (pendiente) {
           cy.log(`Sesión PENDING existente reutilizada: id=${pendiente.id}`);
-          return pendiente.id;
+          return cy.wrap(pendiente.id);
         }
         // No hay PENDING → crear una nueva como el estudiante
         return cy.request({
@@ -74,7 +76,7 @@ describe('E2E-05: Creación de plan estructurado y generación de constancia PDF
             },
           }).then((nueva) => {
             cy.log(`Sesión PENDING nueva sembrada: id=${nueva.body.id}`);
-            return nueva.body.id;
+            return cy.wrap(nueva.body.id);
           });
         });
       });
