@@ -10,7 +10,14 @@
  *  5. Guarda el plan: la sesión transiciona a ATTENDED.
  *  6. El estudiante inicia sesión y entra a "Mi Plan".
  *  7. Verifica que el plan activo refleja los datos ingresados.
- *  8. Pulsa "Descargar constancia PDF" y confirma que la respuesta es application/pdf.
+ *  8. Solicita la constancia PDF y confirma que la respuesta es application/pdf.
+ *
+ * Portabilidad entre máquinas del equipo:
+ *   - El test siembra su propia sesión PENDING vía API al arrancar (no asume IDs fijos).
+ *   - Intercepta endpoints con bugs conocidos (ratings 500) para no romper la vista.
+ *   - Requisitos previos (solo una vez por entorno):
+ *       1. Docker arriba (frontend 3000, backend 5000, mysql).
+ *       2. Cuentas test con email_verified=1 (ver docs/evidencias/npm-test-output.log).
  */
 
 describe('E2E-05: Creación de plan estructurado y generación de constancia PDF', () => {
@@ -18,14 +25,61 @@ describe('E2E-05: Creación de plan estructurado y generación de constancia PDF
   const tutor = { email: 'sofia.tutora@test.com', password: 'Passw0rd1', role: 'tutor' };
   const estudiante = { email: 'sofia.estudiante@test.com', password: 'Passw0rd1', role: 'student' };
 
-  const dificultades = 'Dificultades para aplicar la segunda ley de Newton en planos inclinados y para descomponer fuerzas en componentes vectoriales.';
-  const recurso1 = { nombre: 'Física Universitaria - Sears Zemansky, Cap. 5', tipo: 'Texto', descripcion: 'Leer secciones 5.1 a 5.3 y resolver ejercicios impares 1-15' };
+  const dificultades = 'Dificultades para aplicar la segunda ley de Newton en planos inclinados y descomponer fuerzas en componentes vectoriales.';
+  const recurso1 = { nombre: 'Fisica Universitaria - Sears Zemansky, Cap. 5', tipo: 'Texto', descripcion: 'Leer secciones 5.1 a 5.3 y resolver ejercicios impares 1-15' };
   const recurso2 = { nombre: 'Khan Academy - Planos inclinados', tipo: 'Video', descripcion: 'Ver los 3 videos de la serie y hacer los ejercicios interactivos' };
 
-  // Precondición: debe existir al menos una sesión PENDING del tutor sofia.tutora@test.com.
-  // Si no hay, prepararla con: INSERT INTO sessions (student_id, tutor_id, session_date,
-  // start_time, end_time, subject_id, reason, status) VALUES (5, 8, '2026-11-15', '10:00:00',
-  // '11:00:00', 8, 'E2E-05 seed', 'PENDING');
+  // Interceptar endpoints ajenos con bugs conocidos para no romper el render de la UI
+  const stubBugsAjenos = () => {
+    cy.intercept('GET', '**/api/ratings/**', { statusCode: 200, body: { ratings: [] } });
+  };
+
+  // Garantiza que exista al menos una sesión PENDING para el tutor del test.
+  // Si ya hay una PENDING del tutor usa esa; si no, crea una nueva vía API con las
+  // credenciales del estudiante del test. Devuelve el id de la sesión.
+  const asegurarSesionPendiente = () => {
+    return cy.request({
+      method: 'POST',
+      url: `${BACKEND}/api/auth/login/tutor`,
+      body: { email: tutor.email, password: tutor.password },
+    }).then((loginTutor) => {
+      const tokenTutor = loginTutor.body.token;
+      return cy.request({
+        url: `${BACKEND}/api/sessions/tutor/me`,
+        headers: { Authorization: `Bearer ${tokenTutor}` },
+      }).then((lista) => {
+        const pendiente = (lista.body.sessions || []).find((s) => s.status === 'PENDING');
+        if (pendiente) {
+          cy.log(`Sesión PENDING existente reutilizada: id=${pendiente.id}`);
+          return pendiente.id;
+        }
+        // No hay PENDING → crear una nueva como el estudiante
+        return cy.request({
+          method: 'POST',
+          url: `${BACKEND}/api/auth/login/student`,
+          body: { email: estudiante.email, password: estudiante.password },
+        }).then((loginEst) => {
+          const tokenEst = loginEst.body.token;
+          return cy.request({
+            method: 'POST',
+            url: `${BACKEND}/api/sessions`,
+            headers: { Authorization: `Bearer ${tokenEst}` },
+            failOnStatusCode: false,
+            body: {
+              tutor_id: loginTutor.body.user?.tutorId || 8,
+              session_date: '2026-12-15',
+              start_time: '10:00:00',
+              subject_id: 8,
+              reason: 'E2E-05 seed automático',
+            },
+          }).then((nueva) => {
+            cy.log(`Sesión PENDING nueva sembrada: id=${nueva.body.id}`);
+            return nueva.body.id;
+          });
+        });
+      });
+    });
+  };
 
   const login = (user) => {
     cy.clearLocalStorage();
@@ -37,17 +91,15 @@ describe('E2E-05: Creación de plan estructurado y generación de constancia PDF
     cy.get('button[type="submit"]').click();
   };
 
-  // Interceptar ratings (bug ajeno 500) para no romper la vista del tutor
-  const stubRatings = () => {
-    cy.intercept('GET', '**/api/ratings/**', { statusCode: 200, body: { ratings: [] } });
-  };
+  before(() => {
+    asegurarSesionPendiente();
+  });
 
   it('Paso 1-5: El tutor atiende una sesión registrando un plan estructurado con 2 recursos', () => {
-    stubRatings();
+    stubBugsAjenos();
     login(tutor);
     cy.visit('/tutor/sesiones');
 
-    // Esperar que la lista de pendientes se renderice
     cy.contains('Pendientes por atender', { timeout: 10000 }).should('be.visible');
     cy.get('button').contains('Marcar como Atendida', { timeout: 10000 }).first().click();
     cy.screenshot('e2e-05-paso1-modal-abierto');
@@ -76,6 +128,7 @@ describe('E2E-05: Creación de plan estructurado y generación de constancia PDF
   });
 
   it('Paso 6-7: El estudiante consulta el plan de estudio asignado y verifica el contenido', () => {
+    stubBugsAjenos();
     login(estudiante);
     cy.contains('Mi Plan', { timeout: 10000 }).click();
     cy.url().should('include', '/mi-plan');
@@ -90,11 +143,11 @@ describe('E2E-05: Creación de plan estructurado y generación de constancia PDF
   });
 
   it('Paso 8: El estudiante solicita la constancia PDF y la respuesta tiene Content-Type application/pdf', () => {
+    stubBugsAjenos();
     login(estudiante);
     cy.visit('/mi-plan');
     cy.contains('PLAN ACTIVO', { timeout: 10000 }).should('be.visible');
 
-    // Validar que el endpoint de descarga responde con application/pdf
     cy.window().then((win) => {
       const token = win.localStorage.getItem('token');
       cy.request({
@@ -109,9 +162,9 @@ describe('E2E-05: Creación de plan estructurado y generación de constancia PDF
         }).then((pdfRes) => {
           expect(pdfRes.status).to.eq(200);
           expect(pdfRes.headers['content-type']).to.contain('application/pdf');
-          expect(pdfRes.headers['content-disposition']).to.contain(`constancia-sesion-`);
+          expect(pdfRes.headers['content-disposition']).to.contain('constancia-sesion-');
           expect(pdfRes.body.substring(0, 4)).to.eq('%PDF');
-          cy.log(`✅ PDF generado correctamente — ${pdfRes.body.length} bytes, magic %PDF confirmado`);
+          cy.log(`PDF generado — ${pdfRes.body.length} bytes, magic %PDF confirmado`);
         });
       });
     });
