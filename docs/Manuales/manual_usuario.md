@@ -10,6 +10,12 @@ EduConnect es la plataforma que conecta a estudiantes con tutores para agendar y
 
 Al abrir EduConnect, pulsa el botón **"Registrarse como Estudiante"**. Llena el formulario con tu nombre, apellido, carnet, correo y una contraseña. Por seguridad, la contraseña debe tener al menos 8 caracteres e incluir una letra mayúscula, una minúscula y un número.
 
+A partir de la Fase 2, el registro exige también adjuntar **una fotografía reciente** (JPG, PNG o WEBP, hasta 5 MB) y una **copia del carnet universitario en formato PDF** (hasta 5 MB). Ambos archivos son obligatorios: el sistema no permite enviar la solicitud sin ellos.
+
+![Formulario de registro con los campos de foto y carnet PDF](imgs/f2e-yury-01-registro-estudiante-vacio.png)
+
+![Formulario de registro con la foto y el carnet PDF ya cargados](imgs/f2e-yury-02-registro-estudiante-con-pdf.png)
+
 ![C:\Users\Nicole\Desktop\AYD1_2S_G4\docs\Manuales\imgs\pantalla inicial.png](<imgs/pantalla inicial.png>)
 
 
@@ -22,6 +28,14 @@ Cuando envíes el formulario, tu cuenta quedará en espera de que un administrad
 ### Iniciar sesión
 
 Pulsa **"Iniciar sesión"** e ingresa tu correo y contraseña.
+
+![Pantalla de inicio de sesión con selector de rol](imgs/f2e-yury-03-login-sin-token.png)
+
+**Primer inicio de sesión (Fase 2):** Si es la primera vez que entrás después de registrarte, además de correo y contraseña debés ingresar el **token de verificación de 6 caracteres** que te llegó por correo cuando te registraste. Pulsá *"¿Es tu primer inicio?"* para activar el campo correspondiente y copiá el código tal como aparece en el correo de bienvenida.
+
+![Formulario de login con el campo de token activado para el primer ingreso](imgs/f2e-yury-04-login-con-token-visible.png)
+
+En los siguientes inicios de sesión solo necesitarás correo y contraseña — el token es exigido únicamente la primera vez.
 
 Si tu cuenta todavía no ha sido aprobada por un administrador, el sistema no te dejará entrar y te mostrará un aviso indicando que tu registro sigue en revisión.
 
@@ -79,6 +93,16 @@ En la sección **"Historial"** puedes revisar todas tus sesiones anteriores, de 
 
 ![Historial de sesiones con el resumen del tutor](imgs/estudiante-12-historial-resumen.png)
 
+### Calificar y reportar al tutor
+
+Desde el mismo historial, en cada sesión que esté marcada como **"Atendida"** podrás calificar al tutor con una puntuación de **0 a 5 estrellas** y, opcionalmente, dejar un comentario corto. Esta función solo está habilitada para sesiones atendidas: no es posible calificar sesiones canceladas ni pendientes.
+
+![Historial del estudiante con las acciones de calificar y reportar al tutor](imgs/f2e-isai-01-estudiante-historial.png)
+
+![Formulario de calificación por estrellas](imgs/f2e-isai-02-formulario-calificacion.png)
+
+Si durante alguna tutoría se produjo un incidente serio, también desde el historial podrás **reportar al tutor** eligiendo una categoría del catálogo oficial (Ética y profesionalismo, Negligencia académica, Abuso y conducta inapropiada, Falsificación de información) y añadiendo una explicación detallada. El reporte llega directamente al administrador, quien decidirá si se mantiene, se desestima o se aplica una sanción.
+
 ### Consultar tu plan de estudio
 
 Tras cada sesión atendida, el tutor te deja un **plan de estudio estructurado** con las dificultades que identificó y los recursos recomendados para que trabajes esos temas. Puedes consultarlo en cualquier momento desde el enlace **"Mi Plan"** del menú superior de tu panel.
@@ -106,6 +130,12 @@ Si aún no has recibido ninguna sesión atendida, verás en su lugar un mensaje 
 ### Crear tu cuenta de tutor
 
 Pulsa **"Registrarse como Tutor"** y completa tus datos personales y profesionales. La fotografía de perfil es obligatoria y puede ser JPG, PNG o WEBP, con un tamaño máximo de 5 MB.
+
+En Fase 2 el registro también exige adjuntar tu **currículum vitae en formato PDF** (hasta 5 MB). El administrador lo revisará como parte del proceso de aprobación. Es un archivo obligatorio: la solicitud no se puede enviar sin él.
+
+![Formulario de registro de tutor con campos personales y profesionales](imgs/f2e-xavi-01-registro-tutor-vacio.png)
+
+![Formulario de registro de tutor con el campo de CV PDF visible](imgs/f2e-xavi-02-registro-tutor-con-cv.png)
 
 ![Formulario de registro de tutor con fotografía](imgs/tutor-01-registro.png)
 
@@ -181,7 +211,18 @@ En la sección **"Mi Perfil"** puedes actualizar tus datos profesionales cuando 
 
 ## Módulo Administrador
 
-### Iniciar sesión en dos pasos
+### Iniciar sesión en dos pasos (2FA)
+
+Como administrador, iniciás sesión con tu correo y contraseña como cualquier usuario, seleccionando el rol **"Administrador"** en el menú superior.
+
+![Formulario de ingreso del administrador](imgs/f2e-admin-01-login-paso1-formulario.png)
+
+Después de validar tus credenciales, el sistema te lleva a un **segundo factor obligatorio**: debés subir el archivo `auth2-ayd1.txt` que contiene una contraseña encriptada distinta a la del login inicial. Solo cuando ambas validaciones son correctas podrás entrar al panel administrativo.
+
+![Pantalla de segundo factor pidiendo el archivo auth2-ayd1.txt](imgs/f2e-admin-02-login-paso2-2fa.png)
+
+
+### Panel administrativo (vista general)
 
 El acceso de administrador tiene dos pasos de seguridad. Primero, ingresa tu usuario y contraseña de administrador.
 
@@ -190,6 +231,10 @@ El acceso de administrador tiene dos pasos de seguridad. Primero, ingresa tu usu
 Después, el sistema te pedirá subir un archivo llamado **`auth2-ayd1.txt`** como segundo factor de verificación y contiene una clave de seguridad que el sistema comprueba. Guárdalo en un lugar seguro de tu equipo, porque lo necesitarás cada vez que inicies sesión como administrador. Selecciónalo cuando el sistema te lo pida y confirma; solo al validarse esa clave se te dará acceso al panel.
 
 ![Segundo paso: carga del archivo de verificación](imgs/admin-02-login-2fa.png)
+
+Una vez autenticado, el panel administrativo organiza todas las funciones en pestañas: **Estudiantes**, **Tutores**, **Reporte de Tutores**, **Reporte de Materias**, **Métricas** y, dentro de cada rol, subpestañas para **Solicitudes Pendientes**, **Usuarios Aprobados** y **Denuncias Recibidas**.
+
+![Vista general del panel administrativo con todas las secciones](imgs/f2e-admin-04-dashboard-aprobaciones.png)
 
 ### Aprobar o rechazar solicitudes
 
@@ -207,6 +252,29 @@ Tambien puedes ver en "detalle" de cada solicitud, la información completa del 
 En la lista de usuarios aprobados puedes ver a todos los estudiantes y tutores activos. Desde ahí puedes dar de baja a cualquiera cuando sea necesario; el sistema te pedirá confirmar, y una vez dada de baja, esa persona ya no podrá iniciar sesión en la plataforma.
 
 ![Lista de usuarios aprobados con la opción de dar de baja](imgs/admin-05-usuarios-aprobados.png)
+
+**Novedad Fase 2 — Visor PDF embebido:** al revisar una solicitud, además de los datos del usuario podrás abrir directamente dentro del panel el **carnet universitario** (en el caso de estudiantes) o el **currículum vítae** (en el caso de tutores) sin tener que descargar nada. El visor PDF se abre en línea para que puedas inspeccionar el documento antes de aprobar o rechazar.
+
+### Métricas y reportes analíticos
+
+En la pestaña **"Métricas"** del panel administrativo encontrarás los nuevos reportes analíticos de Fase 2: el **promedio de calificaciones en estrellas** de todos los tutores activos y de los estudiantes, el reporte temporal de **evolución de sesiones por semana y mes** con gráficos interactivos, y el reporte de **materias con más cancelaciones** segmentado por franja horaria. Podés aplicar filtros por rango de fechas para analizar periodos específicos.
+
+![Panel de métricas y reportes del administrador](imgs/f2e-admin-05-panel-metricas.png)
+
+![Reportes y gestión en el panel administrativo](imgs/f2e-admin-06-reportes-y-gestion.png)
+
+### Moderación de denuncias
+
+Dentro de las pestañas **"Denuncias Recibidas"** de cada rol (tutor o estudiante), encontrarás los reportes disciplinarios que los usuarios envían desde su historial. Para cada denuncia podés revisar la categoría, la explicación del denunciante y los datos de la sesión asociada, y decidir una de dos acciones:
+
+- **Desestimar la denuncia** si consideras que no procede: queda registrada con estado `DISMISSED` para auditoría.
+- **Resolver con sanción** si corresponde: el usuario denunciado queda automáticamente marcado como `DISABLED`, no podrá volver a iniciar sesión, y la denuncia queda archivada con estado `RESOLVED_BANNED`.
+
+Ambas acciones quedan registradas en la bitácora para trazabilidad.
+
+### Edición de perfiles y baja lógica
+
+En las pestañas de **Estudiantes Aprobados** y **Tutores Aprobados** podés editar los datos personales de cualquier usuario (nombre, carnet, dirección, etc.) con una excepción: **el correo electrónico es inmutable** y nunca puede ser modificado, ya que identifica la cuenta. Si necesitás retirar a un usuario del sistema sin borrar su historial, usá la opción **"Dar de baja"**: queda marcado como `DISABLED`, no puede iniciar sesión, pero toda su información y sus sesiones anteriores se preservan para auditoría.
 
 ### Consultar y exportar los reportes
 
