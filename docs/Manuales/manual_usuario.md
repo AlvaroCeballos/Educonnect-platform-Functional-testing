@@ -79,6 +79,26 @@ En la sección **"Historial"** puedes revisar todas tus sesiones anteriores, de 
 
 ![Historial de sesiones con el resumen del tutor](imgs/estudiante-12-historial-resumen.png)
 
+### Consultar tu plan de estudio
+
+Tras cada sesión atendida, el tutor te deja un **plan de estudio estructurado** con las dificultades que identificó y los recursos recomendados para que trabajes esos temas. Puedes consultarlo en cualquier momento desde el enlace **"Mi Plan"** del menú superior de tu panel.
+
+![Enlace "Mi Plan" en el menú superior del dashboard del estudiante](imgs/f2-estudiante-01-dashboard-con-mi-plan.png)
+
+En esta pantalla verás destacado tu **plan activo** —el correspondiente a tu sesión atendida más reciente— y, debajo, el historial de **planes previos** si tienes más de una sesión atendida. De cada plan verás el nombre del tutor, su especialidad, su número de identificación institucional, la fecha de la sesión, las dificultades identificadas y la tabla completa de recursos recomendados.
+
+![Mi plan activo con dificultades y tabla de recursos](imgs/f2-estudiante-02-mi-plan-activo.png)
+
+![Vista completa del plan con la tabla de recursos y el botón de descarga](imgs/f2-estudiante-03-tabla-recursos-y-boton-pdf.png)
+
+### Descargar tu constancia de tutoría en PDF
+
+En cada tarjeta de plan encontrarás el botón **"⬇ Descargar constancia PDF"**. Al pulsarlo, el sistema genera y descarga automáticamente un archivo PDF con la **constancia oficial de la tutoría**. La constancia incluye el membrete de EduConnect con la fecha de emisión y el teléfono de contacto, la tabla completa de recursos recomendados (nombre, tipo y descripción de uso), y un pie de documento con el nombre completo del tutor, su especialidad y su número de identificación.
+
+Si aún no has recibido ninguna sesión atendida, verás en su lugar un mensaje amable invitándote a reservar tu primera sesión con un tutor.
+
+![Estado vacío cuando el estudiante aún no tiene planes](imgs/f2-estudiante-04-empty-state.png)
+
 ---
 
 ## Módulo Tutor
@@ -117,11 +137,26 @@ En **"Mis Sesiones"** encontrarás las citas que tienes pendientes de atender, o
 
 ![Lista de sesiones pendientes del tutor](imgs/tutor-05-sesiones-pendientes.png)
 
-### Atender a un estudiante
+### Atender a un estudiante y registrar el plan de estudio
 
-Cuando termines una tutoría, pulsa **"Marcar como Atendida"** en la sesión correspondiente. Antes de guardar, el sistema te pedirá escribir un resumen de la sesión; este paso es obligatorio y ese resumen será el que el estudiante vea en su historial.
+Cuando termines una tutoría, abre tu lista de sesiones pendientes y pulsa **"Marcar como Atendida"** en la sesión correspondiente.
 
-![Ventana para atender con resumen obligatorio](imgs/tutor-06-marcar-atendida.png)
+![Lista de sesiones pendientes del tutor](imgs/f2-tutor-01-sesiones-pendientes.png)
+
+Se abrirá una ventana en la que debes construir el **plan de estudio estructurado** para el estudiante. El plan tiene dos partes:
+
+1. **Dificultades Identificadas** (obligatorio): un texto donde describes los temas en los que el estudiante presentó mayor dificultad durante la sesión. Por ejemplo: *"Derivadas parciales y regla de la cadena"* o *"Sintaxis de bucles en Java"*.
+2. **Recursos Recomendados** (al menos uno): una lista de materiales de apoyo. Para cada recurso debes indicar su **nombre**, el **tipo** (Texto, Video, PDF o Enlace) y una **descripción de uso** con instrucciones concretas como *"Leer capítulo 3"* o *"Ver video hasta el minuto 10"*.
+
+![Ventana vacía del plan de estudio, al pulsar Marcar como Atendida](imgs/f2-tutor-02-modal-atender-vacio.png)
+
+Puedes añadir cuantos recursos consideres necesarios con el botón **"+ Agregar recurso"** y eliminar los que no quieras con el enlace **"✕ Quitar"**. El botón **"Guardar y Atender"** se habilita cuando todos los campos obligatorios están completos.
+
+![Ventana con dificultades y dos recursos listos para guardar](imgs/f2-tutor-03-modal-con-recursos.png)
+
+Al guardar, la sesión se marca como **"Atendida"**, desaparece de tus sesiones pendientes y pasa al historial con el plan completo asociado. El estudiante podrá consultarlo y descargar su constancia desde su propio panel.
+
+![Historial del tutor con la sesión recién atendida](imgs/f2-tutor-04-historial-con-plan.png)
 
 ### Cancelar una sesión
 
