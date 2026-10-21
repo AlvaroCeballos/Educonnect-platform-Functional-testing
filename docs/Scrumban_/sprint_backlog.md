@@ -196,6 +196,14 @@ La validación funcional con datos reales requiere ejecutar la migración de Fas
 | :--- | :--- | :--- | :---: |
 | HU-049 | T-049.3 — Workflow CI/CD para deploy en `main` | Job condicionado a `main`, entorno `production` y despliegue SSH mediante secretos `DEPLOY_*` | Implementada; pendiente de infraestructura productiva |
 
+### Prueba E2E-06 — Paquete F (Isai)
+
+| Prueba | Archivo | Cobertura | Resultado |
+| :--- | :--- | :--- | :---: |
+| **E2E-06** | `frontend/cypress/e2e/e2e-06-feedback.cy.js` | HU-036: estudiante reporta al tutor; HU-037: tutor califica al estudiante; HU-038: tutor reporta al estudiante | **2/2 PASS** |
+
+La prueba utiliza respuestas controladas de la API para reproducir el flujo desde la interfaz sin depender de datos previos de la base de datos. Se verifican los payloads enviados, las categorías de denuncia y la actualización visual posterior al registro.
+
 ---
 
 ## Verificación actual — Sprint 2, Paquete C (Alvaro Ceballos)
