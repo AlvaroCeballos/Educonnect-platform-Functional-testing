@@ -36,7 +36,6 @@ Thumbs.db
 coverage/
 
 # Docker
-.dockerignore
 docker-compose.override.yml
 
 # Material de Apoyo y Enunciados

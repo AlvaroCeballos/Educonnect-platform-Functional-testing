@@ -17,7 +17,9 @@
  *   - Intercepta endpoints con bugs conocidos (ratings 500) para no romper la vista.
  *   - Requisitos previos (solo una vez por entorno):
  *       1. Docker arriba (frontend 3000, backend 5000, mysql).
- *       2. Cuentas test con email_verified=1 (ver docs/evidencias/npm-test-output.log).
+ *       2. Cargar los seeds del test (crea usuarios sofia.tutora, sofia.estudiante,
+ *          materia Física, horario y sesión PENDING sin tocar datos existentes):
+ *            docker compose exec -T db sh -c 'mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE"' < backend/seeds_e2e.sql
  */
 
 describe('E2E-05: Creación de plan estructurado y generación de constancia PDF', () => {
@@ -51,7 +53,7 @@ describe('E2E-05: Creación de plan estructurado y generación de constancia PDF
         const pendiente = (lista.body.sessions || []).find((s) => s.status === 'PENDING');
         if (pendiente) {
           cy.log(`Sesión PENDING existente reutilizada: id=${pendiente.id}`);
-          return pendiente.id;
+          return cy.wrap(pendiente.id);
         }
         // No hay PENDING → crear una nueva como el estudiante
         return cy.request({
@@ -74,7 +76,7 @@ describe('E2E-05: Creación de plan estructurado y generación de constancia PDF
             },
           }).then((nueva) => {
             cy.log(`Sesión PENDING nueva sembrada: id=${nueva.body.id}`);
-            return nueva.body.id;
+            return cy.wrap(nueva.body.id);
           });
         });
       });
@@ -133,7 +135,9 @@ describe('E2E-05: Creación de plan estructurado y generación de constancia PDF
     cy.contains('Mi Plan', { timeout: 10000 }).click();
     cy.url().should('include', '/mi-plan');
 
-    cy.contains('PLAN ACTIVO', { timeout: 10000 }).should('be.visible');
+    // "Plan activo" vive en el DOM en minúsculas; el estilo textTransform: uppercase
+    // lo visualiza en mayúsculas. Usamos regex insensitive para que funcione en todos los navegadores.
+    cy.contains(/plan activo/i, { timeout: 10000 }).should('be.visible');
     cy.contains(dificultades.substring(0, 40)).should('be.visible');
     cy.contains(recurso1.nombre).should('be.visible');
     cy.contains(recurso2.nombre).should('be.visible');
@@ -146,7 +150,7 @@ describe('E2E-05: Creación de plan estructurado y generación de constancia PDF
     stubBugsAjenos();
     login(estudiante);
     cy.visit('/mi-plan');
-    cy.contains('PLAN ACTIVO', { timeout: 10000 }).should('be.visible');
+    cy.contains(/plan activo/i, { timeout: 10000 }).should('be.visible');
 
     cy.window().then((win) => {
       const token = win.localStorage.getItem('token');
