@@ -4,9 +4,9 @@
 >
 > En este documento se presentan las historias de usuario de la plataforma **EduConnect**. Las tareas derivadas de cada historia se gestionan en el tablero Kanban, mientras que la estimación, las dependencias y los criterios de aceptación se consultan en este Product Backlog.
 >
-> El proyecto se organizó en dos fases:
-> - **Fase 1 (Sprint 1):** Establece el núcleo operativo del sistema (registro, autenticación en dos pasos, aprobación administrativa, configuración de horarios y reservación básica anti-traslapes).
-> - **Fase 2 (Sprint 2):** Amplía la solución con búsqueda avanzada, sesiones activas, atención y resúmenes de citas, historial, actualización de perfiles, gestión de bajas lógicas y reportes analíticos de demanda.
+> El proyecto se estructuró formalmente en dos grandes fases metodológicas de desarrollo:
+> - **Parte 1 (Fase 1 del Proyecto):** Núcleo operativo y gestión académica inicial (HU-001 a HU-027), desarrollado a lo largo de los Sprint 1 y Sprint 2 históricos.
+> - **Parte 2 (Fase 2 del Proyecto):** Validación documental estricta (PDFs y tokens Mailtrap), moderación y sanciones, planes estructurados, constancias oficiales, reportes analíticos avanzados, CI/CD en GitHub Actions y despliegue cloud (HU-028 a HU-050), organizado en Sprint 1 (Prioridad Alta) y Sprint 2 (Prioridad Media/Baja).
 
 Este documento contiene las historias de usuario para el desarrollo de la plataforma EduConnect, organizadas por fases.  
 Cada historia describe una funcionalidad desde la perspectiva del usuario final y está priorizada según su importancia dentro del proyecto, dicha priorización se realizó al inicio de cada fase. Las prioridades están indicadas con cuadros de colores:  
@@ -46,7 +46,9 @@ Como evidencia del proceso de estimación grupal, se utilizó una matriz de vota
 
 ---
 
-# 1. Fase 1 — Núcleo Operativo (Sprint 1)
+# 1. Fase 1 — Núcleo Operativo y Gestión Inicial (HU-001 a HU-027)
+
+## 1.1 Sprint 1 (Fase 1) — Núcleo Operativo (HU-001 a HU-017)
 
 ## 🟥 [HU-001] Registro de estudiante
 
@@ -367,7 +369,7 @@ Como evidencia del proceso de estimación grupal, se utilizó una matriz de vota
 
 ---
 
-# 2. Fase 2 — Completitud, Gestión y Reportes (Sprint 2)
+## 1.2 Sprint 2 (Fase 1) — Completitud, Gestión y Reportes (HU-018 a HU-027)
 
 ## 🟨 [HU-010] Búsqueda avanzada de tutores
 
@@ -717,163 +719,765 @@ Como evidencia del proceso de estimación grupal, se utilizó una matriz de vota
 
 ---
 
-# 3. Fase 2 — Paquete F: Feedback y CI/CD
+# 2. Fase 2 — Validación Documental, Planes, Moderación, CI/CD y Cloud (HU-028 a HU-050)
 
-> Esta sección incorpora la distribución actualizada de `DistribucionTareas_Fase2 (1).md`. Para el Sprint 1 de Fase 2, Isai es responsable únicamente de HU-035 y HU-049. Las historias HU-036, HU-037 y HU-038 pertenecen al Sprint 2 y no forman parte de esta entrega.
-
-## 🟥 [HU-035] Calificación de tutores por estudiantes
-
-**Responsable:** Isai (Paquete F)
-
-**Como** estudiante que completó una sesión de tutoría
-
-**Quiero** calificar al tutor con una puntuación de 0 a 5 estrellas y un comentario opcional
-
-**Para** registrar mi retroalimentación sobre la atención recibida
-
-### Criterios de Aceptación
-
-- El formulario se muestra únicamente para sesiones del estudiante con estado `ATTENDED`.
-- La calificación debe ser un número entero entre 0 y 5, inclusive.
-- El sistema rechaza sesiones pendientes, canceladas, inexistentes o pertenecientes a otro estudiante.
-- Cada sesión puede tener como máximo una calificación.
-- La calificación y el comentario opcional se persisten en `reviews` y pueden consultarse desde el historial del estudiante.
-- Después de registrar la calificación, el historial muestra la valoración guardada y evita el registro duplicado.
-
-### Tareas técnicas
-
-- **T-035.1:** Formulario de calificación del tutor en el historial de sesiones atendidas.
-- **T-035.2:** Validación de pertenencia, estado `ATTENDED` y rango de estrellas.
-- **T-035.3:** Persistencia y consulta de calificaciones mediante API REST.
-
-### Tamaño: M
-
-### Dependencias
-
-- Sesiones existentes en estado `ATTENDED`, generadas por el flujo de atención de Nicole.
+> Esta sección contiene el Product Backlog ampliado y oficial para la **Fase 2 del Proyecto EduConnect**.
+> Incorpora 23 nuevas historias de usuario (**HU-028 a HU-050**), abarcando flujos de validación documental estricta (carnet y CV en PDF), verificación de identidad por token temporal vía correo institucional (Mailtrap), aprobación administrativa con visores embebidos, moderación de conducta y régimen sancionatorio de bajas lógicas, planes de estudio estructurados con recursos dinámicos, generación y descarga de constancias oficiales vectoriales en PDF, reportes analíticos multidimensionales con gráficos interactivos, pipeline automatizado de CI/CD en GitHub Actions y despliegue del frontend en la nube mediante contenedores multi-stage.
 
 ---
 
-## 🟨 [HU-036] Reporte disciplinario contra tutores
+## Metodología y Priorización de Fase 2
 
-**Responsable:** Isai (Paquete F)
+La priorización del backlog de Fase 2 se definió al inicio de la fase en estrecha coordinación entre el **Scrum Master (Alvaro)**, el **Product Owner (Isai)** y el **Equipo de Desarrollo (Nicole, Yury, Xavi, Wade)**, respetando la arquitectura técnica y la secuencia crítica de dependencias:
 
-**Como** estudiante que completó una sesión de tutoría
-
-**Quiero** reportar al tutor cuando exista una falta disciplinaria
-
-**Para** dejar constancia de la situación y permitir su revisión administrativa
-
-### Criterios de Aceptación
-
-- El formulario se muestra únicamente para sesiones propias con estado `ATTENDED`.
-- La categoría debe pertenecer al catálogo oficial de faltas contra tutores.
-- El motivo es obligatorio y debe contener al menos 10 caracteres.
-- El reporte se persiste con estado `PENDING` y no se permite duplicar el reporte del mismo estudiante para la misma sesión.
-
-### Tareas técnicas
-
-- **T-036.1:** Formulario de denuncia contra tutores.
-- **T-036.2:** Validaciones de sesión, categoría y motivo.
-- **T-036.3:** Persistencia y seguimiento inicial de la denuncia.
-
-### Tamaño: M
-
-### Dependencias
-
-- Sesiones existentes en estado `ATTENDED`.
+* 🟥 **Prioridad ALTA (Sprint 1 de Fase 2 — Días 3 al 14):**
+  Constituye el núcleo operativo y habilitador del sistema. Incluye el registro con respaldos documentales en PDF, la generación y despacho automático de tokens por correo electrónico, el panel de aprobación con visor embebido de carnets, la edición de perfiles protegida y sanciones iniciales de tutores, el registro obligatorio de planes de estudio estructurados, las calificaciones base de tutores y el pipeline automatizado de CI/CD (Build y Test) en GitHub Actions. Sin estas historias concluidas, no es factible desbloquear los flujos del siguiente sprint.
+* 🟨 **Prioridad MEDIA (Sprint 2 de Fase 2 — Días 15 al 28):**
+  Agrupa funcionalidades que completan la experiencia integral y cierran los ciclos operativos: primer login trifásico con validación dual, visor embebido para currículums de tutores, constancia oficial de tutoría en PDF descargable, régimen sancionatorio contra estudiantes infractores, reportes disciplinarios tipificados bidireccionales y la infraestructura de despliegue en la nube con Docker multi-stage.
+* 🟦 **Prioridad BAJA (Sprint 2 de Fase 2 — Días 15 al 28):**
+  Funcionalidades analíticas complementarias de valor estratégico avanzado, específicamente el Reporte Analítico 2 (**HU-048**) que correlaciona tasas de cancelación y distribución horaria crítica mediante visualizaciones combinadas.
 
 ---
 
-## 🟨 [HU-037] Calificación de estudiantes por tutores
+## Estimación del Tamaño (T-Shirt Size) — Consenso Fase 2
 
-**Responsable:** Isai (Paquete F)
+Para la estimación del esfuerzo y complejidad de las 23 historias de usuario de Fase 2, el equipo completo aplicó la técnica **T-Shirt Size** en sesiones plenarias de planificación.
 
-**Como** tutor que completó una sesión
+Cada integrante emitió su voto individual analizando el impacto en frontend, lógica de negocio en backend, persistencia en base de datos y diseño de pruebas automatizadas:
+* **XS:** Complejidad mínima. Cambios focalizados o formularios simples sin dependencias complejas.
+* **S:** Complejidad baja. Pocos criterios de aceptación, endpoints directos o CRUDs estándar.
+* **M:** Complejidad media. Integración completa frontend-backend, reglas de negocio o transacciones en base de datos.
+* **L:** Complejidad alta. Múltiples validaciones, algoritmos de visualización, flujos asíncronos (correo/tokens), visores embebidos, generación de archivos binarios o configuración de runners CI/CD y despliegue en nube.
+* **XL:** Complejidad muy alta con incertidumbre arquitectónica (no requerida en este alcance tras la modularización en paquetes).
 
-**Quiero** calificar al estudiante con una puntuación de 0 a 5 estrellas y un comentario opcional
+### Matriz de Consenso y Votación Individual (Fase 2)
 
-**Para** registrar retroalimentación sobre su participación
+A continuación se detalla la matriz de votación unánime documentada en la hoja de cálculo colaborativa del equipo:
+
+
+---
+
+### Evidencias de la Matriz de Estimación Colaborativa (Fase 2)
+
+Como evidencia fidedigna de las sesiones sincrónicas de planificación y consenso técnico, se presentan las capturas extraídas de la hoja de cálculo oficial del equipo:
+
+#### Paquetes A, B y C — Identidad, Visores Embebidos y Moderación
+![Matriz de Estimación Fase 2 Paquetes A, B y C](imgs_kanban/estimacion_fase2_paquetes_a_b_c.png)
+
+#### Paquetes D, E y F — Métricas, Planes Estructurados y CI/CD
+![Matriz de Estimación Fase 2 Paquetes D, E y F](imgs_kanban/estimacion_fase2_paquetes_d_e_f.png)
+
+---
+
+## Tabla Resumen de Distribución por Sprint y Prioridad (Fase 2)
+
+| Sprint | Código | Historia de Usuario | Paquete | Responsable | Prioridad | Talla |
+| :---: | :---: | :--- | :---: | :--- | :---: | :---: |
+| **Sprint 1** | **HU-028** | Registro de estudiante con foto reciente y carnet PDF obligatorios | A | Yury | 🟥 Alta | M |
+| **Sprint 1** | **HU-030** | Generación de token y despacho automático de correo desde EduConnect | A | Yury | 🟥 Alta | M |
+| **Sprint 1** | **HU-029** | Registro de tutor con CV en PDF obligatorio | B | Xavi | 🟥 Alta | M |
+| **Sprint 1** | **HU-039** | Aprobación de estudiantes con visor PDF embebido | B | Xavi | 🟥 Alta | M |
+| **Sprint 1** | **HU-041** | Edición de perfil de estudiantes (correo bloqueado) y baja lógica | C | Alvaro | 🟥 Alta | S |
+| **Sprint 1** | **HU-043** | Panel y resolución de denuncias contra tutores | C | Alvaro | 🟥 Alta | M |
+| **Sprint 1** | **HU-045** | Reporte y cálculo de promedio de tutores en estrellas | D | Wade | 🟥 Alta | XS |
+| **Sprint 1** | **HU-047** | Reporte Analítico 1: Evolución temporal de tutorías (semana/mes) con gráficos interactivos | D | Wade | 🟥 Alta | L |
+| **Sprint 1** | **HU-032** | Formulario estructurado de atención con dificultades y recursos dinámicos | E | Nicole | 🟥 Alta | L |
+| **Sprint 1** | **HU-033** | Visualización del plan de estudio estructurado por el estudiante | E | Nicole | 🟥 Alta | M |
+| **Sprint 1** | **HU-035** | Calificación del tutor por estudiante en sesión atendida | F | Isai | 🟥 Alta | S |
+| **Sprint 1** | **HU-049** | Configuración del workflow de CI/CD para backend en GitHub Actions | F | Isai | 🟥 Alta | L |
+| **Sprint 2** | **HU-031** | Primer inicio de sesión trifásico (credenciales + token + admin) | A | Yury | 🟨 Media | M |
+| **Sprint 2** | **HU-040** | Aprobación de tutores con visor PDF embebido | B | Xavi | 🟨 Media | M |
+| **Sprint 2** | **HU-050** | Dockerfile multi-stage y despliegue del frontend en nube | B | Xavi | 🟨 Media | L |
+| **Sprint 2** | **HU-042** | Edición de perfil de tutores (correo bloqueado) y baja lógica | C | Alvaro | 🟨 Media | S |
+| **Sprint 2** | **HU-044** | Panel y resolución de denuncias contra estudiantes | C | Alvaro | 🟨 Media | M |
+| **Sprint 2** | **HU-046** | Reporte y cálculo de promedio de estudiantes en estrellas | D | Wade | 🟨 Media | XS |
+| **Sprint 2** | **HU-048** | Reporte Analítico 2: Materias con cancelaciones y franjas horarias críticas | D | Wade | 🟦 Baja | L |
+| **Sprint 2** | **HU-034** | Motor de generación y descarga de constancia oficial de tutoría en PDF | E | Nicole | 🟨 Media | M |
+| **Sprint 2** | **HU-036** | Reporte disciplinario contra tutores con 4 categorías | F | Isai | 🟨 Media | M |
+| **Sprint 2** | **HU-037** | Calificación de estudiante por tutor tras la sesión | F | Isai | 🟨 Media | S |
+| **Sprint 2** | **HU-038** | Reporte disciplinario contra estudiantes con 4 categorías | F | Isai | 🟨 Media | S |
+
+---
+
+## 2.1 Sprint 1 (Fase 2) — Núcleo de Validación, Planes y CI/CD (Prioridad ALTA 🟥)
+
+## 🟥 [HU-028] Registro de estudiante con foto reciente y carnet PDF obligatorios
+
+**Responsable:** Yury (Paquete A — Identidad, Tokens y PDFs Estudiante)  
+**Prioridad:** 🟥 Alta (Sprint 1)  
+**Tamaño:** M  
+
+**Como** estudiante postulante  
+**Quiero** adjuntar obligatoriamente mi fotografía reciente y mi carnet universitario escaneado en formato PDF al momento de registrarme  
+**Para que** el administrador cuente con los respaldos documentales necesarios para validar mi identidad académica previo a concederme acceso
 
 ### Criterios de Aceptación
 
-- El formulario se muestra únicamente para sesiones atendidas propias del tutor.
-- La calificación debe ser un número entero entre 0 y 5, inclusive.
+- El formulario solicita obligatoriamente: nombres, apellidos, carnet universitario único, correo institucional único y contraseña segura ($\ge 8$ caracteres, al menos 1 mayúscula, 1 minúscula y 1 número).
+- La carga de fotografía reciente y archivo `.pdf` del carnet son estrictamente obligatorios; la interfaz y el backend bloquean el envío si falta cualquiera de los dos documentos.
+- Validación estricta de MIME-Type (`application/pdf`) y límite de tamaño máximo del archivo (5 MB).
+- Almacenamiento seguro del PDF en el servidor con nombres UUID v4 no colisionables (`/uploads/documents/carnets/`).
+- La cuenta se persiste en base de datos en estado pendiente (`PENDING`), impidiendo el inicio de sesión hasta que un administrador apruebe la solicitud.
+- Preserva todas las validaciones de unicidad de carnet y correo electrónico institucional.
+
+### Tareas técnicas
+
+- **T-028.1:** Formulario frontend de registro con validaciones de campos y subida de imagen y carnet en PDF.
+- **T-028.2:** Middleware backend con `Multer` para validar formato MIME (`application/pdf`), tamaño máximo y almacenamiento con UUID.
+- **T-028.3:** Endpoint `POST /api/auth/register/student` con persistencia de campos, hash bcrypt y registro en estado `PENDING`.
+
+### Dependencias
+
+- Base de datos relacional y migración con columna `carnet_pdf_url` en tabla `users`.
+
+---
+
+## 🟥 [HU-030] Generación de token y despacho automático de correo desde EduConnect
+
+**Responsable:** Yury (Paquete A — Identidad, Tokens y PDFs Estudiante)  
+**Prioridad:** 🟥 Alta (Sprint 1)  
+**Tamaño:** M  
+
+**Como** sistema EduConnect  
+**Quiero** generar un token criptográfico único y despachar un correo institucional tras el registro de cualquier estudiante o tutor  
+**Para que** el usuario verifique la legitimidad de su dirección de correo antes de su primer acceso a la plataforma
+
+### Criterios de Aceptación
+
+- Generación de un token pseudoaleatorio alfanumérico seguro de 6 caracteres persistido en la tabla `users` (`verification_token`) con expiración de 24 horas y marca inicial `email_verified = FALSE`.
+- Envío automático e inmediato mediante transporte SMTP (Mailtrap) con remitente oficial "EduConnect".
+- Plantilla HTML de correo con diseño institucional: logotipo oficial, mensaje de bienvenida contra filtros anti-spam, el token en texto resaltado e instrucciones claras de verificación.
+- Si el despacho de correo falla, el backend maneja el error sin comprometer la persistencia del usuario registrado.
+
+### Tareas técnicas
+
+- **T-030.1:** Módulo utilitario de generación de tokens alfanuméricos criptográficos y control de expiración.
+- **T-030.2:** Configuración del servicio de correo con `nodemailer` y transporte SMTP (Mailtrap Sandbox).
+- **T-030.3:** Diseño de plantilla HTML institucional de correo con token destacado y mensaje anti-spam.
+
+### Dependencias
+
+- [HU-028] Registro de estudiante / [HU-029] Registro de tutor.
+
+---
+
+## 🟥 [HU-029] Registro de tutor con CV en PDF obligatorio
+
+**Responsable:** Xavi (Paquete B — CV Tutor, Visores PDF y Despliegue)  
+**Prioridad:** 🟥 Alta (Sprint 1)  
+**Tamaño:** M  
+
+**Como** docente o tutor postulante  
+**Quiero** adjuntar obligatoriamente mi currículum vítae en formato PDF durante mi registro profesional  
+**Para que** la administración certifique mi experiencia académica y materias de especialidad previo a autorizarme impartir tutorías
+
+### Criterios de Aceptación
+
+- El formulario solicita obligatoriamente: nombres, apellidos, carnet, DPI/identificación, fecha de nacimiento, género, especialidades académicas, universidad de origen, modalidad/dirección, año de inicio de experiencia, correo institucional y contraseña segura.
+- Carga obligatoria de fotografía de perfil y currículum vítae en formato estrictamente PDF (`application/pdf`).
+- Validación de tamaño máximo del archivo PDF (hasta 5 MB) y almacenamiento en disco persistente (`/uploads/documents/cvs/`) con nombres basados en UUID v4.
+- Se almacena la ruta relativa en base de datos (`cv_pdf_url`) asociada al registro del tutor.
+- El registro se crea en estado inicial `PENDING` y `email_verified = FALSE`, bloqueando cualquier acceso hasta la aprobación.
+
+### Tareas técnicas
+
+- **T-029.1:** Formulario web de registro de tutor con carga de foto de perfil y CV en PDF.
+- **T-029.2:** Middleware de carga con validación de tipo MIME y límite de tamaño para CVs.
+- **T-029.3:** Endpoint `POST /api/auth/register/tutor` con persistencia de especialidades, ruta de CV y estado inicial `PENDING`.
+
+### Dependencias
+
+- Esquema de base de datos con campo `cv_pdf_url` en tabla `users` y `tutors`.
+
+---
+
+## 🟥 [HU-039] Aprobación de estudiantes con visor PDF embebido
+
+**Responsable:** Xavi (Paquete B — CV Tutor, Visores PDF y Despliegue)  
+**Prioridad:** 🟥 Alta (Sprint 1)  
+**Tamaño:** M  
+
+**Como** administrador del sistema  
+**Quiero** examinar el carnet del estudiante directamente en la interfaz mediante un visor incrustado sin necesidad de descargarlo localmente  
+**Para que** pueda cotejar los datos registrados con el documento oficial de forma rápida y segura antes de aprobar o rechazar la solicitud
+
+### Criterios de Aceptación
+
+- Panel de revisión de solicitudes de estudiantes en estado `PENDING`.
+- Visor PDF embebido mediante etiqueta `<iframe src="{pdfUrl}">` o visor PDF.js con zoom, paginación y navegación nítida sin forzar la descarga en disco local.
+- Endpoint seguro de lectura con cabeceras `Content-Type: application/pdf` y `Content-Disposition: inline`.
+- Visualización simultánea de foto de perfil, carnet, nombre completo, correo y datos académicos.
+- Botones de acción "Aprobar" (actualiza estado a `APPROVED`) y "Rechazar" (actualiza estado a `REJECTED`), disparando notificación de resolución.
+
+### Tareas técnicas
+
+- **T-039.1:** Endpoint de streaming seguro de documentos PDF (`GET /api/documents/carnet/:id`).
+- **T-039.2:** Componente frontend de visor PDF interactivo embebido en modal o vista de aprobación.
+- **T-039.3:** Acciones administrativas de aprobación/rechazo con actualización de estado y retroalimentación visual.
+
+### Dependencias
+
+- [HU-028] Registro de estudiante con carnet PDF.
+
+---
+
+## 🟥 [HU-041] Edición de perfil de estudiantes (correo bloqueado) y baja lógica
+
+**Responsable:** Alvaro (Paquete C — Moderación, Denuncias y Cuentas / Scrum Master)  
+**Prioridad:** 🟥 Alta (Sprint 1)  
+**Tamaño:** S  
+
+**Como** administrador del sistema  
+**Quiero** visualizar el padrón de estudiantes aprobados, editar su información académica o dar de baja su cuenta  
+**Para que** el directorio estudiantil se mantenga depurado y se puedan deshabilitar accesos indebidos de forma justificada
+
+### Criterios de Aceptación
+
+- Tabla interactiva con búsqueda por nombre o carnet y paginación de estudiantes en estado `APPROVED`.
+- Formulario modal de edición que permite modificar nombre, apellido y carnet, manteniendo el correo electrónico estrictamente bloqueado para edición (`disabled`/`readonly`).
+- Validación en backend: cualquier intento de alterar el correo electrónico en la petición PUT/PATCH debe ser rechazado con error 400 Bad Request.
+- Botón de "Dar de baja" con modal de confirmación obligatorio; actualiza el estado del estudiante a `DISABLED`.
+- Un estudiante con estado `DISABLED` tiene denegado el inicio de sesión de forma inmediata (código 403 Forbidden).
+
+### Tareas técnicas
+
+- **T-041.1:** Vista administrativa de gestión de estudiantes aprobados con tabla, filtros y acciones.
+- **T-041.2:** Modal de edición de perfil con campo de correo bloqueado y validaciones de datos.
+- **T-041.3:** Endpoints `PUT /api/admin/students/:id` y `PATCH /api/admin/students/:id/status` con baja lógica y protección de correo.
+
+### Dependencias
+
+- [HU-003] Autenticación administrativa / [HU-039] Aprobación de estudiantes.
+
+---
+
+## 🟥 [HU-043] Panel y resolución de denuncias contra tutores
+
+**Responsable:** Alvaro (Paquete C — Moderación, Denuncias y Cuentas / Scrum Master)  
+**Prioridad:** 🟥 Alta (Sprint 1)  
+**Tamaño:** M  
+
+**Como** administrador del sistema  
+**Quiero** revisar las quejas formales interpuestas por estudiantes contra tutores y ejecutar sanciones disciplinarias  
+**Para que** se mantengan altos estándares de ética, respeto y profesionalismo en las sesiones de tutoría académica
+
+### Criterios de Aceptación
+
+- Panel administrativo que lista denuncias en estado `PENDING` contra tutores con datos: categoría de falta, motivo circunstanciado, sesión relacionada, nombre del tutor denunciado, nombre del estudiante denunciante y marca de tiempo.
+- Acción "Dar de baja al tutor" (sanción aplicada): actualiza la denuncia a `RESOLVED_BANNED` y cambia automáticamente el estado del tutor a `DISABLED`.
+- Acción "Desestimar denuncia": actualiza el estado de la denuncia a `DISMISSED` sin afectar el estado del tutor.
+- Ambas acciones requieren confirmación mediante modal para prevenir ejecuciones accidentales y quedan auditadas en el historial.
+
+### Tareas técnicas
+
+- **T-043.1:** Panel frontend con tabla de denuncias contra tutores, filtros por categoría y modal de detalle.
+- **T-043.2:** Modal de resolución con acciones de sanción (baja del tutor) o desestimación.
+- **T-043.3:** Endpoint `PATCH /api/admin/reports/tutors/:id/resolve` con transaccionalidad para actualizar denuncia y usuario.
+
+### Dependencias
+
+- Base de datos con tabla `incident_reports` y registros de tutores.
+
+---
+
+## 🟥 [HU-045] Reporte y cálculo de promedio de tutores en estrellas
+
+**Responsable:** Wade (Paquete D — Métricas, Calificaciones y Reportes F2)  
+**Prioridad:** 🟥 Alta (Sprint 1)  
+**Tamaño:** XS  
+
+**Como** administrador del sistema  
+**Quiero** consultar el listado consolidado de tutores activos junto con su promedio de calificación en estrellas  
+**Para que** pueda evaluar el rendimiento docente y detectar quiénes destacan positivamente o requieren retroalimentación institucional
+
+### Criterios de Aceptación
+
+- Muestra una tabla con nombre completo del tutor, correo institucional, materias que imparte y el promedio numérico y visual de 0 a 5 estrellas.
+- El cálculo se deriva matemáticamente mediante `AVG(rating)` de todas las evaluaciones emitidas por estudiantes en sesiones con estado `ATTENDED`.
+- Los tutores que aún no cuentan con evaluaciones registradas deben mostrar un distintivo claro (ej. "Sin calificaciones" o 0.0 estrellas).
+- Permite ordenar la tabla por promedio de mayor a menor y viceversa para facilitar la supervisión.
+
+### Tareas técnicas
+
+- **T-045.1:** Consulta SQL de agregación para calcular promedio de estrellas y total de reseñas por tutor.
+- **T-045.2:** Endpoint `GET /api/reports/tutors-ratings` con soporte de ordenamiento.
+- **T-045.3:** Componente visual de tabla de calificaciones con estrellas interactivas y formato amigable.
+
+### Dependencias
+
+- Base de datos con tabla de calificaciones (`session_ratings` / `reviews`).
+
+---
+
+## 🟥 [HU-047] Reporte Analítico 1: Evolución temporal de tutorías (semana/mes) con gráficos interactivos
+
+**Responsable:** Wade (Paquete D — Métricas, Calificaciones y Reportes F2)  
+**Prioridad:** 🟥 Alta (Sprint 1)  
+**Tamaño:** L  
+
+**Como** administrador institucional  
+**Quiero** visualizar un reporte gráfico interactivo que exhiba el volumen y evolución de tutorías agrupadas por semana y mes  
+**Para que** la institución planifique la asignación de recursos y refuerzos académicos en épocas de exámenes
+
+### Criterios de Aceptación
+
+- Gráfico interactivo (Chart.js / Recharts) de líneas o barras temporales con selector de granularidad (semanal y mensual) y rango de fechas.
+- Diferenciación visual clara entre sesiones programadas, sesiones atendidas y sesiones canceladas.
+- Tabla resumen complementaria que detalle totales absolutos y porcentajes de variación temporal.
+- El reporte debe ser completamente nuevo y desacoplado de los reportes estáticos entregados en Fase 1.
+
+### Tareas técnicas
+
+- **T-047.1:** Consulta SQL de agregación temporal (`DATE_FORMAT`, `COUNT`, `GROUP BY`) por intervalos de tiempo.
+- **T-047.2:** Endpoint `GET /api/analytics/sessions-timeline` con parámetros de rango temporal.
+- **T-047.3:** Interfaz visual con gráficos responsivos, tooltips informativos y filtros de fecha dinámicos.
+
+### Dependencias
+
+- Registro de sesiones de tutoría en base de datos.
+
+---
+
+## 🟥 [HU-032] Formulario estructurado de atención del tutor con dificultades y recursos dinámicos
+
+**Responsable:** Nicole (Paquete E — Planes Estructurados y Constancia PDF)  
+**Prioridad:** 🟥 Alta (Sprint 1)  
+**Tamaño:** L  
+
+**Como** tutor que ha finalizado una sesión presencial u online  
+**Quiero** registrar un plan de estudio estructurado con las dificultades detectadas y un listado dinámico de recursos al concluir la cita  
+**Para que** el estudiante cuente con una guía precisa y metodológica para superar sus vacíos académicos
+
+### Criterios de Aceptación
+
+- Al presionar el botón "Atender Estudiante", se despliega un formulario estructurado obligatorio antes de finalizar la sesión.
+- Campo de texto obligatorio: "Dificultades Identificadas" (el sistema no permite guardar si está vacío).
+- Componente dinámico de recursos que permite agregar, editar y eliminar $N$ recursos pedagógicos en tiempo real.
+- Cada recurso exige obligatoriamente tres campos: Nombre del recurso, Tipo de recurso (Texto, Video, PDF o Enlace externo) e Instrucción o descripción de uso.
+- Al confirmar, la sesión transiciona exitosamente a estado `ATTENDED` / `COMPLETED` y los datos del plan y recursos se persisten relacionalmente (`study_plans` y `study_resources`).
+
+### Tareas técnicas
+
+- **T-032.1:** Esquema de base de datos y modelos para `study_plans` y `study_resources` vinculados a la sesión.
+- **T-032.2:** Formulario dinámico en frontend con validaciones de campos obligatorios y gestión reactiva de arrays de recursos.
+- **T-032.3:** Endpoint transaccional `POST /api/sessions/:id/study-plan` que valida datos, guarda el plan y actualiza la sesión a `ATTENDED`.
+
+### Dependencias
+
+- Sesiones agendadas en estado pendiente (`PENDING`).
+
+---
+
+## 🟥 [HU-033] Módulo de visualización del plan de estudio estructurado por el estudiante
+
+**Responsable:** Nicole (Paquete E — Planes Estructurados y Constancia PDF)  
+**Prioridad:** 🟥 Alta (Sprint 1)  
+**Tamaño:** M  
+
+**Como** estudiante atendido  
+**Quiero** acceder a un módulo dedicado para consultar el plan de estudio formulado por mi tutor  
+**Para que** pueda repasar las dificultades diagnosticadas y acceder a los recursos recomendados
+
+### Criterios de Aceptación
+
+- Apartado dedicado en el panel del estudiante accesible desde su historial de citas atendidas.
+- Despliegue de metadatos de la sesión: fecha de realización, materia, nombre del tutor, carnet y especialidad.
+- Sección destacada con el texto íntegro de las "Dificultades Identificadas" por el tutor.
+- Tabla formateada de recursos recomendados con nombre, badge de tipo (Texto, Video, PDF, Enlace) e instrucción detallada. Los enlaces web deben ser clicables abriendo en pestaña nueva (`target="_blank"`).
+
+### Tareas técnicas
+
+- **T-033.1:** Endpoint `GET /api/sessions/:id/study-plan` para consultar los detalles del plan y recursos asignados.
+- **T-033.2:** Vista de interfaz responsiva en el frontend con tarjetas informativas y badges de tipo de recurso.
+- **T-033.3:** Control de acceso para garantizar que únicamente el estudiante dueño de la cita o el tutor puedan visualizar el plan.
+
+### Dependencias
+
+- [HU-032] Formulario estructurado de atención del tutor.
+
+---
+
+## 🟥 [HU-035] Calificación del tutor por estudiante en sesión atendida
+
+**Responsable:** Isai (Paquete F — Feedback y CI/CD / Product Owner)  
+**Prioridad:** 🟥 Alta (Sprint 1)  
+**Tamaño:** S  
+
+**Como** estudiante que completó una sesión de tutoría  
+**Quiero** calificar al tutor asignando de 0 a 5 estrellas e ingresar un comentario voluntario desde mi historial  
+**Para que** mi opinión contribuya a la reputación y auditoría de la plataforma
+
+### Criterios de Aceptación
+
+- El formulario de calificación se activa **única y exclusivamente** si la sesión se encuentra en estado `ATTENDED`.
+- Bloqueo estricto para sesiones pendientes, activas o canceladas.
+- Registro de calificación numérica entera de 0 a 5 estrellas y campo de texto opcional para comentarios.
+- Restricción de unicidad: cada sesión puede recibir un único registro de calificación por parte del estudiante; una vez calificada, se desactiva el botón y se muestra la valoración guardada.
+- Persistencia en la tabla `session_ratings` / `reviews`.
+
+### Tareas técnicas
+
+- **T-035.1:** Formulario modal de calificación con selector interactivo de estrellas (0 a 5) y textarea de comentarios.
+- **T-035.2:** Endpoint `POST /api/sessions/:id/rate-tutor` con validación de estado `ATTENDED` y control de calificación única.
+- **T-035.3:** Integración en la vista de historial de citas para reflejar inmediatamente el estado calificado.
+
+### Dependencias
+
+- [HU-032] Sesiones en estado `ATTENDED`.
+
+---
+
+## 🟥 [HU-049] Configuración del workflow de CI/CD para backend en GitHub Actions
+
+**Responsable:** Isai (Paquete F — Feedback y CI/CD / Product Owner)  
+**Prioridad:** 🟥 Alta (Sprint 1)  
+**Tamaño:** L  
+
+**Como** equipo de ingeniería y DevOps  
+**Quiero** un pipeline automatizado que compile, pruebe y verifique el backend en cada integración a `main`  
+**Para que** se garantice la integridad del código, detectando regresiones antes de integrar cambios
+
+### Criterios de Aceptación
+
+- Workflow `.github/workflows/backend-ci-cd.yml` activado automáticamente ante eventos `push` hacia la rama `main`.
+- **Job Build:** Instalación limpia de dependencias y construcción de la imagen Docker del backend a partir de `./backend/Dockerfile`.
+- **Job Test:** Ejecución automatizada de la suite de pruebas unitarias (`npm test` / `node --test`). Si una sola prueba falla, el runner aborta el pipeline de inmediato.
+- Las variables sensibles (puertos, secretos, tokens) se administran de forma segura mediante `GitHub Secrets`.
+- Costo de infraestructura de $0.00 utilizando el runner oficial de GitHub (`ubuntu-latest`).
+
+### Tareas técnicas
+
+- **T-049.1:** Creación y configuración del archivo de flujo `.github/workflows/backend-ci-cd.yml`.
+- **T-049.2:** Configuración del job de Build con Docker y dependencias de Node.js.
+- **T-049.3:** Configuración del job de Test con base de datos de servicio (MySQL) y reporte de resultados en el runner.
+
+### Dependencias
+
+- Suite de pruebas unitarias y Dockerfile del backend.
+
+---
+
+## 2.2 Sprint 2 (Fase 2) — Despliegue Cloud, Constancias, Moderación y Cierre (Prioridad MEDIA 🟨 / BAJA 🟦)
+
+## 🟨 [HU-031] Primer inicio de sesión trifásico (credenciales + token + admin)
+
+**Responsable:** Yury (Paquete A — Identidad, Tokens y PDFs Estudiante)  
+**Prioridad:** 🟨 Media (Sprint 2)  
+**Tamaño:** M  
+
+**Como** estudiante o tutor registrado  
+**Quiero** ingresar mi correo, contraseña y el token recibido en mi primer intento de autenticación  
+**Para que** el sistema active mi cuenta y me conceda acceso a la plataforma
+
+### Criterios de Aceptación
+
+- En el primer inicio de sesión se exige obligatoriamente el campo "Token de Verificación".
+- Si el token ingresado es erróneo, está vencido (> 24 hrs) o no coincide, el acceso es rechazado con mensaje descriptivo específico.
+- Si el usuario no ha sido aprobado aún por el administrador (`status != 'APPROVED'`), el sistema bloquea el acceso informando "Cuenta pendiente de aprobación administrativa".
+- Tras validar exitosamente ambas condiciones (token válido y aprobación administrativa), la cuenta se marca permanentemente como `email_verified = TRUE`.
+- En los inicios de sesión subsecuentes, el sistema solicita únicamente correo y contraseña habituales.
+
+### Tareas técnicas
+
+- **T-031.1:** Adaptación de la vista de Login en frontend para soportar el campo condicional de token.
+- **T-031.2:** Endpoint de autenticación adaptado para verificar token temporal y estado de aprobación administrativa.
+- **T-031.3:** Lógica de transición para marcar `email_verified = TRUE` y permitir accesos futuros simplificados.
+
+### Dependencias
+
+- [HU-028] / [HU-029] Registros y [HU-030] Envío de token vía correo.
+
+---
+
+## 🟨 [HU-040] Aprobación de tutores con visor PDF embebido
+
+**Responsable:** Xavi (Paquete B — CV Tutor, Visores PDF y Despliegue)  
+**Prioridad:** 🟨 Media (Sprint 2)  
+**Tamaño:** M  
+
+**Como** administrador del sistema  
+**Quiero** leer el CV del tutor en un visor integrado en pantalla sin necesidad de descargas externas  
+**Para que** pueda validar su perfil profesional previo a emitir una decisión de ingreso
+
+### Criterios de Aceptación
+
+- Panel de administración para tutores pendientes con visor embebido de CV en PDF (usando iframe o PDF.js) con controles de zoom y desplazamiento responsivo.
+- Visualización simultánea de foto de perfil, materias a impartir, identificación, credenciales y años de experiencia.
+- Botones "Aprobar Tutor" y "Rechazar Tutor" completamente funcionales que actualizan el estado a `APPROVED` o `REJECTED`.
+- Notificación de estado al tutor mediante correo tras la decisión administrativa.
+
+### Tareas técnicas
+
+- **T-040.1:** Integración del componente de visor PDF embebido en la vista de auditoría de tutores.
+- **T-040.2:** Endpoint de lectura de CVs (`GET /api/documents/cv/:id`) con cabeceras para renderizado en navegador.
+- **T-040.3:** Controladores de aprobación y rechazo administrativo con confirmación y auditoría de estado.
+
+### Dependencias
+
+- [HU-029] Registro de tutor con CV en PDF.
+
+---
+
+## 🟨 [HU-050] Dockerfile multi-stage y despliegue del frontend en nube
+
+**Responsable:** Xavi (Paquete B — CV Tutor, Visores PDF y Despliegue)  
+**Prioridad:** 🟨 Media (Sprint 2)  
+**Tamaño:** L  
+
+**Como** evaluador técnico y usuario final  
+**Quiero** acceder a la plataforma web de EduConnect mediante una URL pública desplegada en la nube  
+**Para que** el sistema sea accesible y operativo fuera de un entorno local cerrado
+
+### Criterios de Aceptación
+
+- Frontend dockerizado con Dockerfile optimizado para producción mediante compilación multi-stage (Stage 1: Build de React con Vite; Stage 2: Servidor web ligero `nginx:alpine`).
+- Configuración de Nginx para resolver rutas SPA (`try_files $uri /index.html;`).
+- Despliegue funcional en proveedor cloud (Vercel, Render o Cloud Run) accesible mediante una URL pública con certificado SSL/HTTPS.
+- El frontend en la nube se comunica de forma transparente y segura vía API REST con los servicios del backend mediante la variable `VITE_API_URL`.
+
+### Tareas técnicas
+
+- **T-050.1:** Redacción y optimización del `frontend/Dockerfile` multi-stage y archivo de configuración `nginx.conf`.
+- **T-050.2:** Aprovisionamiento y despliegue del servicio frontend en la nube con certificado SSL/HTTPS.
+- **T-050.3:** Configuración de variables de entorno de producción y verificación de conectividad con la API REST.
+
+### Dependencias
+
+- Frontend compilable y endpoints de backend accesibles.
+
+---
+
+## 🟨 [HU-042] Edición de perfil de tutores (correo bloqueado) y baja lógica
+
+**Responsable:** Alvaro (Paquete C — Moderación, Denuncias y Cuentas / Scrum Master)  
+**Prioridad:** 🟨 Media (Sprint 2)  
+**Tamaño:** S  
+
+**Como** administrador del sistema  
+**Quiero** auditar a los tutores aprobados, actualizar sus credenciales profesionales y suspender cuentas infractoras  
+**Para que** se garantice la idoneidad del personal académico activo
+
+### Criterios de Aceptación
+
+- Listado interactivo de tutores activos con opción de editar datos personales y especialidades docentes.
+- Formulario de edición con el correo electrónico estrictamente bloqueado para modificación (`readonly`). El backend rechaza peticiones de alteración con error 400.
+- Opción de "Dar de baja" bajo confirmación previa obligatoria, actualizando el estado del tutor a inactivo (`DISABLED`).
+- Restricción inmediata de inicio de sesión para el tutor dado de baja y ocultamiento automático de su disponibilidad horaria.
+
+### Tareas técnicas
+
+- **T-042.1:** Panel administrativo de gestión de tutores con tabla interactiva, filtros y estado actual.
+- **T-042.2:** Modal de actualización de especialidades y datos del tutor con campo de correo protegido.
+- **T-042.3:** Endpoint `PUT /api/admin/tutors/:id` y `PATCH /api/admin/tutors/:id/status` con lógica de suspensión.
+
+### Dependencias
+
+- [HU-003] Autenticación administrativa / [HU-040] Aprobación de tutores.
+
+---
+
+## 🟨 [HU-044] Panel y resolución de denuncias contra estudiantes
+
+**Responsable:** Alvaro (Paquete C — Moderación, Denuncias y Cuentas / Scrum Master)  
+**Prioridad:** 🟨 Media (Sprint 2)  
+**Tamaño:** M  
+
+**Como** administrador del sistema  
+**Quiero** gestionar los reportes presentados por tutores respecto a conductas irregulares de estudiantes  
+**Para que** se proteja la integridad física, psicológica y académica de los tutores
+
+### Criterios de Aceptación
+
+- Panel con listado completo de incidencias pendientes contra estudiantes: categoría de falta, explicación detallada, estudiante infractor, tutor denunciante y fecha.
+- Acción "Dar de baja al estudiante": actualiza la denuncia a `RESOLVED_BANNED` y suspende inmediatamente la cuenta del estudiante infractor (`DISABLED`).
+- Acción "Desestimar reporte": transiciona el estado de la queja a `DISMISSED` sin alterar el estado del estudiante.
+- Modales de confirmación en ambas acciones y persistencia en base de datos para trazabilidad y auditoría.
+
+### Tareas técnicas
+
+- **T-044.1:** Interfaz administrativa con tabla de denuncias contra estudiantes y vista detallada de la queja.
+- **T-044.2:** Acciones interactivas de sanción inmediata o desestimación con confirmación modal.
+- **T-044.3:** Endpoint `PATCH /api/admin/reports/students/:id/resolve` con actualización de estado y baja lógica transaccional.
+
+### Dependencias
+
+- [HU-038] Reportes de tutores contra estudiantes en base de datos.
+
+---
+
+## 🟨 [HU-046] Reporte y cálculo de promedio de estudiantes en estrellas
+
+**Responsable:** Wade (Paquete D — Métricas, Calificaciones y Reportes F2)  
+**Prioridad:** 🟨 Media (Sprint 2)  
+**Tamaño:** XS  
+
+**Como** administrador institucional  
+**Quiero** monitorear la reputación académica de los estudiantes mediante su promedio de estrellas otorgadas por tutores  
+**Para que** pueda identificar alumnos ejemplares o aquellos que presenten dificultades sistemáticas
+
+### Criterios de Aceptación
+
+- Muestra una tabla con nombre completo, carnet, correo y promedio de calificación en estrellas (rango 0 a 5).
+- Cálculo exacto ponderado a partir de las calificaciones registradas por los tutores en sesiones con estado `ATTENDED`.
+- Indicador visual claro para estudiantes sin evaluaciones previas.
+- Permite ordenar de mayor a menor y viceversa para facilitar la supervisión docente.
+
+### Tareas técnicas
+
+- **T-046.1:** Consulta SQL de agregación para calcular promedio de estrellas y total de sesiones evaluadas por estudiante.
+- **T-046.2:** Endpoint `GET /api/reports/students-ratings` con soporte de paginación y ordenamiento.
+- **T-046.3:** Componente frontend de tabla de promedios con visualización de estrellas y filtros de búsqueda.
+
+### Dependencias
+
+- [HU-037] Calificaciones emitidas por tutores hacia estudiantes.
+
+---
+
+## 🟦 [HU-048] Reporte Analítico 2: Materias con más cancelaciones y franjas horarias críticas
+
+**Responsable:** Wade (Paquete D — Métricas, Calificaciones y Reportes F2)  
+**Prioridad:** 🟦 Baja (Sprint 2)  
+**Tamaño:** L  
+
+**Como** administrador del sistema  
+**Quiero** un reporte analítico que correlacione las materias con mayor tasa de cancelación y los horarios más demandados  
+**Para que** se tomen medidas correctivas en las materias críticas y se optimice la oferta horaria
+
+### Criterios de Aceptación
+
+- Gráfico visual interactivo (gráfico combinado de pastel o barras apiladas) mostrando la proporción y tasa de cancelaciones por cátedra/materia.
+- Mapa de calor o histograma de distribución horaria identificando las franjas con mayor afluencia de reservas y deserciones.
+- Tabla complementaria con métricas detalladas: total de reservas, total de cancelaciones y porcentaje relativo de deserción.
+- Totalmente desacoplado e independiente de los reportes entregados en Fase 1.
+
+### Tareas técnicas
+
+- **T-048.1:** Consulta analítica agregada para correlacionar tasas de cancelación y distribución horaria por materia.
+- **T-048.2:** Endpoint `GET /api/analytics/cancellations-and-schedules` con agregaciones multidimensionales.
+- **T-048.3:** Integración de gráficos combinados en el frontend con tooltips explicativos y diseño responsivo.
+
+### Dependencias
+
+- Registros de sesiones de tutoría con estados atendidos y cancelados.
+
+---
+
+## 🟨 [HU-034] Motor de generación y descarga de constancia oficial de tutoría en PDF
+
+**Responsable:** Nicole (Paquete E — Planes Estructurados y Constancia PDF)  
+**Prioridad:** 🟨 Media (Sprint 2)  
+**Tamaño:** M  
+
+**Como** estudiante  
+**Quiero** generar y descargar una constancia formal en PDF de mi plan de estudio  
+**Para que** me sirva como comprobante de asistencia académica ante coordinaciones o cátedras universitarias
+
+### Criterios de Aceptación
+
+- Botón "Descargar Constancia en PDF" disponible en el módulo del plan de estudio de la sesión atendida.
+- Descarga directa con renderizado vectorial limpio y maquetación profesional:
+  - **Encabezado institucional obligatorio:** Logotipo oficial, nombre "EduConnect - Constancia Oficial de Tutoría", fecha de emisión y teléfonos de contacto.
+  - **Datos generales de la asesoría:** Nombre del estudiante, carnet, nombre del tutor, especialidad académica y fecha de la sesión.
+  - **Cuerpo del documento:** Resumen de dificultades identificadas y tabla formateada con los recursos recomendados (Nombre, Tipo e Instrucción de uso).
+  - **Pie de página obligatorio (firma institucional/sello):** Nombre completo del tutor, especialidad docente y número de identificación para garantizar autenticidad.
+
+### Tareas técnicas
+
+- **T-034.1:** Integración de librería de generación de PDF (`jsPDF` / `pdfkit`) con plantilla tipográfica institucional.
+- **T-034.2:** Función de mapeo de datos de la sesión y recursos dinámicos hacia la estructura visual del documento.
+- **T-034.3:** Implementación del botón de descarga directa en el navegador con nombre estandarizado (`Constancia_Tutoria_[ID].pdf`).
+
+### Dependencias
+
+- [HU-032] y [HU-033] Plan de estudio asignado a la sesión.
+
+---
+
+## 🟨 [HU-036] Reporte disciplinario contra tutores con 4 categorías
+
+**Responsable:** Isai (Paquete F — Feedback y CI/CD / Product Owner)  
+**Prioridad:** 🟨 Media (Sprint 2)  
+**Tamaño:** M  
+
+**Como** estudiante víctima de irregularidades  
+**Quiero** reportar a un tutor desde mi historial mediante un catálogo tipificado de faltas  
+**Para que** la coordinación administrativa investigue y sancione malas conductas
+
+### Criterios de Aceptación
+
+- Formulario de denuncia habilitado **única y exclusivamente** sobre sesiones en estado `ATTENDED`.
+- Selector obligatorio con al menos 4 categorías oficiales predefinidas: (1) Ética y profesionalismo, (2) Negligencia académica, (3) Abuso o conducta inapropiada, (4) Falsificación de información.
+- Campo obligatorio de descripción circunstanciada de los hechos con una longitud mínima de 10 caracteres.
+- El reporte se persiste en estado `PENDING` en la tabla `incident_reports` y se canaliza al panel de administración.
+- Regla anti-duplicados: un estudiante solo puede interponer un reporte por sesión atendida.
+
+### Tareas técnicas
+
+- **T-036.1:** Formulario modal en frontend para interponer denuncias con selector de categoría y validación de texto.
+- **T-036.2:** Endpoint `POST /api/sessions/:id/report-tutor` con validación de sesión atendida y prevención de duplicados.
+- **T-036.3:** Notificación de confirmación al estudiante y persistencia en estado `PENDING`.
+
+### Dependencias
+
+- Sesiones en estado `ATTENDED`.
+
+---
+
+## 🟨 [HU-037] Calificación de estudiante por tutor tras la sesión
+
+**Responsable:** Isai (Paquete F — Feedback y CI/CD / Product Owner)  
+**Prioridad:** 🟨 Media (Sprint 2)  
+**Tamaño:** S  
+
+**Como** tutor  
+**Quiero** evaluar el compromiso del estudiante (0 a 5 estrellas y comentario) tras concluir la sesión  
+**Para que** quede un precedente del desempeño del alumno en el sistema
+
+### Criterios de Aceptación
+
+- Opción disponible únicamente para sesiones en estado `ATTENDED` impartidas por el tutor autenticado. Bloqueada para canceladas o pendientes.
+- Calificación numérica entera entre 0 y 5 estrellas, con textarea opcional para observaciones del tutor sobre la preparación previa del estudiante.
 - La calificación y el comentario se persisten sin impedir que el estudiante registre su propia calificación al tutor.
-- Cada tutor puede calificar una sola vez a cada estudiante por sesión.
+- Cada tutor puede calificar una sola vez a cada estudiante por sesión atendida.
 
 ### Tareas técnicas
 
-- **T-037.1:** Formulario de calificación del estudiante.
-- **T-037.2:** Validación de sesión atendida y estrellas.
-- **T-037.3:** Persistencia y consulta de calificaciones.
-
-### Tamaño: M
+- **T-037.1:** Componente de calificación del estudiante en la vista de historial de tutorías del tutor.
+- **T-037.2:** Endpoint `POST /api/sessions/:id/rate-student` con validaciones de rol y sesión atendida.
+- **T-037.3:** Persistencia relacional y bloqueo de re-calificación.
 
 ### Dependencias
 
-- Sesiones existentes en estado `ATTENDED`.
+- Sesiones en estado `ATTENDED`.
 
 ---
 
-## 🟨 [HU-038] Reporte disciplinario contra estudiantes
+## 🟨 [HU-038] Reporte disciplinario contra estudiantes con 4 categorías
 
-**Responsable:** Isai (Paquete F)
+**Responsable:** Isai (Paquete F — Feedback y CI/CD / Product Owner)  
+**Prioridad:** 🟨 Media (Sprint 2)  
+**Tamaño:** S  
 
-**Como** tutor que completó una sesión de tutoría
-
-**Quiero** reportar al estudiante cuando exista una falta disciplinaria
-
-**Para** dejar constancia de la situación y permitir su revisión administrativa
-
-### Criterios de Aceptación
-
-- El formulario se muestra únicamente para sesiones propias con estado `ATTENDED`.
-- La categoría debe pertenecer al catálogo oficial de faltas contra estudiantes.
-- El motivo es obligatorio y debe contener al menos 10 caracteres.
-- El reporte se persiste con estado `PENDING` y no se permite duplicar el reporte del mismo tutor para la misma sesión.
-
-### Tareas técnicas
-
-- **T-038.1:** Formulario de denuncia contra estudiantes.
-- **T-038.2:** Validaciones de sesión, categoría y motivo.
-- **T-038.3:** Persistencia y seguimiento inicial de la denuncia.
-
-### Tamaño: M
-
-### Dependencias
-
-- Sesiones existentes en estado `ATTENDED`.
-
----
-
-## 🟥 [HU-049] Pipeline CI/CD de Build y Test
-
-**Responsable:** Isai (Paquete F)
-
-**Como** equipo de desarrollo
-
-**Quiero** automatizar la construcción y las pruebas del backend en GitHub Actions
-
-**Para** detectar regresiones antes de integrar cambios en `main`
+**Como** tutor afectado  
+**Quiero** levantar un reporte disciplinario contra un estudiante problemático  
+**Para que** el administrador aplique las sanciones de baja que correspondan
 
 ### Criterios de Aceptación
 
-- El workflow `.github/workflows/backend-ci-cd.yml` se ejecuta al hacer `push` a `main`.
-- La etapa `Build` instala dependencias, construye la imagen Docker del backend y compila el frontend.
-- La etapa `Test` depende de `Build` y ejecuta `npm test` en el backend.
-- Un fallo en Build impide ejecutar Test.
-- No se almacenan credenciales sensibles en el repositorio.
-- La etapa Deploy se ejecuta únicamente en `main`, después de que `Build` y `Test` finalicen correctamente.
+- Válido únicamente sobre sesiones atendidas impartidas por el tutor.
+- Selector obligatorio con al menos 4 categorías oficiales predefinidas: (1) Conducta inapropiada, (2) Falsificación de documentos, (3) Agresión verbal o física, (4) Daño a instalaciones / inasistencia lesiva.
+- Campo obligatorio de exposición circunstanciada de motivos con un mínimo de 10 caracteres.
+- El ticket se persiste en estado `PENDING` en `incident_reports` y se transfiere al panel de administración.
+- No se permite más de un reporte del tutor por sesión.
 
 ### Tareas técnicas
 
-- **T-049.1:** Configurar el workflow y el job de Build.
-- **T-049.2:** Automatizar el job de pruebas unitarias.
-- **T-049.3:** Configurar la etapa Deploy condicionada a `main` y documentar sus secretos de conexión.
-
-### Tamaño: M
+- **T-038.1:** Formulario modal de denuncia contra estudiantes en el historial de tutorías atendidas del tutor.
+- **T-038.2:** Endpoint `POST /api/sessions/:id/report-student` con verificación de autoría y validación de categorías.
+- **T-038.3:** Registro y confirmación de la denuncia en la base de datos.
 
 ### Dependencias
 
-- Repositorio con `backend/package-lock.json`, `frontend/package-lock.json` y Dockerfile del backend.
+- Sesiones en estado `ATTENDED`.
+
