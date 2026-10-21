@@ -1,5 +1,7 @@
 const pool = require('../config/db');
-const { groupSessionsByPeriod } = require('../utils/metrics');
+const {
+  groupSessionsByPeriod, cancellationRateBySubject, demandBySchedule, weightedAverage,
+} = require('../utils/metrics');
 
 // HU-045: promedio de calificaciones de tutores activos (APPROVED)
 const getTutorRatingsReport = async (req, res, next) => {
@@ -9,7 +11,7 @@ const getTutorRatingsReport = async (req, res, next) => {
               COALESCE(AVG(r.rating), 0) AS promedio, COUNT(r.id) AS total
          FROM tutor_profiles tp
          JOIN users u ON u.id = tp.user_id AND u.status = 'APPROVED'
-         LEFT JOIN reviews r ON r.tutor_id = tp.id
+         LEFT JOIN reviews r ON r.tutor_id = tp.id AND r.reviewer_role = 'student'
         GROUP BY tp.id
         ORDER BY promedio DESC, total DESC`,
     );
@@ -21,6 +23,49 @@ const getTutorRatingsReport = async (req, res, next) => {
     res.json({ tutorsRatings });
   } catch (err) { next(err); }
 };
+
+// HU-046: promedio de calificaciones de estudiantes activos (APPROVED),
+// a partir de las calificaciones que les asignaron los tutores (reviewer_role = 'tutor').
+// Se agrupa por tutor y se pondera por la cantidad de calificaciones (PU-18),
+// lo que equivale al promedio de todas las calificaciones recibidas.
+const getStudentRatingsReport = async (req, res, next) => {
+  try {
+    const [students] = await pool.execute(
+      `SELECT sp.id, sp.nombre, sp.apellido, sp.carnet
+         FROM student_profiles sp
+         JOIN users u ON u.id = sp.user_id AND u.status = 'APPROVED'`,
+    );
+    const [groups] = await pool.execute(
+      `SELECT r.student_id, SUM(r.rating) AS suma, COUNT(*) AS total
+         FROM reviews r
+        WHERE r.reviewer_role = 'tutor'
+        GROUP BY r.student_id, r.tutor_id`,
+    );
+
+    const byStudent = new Map();
+    for (const g of groups) {
+      const total = Number(g.total);
+      const items = byStudent.get(g.student_id) || [];
+      items.push({ rating: Number(g.suma) / total, weight: total });
+      byStudent.set(g.student_id, items);
+    }
+
+    const studentsRatings = students
+      .map((s) => {
+        const items = byStudent.get(s.id) || [];
+        return {
+          ...s,
+          promedio: weightedAverage(items),
+          total: items.reduce((acc, i) => acc + i.weight, 0),
+          tutores: items.length,
+        };
+      })
+      .sort((a, b) => b.promedio - a.promedio || b.total - a.total);
+
+    res.json({ studentsRatings });
+  } catch (err) { next(err); }
+};
+
 
 // HU-047: ?granularity=week|month&month=YYYY-MM
 const getSessionsEvolutionReport = async (req, res, next) => {
@@ -43,4 +88,46 @@ const getSessionsEvolutionReport = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
-module.exports = { getTutorRatingsReport, getSessionsEvolutionReport };
+// Filtro opcional ?month=YYYY-MM compartido por los reportes HU-048
+const monthFilter = (month) => {
+  if (!month) return { clause: '', params: [] };
+  if (!/^\d{4}-\d{2}$/.test(month)) return { error: 'month debe tener formato YYYY-MM' };
+  return { clause: " WHERE DATE_FORMAT(s.session_date, '%Y-%m') = ?", params: [month] };
+};
+
+// HU-048a: materias con mayor tasa de cancelación
+const getCancellationsBySubjectReport = async (req, res, next) => {
+  try {
+    const { month } = req.query;
+    const f = monthFilter(month);
+    if (f.error) return res.status(400).json({ message: f.error });
+    const [rows] = await pool.execute(
+      `SELECT sub.nombre AS subject, s.status
+         FROM sessions s
+         JOIN subjects sub ON sub.id = s.subject_id${f.clause}`,
+      f.params,
+    );
+    res.json({ month: month || null, cancellations: cancellationRateBySubject(rows) });
+  } catch (err) { next(err); }
+};
+
+
+// HU-048b: horarios más demandados
+const getDemandedSchedulesReport = async (req, res, next) => {
+  try {
+    const { month } = req.query;
+    const f = monthFilter(month);
+    if (f.error) return res.status(400).json({ message: f.error });
+    const [rows] = await pool.execute(
+      `SELECT s.start_time FROM sessions s${f.clause}`,
+      f.params,
+    );
+    res.json({ month: month || null, schedules: demandBySchedule(rows) });
+  } catch (err) { next(err); }
+};
+
+module.exports = {
+  getTutorRatingsReport, getSessionsEvolutionReport,
+  getCancellationsBySubjectReport, getDemandedSchedulesReport,
+  getStudentRatingsReport,
+};

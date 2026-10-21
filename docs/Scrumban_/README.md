@@ -1,52 +1,64 @@
 # Scrumban: Guía General de Gestión y Metodología (EduConnect)
 
-Esta carpeta concentra los artefactos y la documentación práctica para organizar y gestionar el desarrollo de la plataforma **EduConnect** utilizando historias de usuario, Product Backlog, Sprint Backlog, tablero Kanban y los eventos de la metodología Scrum.
+Esta carpeta concentra todos los artefactos, actas formales y documentación técnica utilizados para gestionar el desarrollo de la plataforma **EduConnect** bajo la metodología híbrida **Scrumban** (Scrum con control visual Kanban) a lo largo de la **Fase 1** y la **Fase 2**.
 
 ---
 
 ## Estructura de la Documentación
 
+Todos los documentos del directorio siguen la jerarquía unificada por fases y sprints:
+```markdown
+# 1. Fase 1
+## 1.1 Sprint 1
+## 1.2 Sprint 2
+
+# 2. Fase 2
+## 2.1 Sprint 1
+## 2.2 Sprint 2
+```
+
 ### 1. Product Backlog
 - **Archivo:** [`historias_usuario.md`](historias_usuario.md)
 - **Contenido:**
-  - Catálogo ordenado de historias de usuario del proyecto.
-  - Criterios de aceptación estructurados, estimaciones en tallas de camiseta (*T-Shirt Size*) y mapa de dependencias.
-  - Priorización mediante código de colores (Alta 🟥, Media 🟨, Baja 🟦).
+  - Catálogo completo de las 50 historias de usuario (27 de Fase 1 + 23 de Fase 2).
+  - Criterios de aceptación detallados y estimación en tallas de camiseta (*T-Shirt Size*) por consenso con capturas de evidencia.
+  - Priorización visual por código de colores (Alta 🟥, Media 🟨, Baja 🟦).
 
-### 2. Sprint Backlog
-- **Archivo:** [`sprint_backlog.md`](sprint_backlog.md)
+### 2. Sprint Backlog y Tareas Técnicas
+- **Archivos:** [`sprint_backlog.md`](sprint_backlog.md) y [`listaTareas.md`](listaTareas.md)
 - **Contenido:**
-  - Historias de usuario seleccionadas para cada uno de los Sprints (Sprint 1 y Sprint 2).
-  - Objetivos de cada iteración (*Sprint Goals*).
-  - Alcance y descripción técnica del trabajo planificado.
+  - Desglose técnico de 160 tareas en total (91 tareas en Fase 1 + 69 tareas en Fase 2) distribuidas en los paquetes técnicos A al F.
+  - Objetivos de cada iteración (*Sprint Goals*), fechas de ejecución y definición de alcance.
 
-### 3. Tablero Kanban
+### 3. Tablero Kanban y Políticas de Flujo
 - **Archivo:** [`tablero_kanban.md`](tablero_kanban.md)
 - **Contenido:**
-  - Definición del flujo visual de trabajo: columnas `TO-DO`, `BLOCKED`, `IN PROGRESS`, `TEST/QA` y `DEPLOY`.
-  - Políticas de movimiento de tarjetas y etiquetas del tablero.
-  - Registro de la evolución visual del tablero mediante archivos exportados en formato PDF.
+  - Definición de columnas (`TO-DO`, `BLOCKED`, `IN PROGRESS`, `TEST/QA`, `DEPLOY` y `DONE`).
+  - Políticas explícitas de límites WIP (Work in Progress), Definition of Done (DoD) y reglas de transición.
+  - Enlaces directos a las evidencias de evolución en formato PDF para ambas fases.
 
-### 4. Eventos Scrum (Reuniones)
+### 4. Eventos Scrum y Actas de Dailies
 - **Archivo:** [`scrum_meetings.md`](scrum_meetings.md)
 - **Contenido:**
-  - Registro detallado de las ceremonias de Scrum: *Sprint Planning*, *Daily Scrum* y *Sprint Retrospective*.
-  - Simulación cronológica completa con los 6 integrantes del equipo en cada Daily Scrum respondiendo a las 3 preguntas clave.
-  - Enlaces a las evidencias del tablero en cada reunión.
+  - Actas formales de las 4 sesiones de Sprint Planning y 4 Sprint Retrospectives con enlaces directos a las grabaciones en Google Drive.
+  - Registro cronológico detallado de las **24 sesiones de Daily Scrum** (12 en Fase 1 y 12 en Fase 2) con las 3 preguntas clave por cada uno de los 6 integrantes del equipo.
 
-### 5. Evidencias del Tablero (PDF)
-- **Directorio:** [`tableros_f2/`](tableros_f2/)
+### 5. Evaluación de Desempeño del Scrum Master
+- **Archivo:** [`Evaluacion_SM.md`](Evaluacion_SM.md)
 - **Contenido:**
-  - Exportaciones periódicas en PDF que demuestran la progresión y movimiento de las tarjetas a lo largo de cada Sprint.
+  - Auditoría cuantitativa y cualitativa (escala 1 a 100) del desempeño individual de los 6 integrantes en las cuatro dimensiones evaluadas por el Scrum Master.
 
-### 6. Recursos Visuales
-- **Directorio:** [`imgs_kanban/`](imgs_kanban/)
-- **Contenido:**
-  - Capturas auxiliares de etiquetas, miembros y configuraciones del tablero en Trello.
+### 6. Evidencias del Tablero en PDF
+- **Fase 1:** [`tableros/`](tableros/) — 14 archivos PDF con el registro de Planning 1 y 2, Dailies 1 al 12 y Retrospectivas 1 y 2.
+- **Fase 2:** [`tableroFase2/`](tableroFase2/) — 14 archivos PDF con fechas y horas oficiales sincronizadas mediante script automatizado (`actualizar_fechas_tableros.py`).
+
+### 7. Recursos Visuales
+- **Directorio:** [`imgs_kanban/`](imgs_kanban/) — Evidencias de tableros Trello, etiquetas de trabajo y planillas de estimación de tallas por camiseta.
 
 ---
 
 ## Herramientas Utilizadas
 - **Trello:** Plataforma visual para el seguimiento Kanban del flujo de desarrollo ([Acceder al Tablero AYD1 - EduConnect](https://trello.com/invite/b/6a8e3c36dcf32de42c7d8d45/ATTIc16aa6c7be21da464d3dabfea5738f984D9AE89F/ayd1-educonnect)).
-- **Markdown:** Estándar de documentación técnica colaborativa.
-- **PDF:** Formato estándar para archivar las impresiones y evidencias de evolución del tablero.
+- **Google Drive:** Almacenamiento seguro de las grabaciones de video de las ceremonias de Scrum ([Carpeta de Grabaciones Fase 2](https://drive.google.com/drive/folders/1QWwwTloNce28EC7Sr9hJwT0NTGPDOz8o?usp=sharing)).
+- **PyMuPDF / Python:** Scripting automatizado para la trazabilidad y estandarización de encabezados en evidencias PDF.
+- **Markdown & GitHub:** Estándar de documentación técnica y control de versiones bajo Git Flow.

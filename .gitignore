@@ -36,7 +36,6 @@ Thumbs.db
 coverage/
 
 # Docker
-.dockerignore
 docker-compose.override.yml
 
 # Material de Apoyo y Enunciados
@@ -51,3 +50,5 @@ DistribucionTareas*.md
 pnpm-lock.yaml
 pnpm-workspace.yaml
 
+frontend/cypress/screenshots/
+frontend/cypress/videos/

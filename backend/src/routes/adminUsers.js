@@ -3,18 +3,26 @@ const { authenticateJWT, authorizeAdmin } = require('../middlewares/authJWT');
 const {
   listUsers,
   listPendingStudents,
+  listPendingTutors,
   updateStudentStatus,
   updateUserStatus,
+  updateTutorStatus,
   disableUser,
   getTopTutorsReport,
   updateStudentProfileByAdmin,
+  updateTutorProfileByAdmin,
   listTutorIncidents,
+  listStudentIncidents,
+  resolveIncident,
   resolveTutorIncident,
+  resolveStudentIncident,
 } = require('../controllers/adminUserController');
 
 router.use(authenticateJWT, authorizeAdmin);
 router.get('/students/pending', listPendingStudents);
 router.put('/students/:id/status', updateStudentStatus);
+router.get('/tutors/pending', listPendingTutors);
+router.put('/tutors/:id/status', updateTutorStatus);
 router.get('/users', listUsers);
 router.patch('/users/:id/status', updateUserStatus);
 router.put('/users/:id/status', updateUserStatus);
@@ -25,13 +33,23 @@ router.put('/users/:id/disable', disableUser);
 router.put('/users/:id/student-profile', updateStudentProfileByAdmin);
 router.put('/students/:id', updateStudentProfileByAdmin);
 
+// HU-042: Edición de perfil de tutores por Administrador (correo inmutable)
+router.put('/users/:id/tutor-profile', updateTutorProfileByAdmin);
+router.put('/tutors/:id', updateTutorProfileByAdmin);
+
 // HU-043: Panel de moderación y denuncias contra tutores
 router.get('/reports/tutors', listTutorIncidents);
 router.get('/incidents/tutors', listTutorIncidents);
-router.patch('/reports/:id/resolve', resolveTutorIncident);
-router.put('/reports/:id/resolve', resolveTutorIncident);
-router.patch('/incidents/:id/resolve', resolveTutorIncident);
-router.put('/incidents/:id/resolve', resolveTutorIncident);
+
+// HU-044: Panel de moderación y denuncias contra estudiantes
+router.get('/reports/students', listStudentIncidents);
+router.get('/incidents/students', listStudentIncidents);
+
+// HU-043 / HU-044: Resolución unificada de denuncias disciplinarias
+router.patch('/reports/:id/resolve', resolveIncident);
+router.put('/reports/:id/resolve', resolveIncident);
+router.patch('/incidents/:id/resolve', resolveIncident);
+router.put('/incidents/:id/resolve', resolveIncident);
 
 // HU-026: Reporte de demanda de tutores
 router.get('/reports/top-tutors', getTopTutorsReport);

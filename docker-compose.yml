@@ -10,7 +10,7 @@ services:
       MYSQL_USER: ${DB_USER}
       MYSQL_PASSWORD: ${DB_PASSWORD}
     ports:
-      - "3306:3306"
+      - "${DB_EXTERNAL_PORT:-3307}:3306"
     volumes:
       # Esquema inicial de la Fase 0. Se ejecuta al crear el volumen por primera vez.
       - ./backend/init.sql:/docker-entrypoint-initdb.d/001-init.sql:ro
@@ -52,6 +52,11 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:5000/api/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
     volumes:
       # Hot-reload en desarrollo (opcional)
       - ./backend/src:/app/src
@@ -65,19 +70,22 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        # Pasa la variable al momento de compilar la imagen
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:5000/api}
     container_name: educonnect_frontend
     restart: unless-stopped
     environment:
-      VITE_API_URL: http://backend:5000/api
-      VITE_API_PROXY_TARGET: http://backend:5000
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:5000/api}
     ports:
-      - "3000:3000"
+      - "3000:80" # Nginx expone el puerto 80 por defecto
     depends_on:
       - backend
-    volumes:
-      # Hot-reload en desarrollo
-      - ./frontend/src:/app/src
-      - ./frontend/public:/app/public
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:80/healthz"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
     networks:
       - educonnect_network
 

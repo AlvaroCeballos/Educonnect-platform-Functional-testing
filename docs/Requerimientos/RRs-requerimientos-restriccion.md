@@ -1,4 +1,4 @@
-# Requerimientos de Restricción (RRs) — Paquete A
+# Requerimientos de Restricción (RRs) — Fase 1 (Abajo los de las fase 2)
 
 ## Identidad y Autenticación
 
@@ -180,3 +180,42 @@
 - Hash con bcrypt (10 rounds) antes de guardar.
 
 **Aplica a:** HU-022 T-022.3, T-022.4.
+
+
+# Requerimientos de Restricción (RRs) — Fase 2
+
+**Proyecto:** EduConnect — Plataforma de Gestión de Tutorías Académicas  
+**Responsable:** Yury Alexander Cruz García (Carnet: 202300359)  
+**Módulo:** Paquete A (Identidad, Tokens, Seguridad y Restricciones Técnicas)  
+
+---
+
+## 1. Introducción
+Los requerimientos de restricción definen las limitaciones arquitectónicas, normativas, tecnológicas y de seguridad que condicionan el diseño y la implementación de EduConnect en su Fase 2.
+
+---
+
+## 2. Clasificación de Restricciones
+
+### 2.1. Restricciones Legales y de Privacidad (RR-LEG)
+* **RR-LEG-01 (Protección de Documentación Universitaria):** Los archivos de Carnet Universitario (estudiantes) y Currículum Vítae (tutores) contienen datos sensibles. Deben almacenarse en el servidor bajo identificadores aleatorios UUID v4 en rutas no indexables directamente y transmitirse con cabeceras `Content-Disposition: inline`.
+* **RR-LEG-02 (Confidencialidad de Calificaciones y Reportes):** Las evaluaciones por estrellas y los reportes de incidentes disciplinarios solo pueden ser gestionados por los involucrados directos de la sesión y auditados por el Administrador, garantizando confidencialidad académica.
+
+### 2.2. Restricciones de Estándares y Seguridad (RR-EST)
+* **RR-EST-01 (Políticas de Contraseñas):** Toda contraseña debe tener una longitud mínima de 8 caracteres e incluir al menos una letra mayúscula, una letra minúscula y un número. En la base de datos se almacena exclusivamente el hash criptográfico generado con `bcrypt` (mínimo factor de costo 10).
+* **RR-EST-02 (Ciclo de Vida del Token de Verificación):** El token para primer inicio de sesión debe ser alfanumérico de 6 caracteres en base 32 sin caracteres ambiguos (`0, O, 1, I`), con una vigencia máxima estricta de 24 horas (`token_expires_at`).
+* **RR-EST-03 (Versionamiento y Commits):** Flujo de trabajo obligatorio bajo Git Flow (`main`, `develop`, `feature/<nombre>_<carnet>`) y mensajes bajo el estándar de **Conventional Commits** (`feat:`, `fix:`, `test:`, `docs:`, `ci:`).
+
+### 2.3. Restricciones de Interfaz y UX (RR-INT)
+* **RR-INT-01 (Visualización Embebida de PDFs):** El Administrador debe poder inspeccionar el Carnet y el CV directamente en la interfaz web mediante visores PDF embebidos (`<iframe>` o visor nativo del navegador), sin obligar a la descarga local del archivo binario.
+* **RR-INT-02 (Frameworks CSS y Prohibición de Plantillas):** Prohibición terminante del uso de Bootstrap o plantillas prediseñadas descargadas. La interfaz debe construirse a medida con **Tailwind CSS**, cumpliendo al menos 6 de las 10 heurísticas de Jakob Nielsen.
+
+### 2.4. Restricciones Técnicas y de Arquitectura (RR-TEC)
+* **RR-TEC-01 (Despliegue CI/CD en Runner de GitHub Actions):** La automatización de backend se ejecuta en el runner `ubuntu-latest` al hacer push a `main`, conteniendo estrictamente las tres fases encadenadas: `Build` (imagen Docker) $\rightarrow$ `Test` (pruebas unitarias) $\rightarrow$ `Deploy` (levantamiento del contenedor).
+* **RR-TEC-02 (Despliegue del Frontend en la Nube):** El frontend debe estar contenedorizado mediante Dockerfile multi-stage (Node build + Nginx Alpine) y alojado en la nube bajo una URL pública funcional.
+* **RR-TEC-03 (Límites de Carga de Archivos):** La subida de fotografías e imágenes de perfil tiene un límite máximo de 5 MB en formatos `JPG, PNG, WEBP`. El carnet y el CV deben ser estrictamente `application/pdf` con un límite estricto de 5 MB.
+* **RR-TEC-04 (Servicio SMTP):** La entrega de correos de verificación y notificaciones se centraliza a través de Mailtrap Sandbox para evitar bloqueos por spam o credenciales personales expuestas.
+
+### 2.5. Restricciones Organizacionales (RR-ORG)
+* **RR-ORG-01 (Metodología SCRUM):** Ejecución obligatoria de 2 Sprints de 14 días cada uno, con participación de los 6 integrantes como equipo de desarrollo.
+* **RR-ORG-02 (Cobertura de Pruebas Obligatoria):** Implementación de al menos 30 pruebas unitarias (5 por integrante) y 6 pruebas End-to-End con Cypress o Selenium (1 por integrante).

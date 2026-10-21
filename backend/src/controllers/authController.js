@@ -42,7 +42,7 @@ const registerStudent = async (req, res) => {
 
   if (!nombre || !apellido || !carnet || !email || !password) {
     cleanupUploadedFiles(req.files);
-    return res.status(400).json({ message: 'Todos los campos son requeridos' });
+    return res.status(400).json({ message: 'Todos los campos obligatorios son requeridos' });
   }
 
   if (!photoFile) {
@@ -88,7 +88,6 @@ const registerStudent = async (req, res) => {
 
     const password_hash = await hashPassword(password);
 
-    // Insertar en users con las columnas de Fase 2 (email_verified, verification_token, carnet_pdf_url)
     const [userResult] = await conn.execute(
       `INSERT INTO users 
         (email, password_hash, role, status, email_verified, verification_token, carnet_pdf_url) 
@@ -101,7 +100,6 @@ const registerStudent = async (req, res) => {
       ? genero
       : 'UNSPECIFIED';
 
-    // Insertar en student_profiles respetando las columnas de init.sql
     await conn.execute(
       `INSERT INTO student_profiles 
         (user_id, nombre, apellido, carnet, fecha_nacimiento, genero, universidad, carrera, fotografia_url) 
@@ -121,7 +119,6 @@ const registerStudent = async (req, res) => {
 
     await conn.commit();
 
-    // HU-030: Enviar correo con el token de verificación
     sendVerificationTokenEmail({
       to: email,
       nombre: `${nombre} ${apellido}`.trim(),
@@ -239,47 +236,96 @@ const loginAdmin2FA = async (req, res) => {
 };
 
 /**
- * HU-006: Login de estudiante
+ * HU-006 + HU-031: Login de estudiante con validación de Token en primer inicio
  * POST /api/auth/login/student
  */
 const loginStudent = async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, token: inputToken } = req.body;
 
-  if (!email || !password)
+  if (!email || !password) {
     return res.status(400).json({ message: 'Email y contraseña requeridos' });
+  }
 
   const conn = await pool.getConnection();
   try {
     const [rows] = await conn.execute(
-      `
-      SELECT u.id, u.email, u.password_hash, u.status, u.email_verified, u.verification_token,
-             sp.id as student_id, sp.nombre, sp.apellido, sp.carnet
-      FROM users u
-      LEFT JOIN student_profiles sp ON u.id = sp.user_id
-      WHERE u.email = ? AND u.role = 'student'
-    `,
+      `SELECT u.id, u.email, u.password_hash, u.status, u.email_verified, u.verification_token,
+              sp.id AS student_id, sp.nombre, sp.apellido, sp.carnet
+         FROM users u
+         LEFT JOIN student_profiles sp ON u.id = sp.user_id
+        WHERE u.email = ? AND u.role = 'student'
+        LIMIT 1`,
       [email]
     );
 
-    if (rows.length === 0)
+    if (rows.length === 0) {
       return res.status(401).json({ message: 'Credenciales inválidas' });
+    }
 
     const student = rows[0];
 
-    if (student.status !== 'APPROVED') {
-      const statusMessages = {
-        PENDING: 'Tu cuenta aún no ha sido aprobada por el administrador',
-        REJECTED: 'Tu solicitud de estudiante fue rechazada',
-        DISABLED: 'Tu cuenta ha sido dada de baja por el administrador',
-      };
-      return res.status(403).json({
-        message: statusMessages[student.status] || 'Tu cuenta no está habilitada',
-      });
+    const passwordMatch = await comparePassword(password, student.password_hash);
+    if (!passwordMatch) {
+      return res.status(401).json({ message: 'Credenciales inválidas' });
     }
 
-    const passwordMatch = await comparePassword(password, student.password_hash);
-    if (!passwordMatch)
-      return res.status(401).json({ message: 'Credenciales inválidas' });
+    // FLUJO HU-031: PRIMER INICIO DE SESIÓN (email_verified === FALSE / 0)
+    if (!student.email_verified) {
+      const cleanToken = String(inputToken || '').trim().toUpperCase();
+
+      if (!cleanToken) {
+        return res.status(403).json({
+          requiresToken: true,
+          message:
+            'Tu cuenta requiere ingresar el token de verificación enviado a tu correo en tu primer inicio de sesión.',
+        });
+      }
+
+      if (cleanToken !== String(student.verification_token || '').trim().toUpperCase()) {
+        return res.status(401).json({
+          requiresToken: true,
+          message: 'El token de verificación ingresado es incorrecto.',
+        });
+      }
+
+      // Validar si fue aprobado por el Administrador
+      if (student.status !== 'APPROVED') {
+        const statusMessages = {
+          PENDING:
+            'Tu token de correo es correcto, pero tu cuenta aún está pendiente de aprobación por el administrador.',
+          REJECTED:
+            'Tu token de correo es correcto, pero tu solicitud de estudiante fue rechazada por el administrador.',
+          DISABLED:
+            'Tu cuenta ha sido dada de baja por el administrador.',
+        };
+        return res.status(403).json({
+          requiresToken: true,
+          message:
+            statusMessages[student.status] ||
+            'Tu cuenta no se encuentra aprobada para ingresar.',
+        });
+      }
+
+      // Validación exitosa de primer inicio: confirmar email y limpiar token
+      await conn.execute(
+        `UPDATE users 
+            SET email_verified = TRUE, verification_token = NULL 
+          WHERE id = ?`,
+        [student.id]
+      );
+    } else {
+      // INICIOS DE SESIÓN POSTERIORES (Solo requiere email y password)
+      if (student.status !== 'APPROVED') {
+        const statusMessages = {
+          PENDING: 'Tu cuenta aún no ha sido aprobada por el administrador',
+          REJECTED: 'Tu solicitud de estudiante fue rechazada',
+          DISABLED: 'Tu cuenta ha sido dada de baja por el administrador',
+        };
+        return res.status(403).json({
+          message: statusMessages[student.status] || 'Tu cuenta no está habilitada',
+        });
+      }
+    }
 
     const token = jwt.sign(
       {
@@ -289,7 +335,7 @@ const loginStudent = async (req, res) => {
         email: student.email,
         status: student.status,
       },
-      process.env.JWT_SECRET,
+      process.env.JWT_SECRET || 'dev-secret',
       { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
     );
 

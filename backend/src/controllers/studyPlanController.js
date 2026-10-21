@@ -1,5 +1,6 @@
 const pool = require('../config/db');
 const { validateStudyPlanPayload, canAttendSession } = require('../utils/studyPlan');
+const { generateCertificatePDF, validateCertificatePayload } = require('../utils/certificatePdf');
 
 const resolveTutorProfileId = (req) => Number(req.user?.tutorId || req.user?.id);
 
@@ -89,6 +90,52 @@ const createStudyPlan = async (req, res, next) => {
   }
 };
 
+const fetchStudyPlanByIdForStudent = async (planId, studentId) => {
+  const [planRows] = await pool.execute(
+    `SELECT
+       sp.id,
+       sp.session_id,
+       sess.session_date,
+       CONCAT(tp.nombre, ' ', tp.apellido) AS tutor_name,
+       tp.especialidad                     AS tutor_specialty,
+       tp.identificacion                   AS tutor_identification,
+       sp.dificultades_detectadas,
+       sp.created_at
+     FROM study_plans sp
+     INNER JOIN sessions sess       ON sp.session_id = sess.id
+     INNER JOIN tutor_profiles tp   ON sess.tutor_id = tp.id
+     WHERE sp.id = ? AND sess.student_id = ?
+     LIMIT 1`,
+    [planId, studentId],
+  );
+  const plan = planRows[0];
+  if (!plan) return null;
+
+  const [recursoRows] = await pool.execute(
+    `SELECT nombre_recurso, tipo_recurso, descripcion_uso
+       FROM study_resources
+      WHERE study_plan_id = ?
+      ORDER BY id`,
+    [plan.id],
+  );
+
+  return {
+    id: plan.id,
+    session_id: plan.session_id,
+    session_date: plan.session_date,
+    tutor_name: plan.tutor_name,
+    tutor_specialty: plan.tutor_specialty,
+    tutor_identification: plan.tutor_identification,
+    dificultades_detectadas: plan.dificultades_detectadas,
+    recursos: recursoRows.map((r) => ({
+      nombre_recurso: r.nombre_recurso,
+      tipo_recurso: r.tipo_recurso,
+      descripcion_uso: r.descripcion_uso,
+    })),
+    created_at: plan.created_at,
+  };
+};
+
 const getMyStudyPlans = async (req, res, next) => {
   try {
     const studentId = await resolveStudentProfileId(req);
@@ -152,7 +199,39 @@ const getMyStudyPlans = async (req, res, next) => {
   }
 };
 
+const downloadCertificate = async (req, res, next) => {
+  try {
+    const studentId = await resolveStudentProfileId(req);
+    if (!studentId) return res.status(401).json({ message: 'La sesión no identifica al estudiante' });
+
+    const planId = Number(req.params.planId);
+    if (!Number.isInteger(planId) || planId < 1) {
+      return res.status(400).json({ message: 'El identificador del plan debe ser un entero positivo' });
+    }
+
+    const plan = await fetchStudyPlanByIdForStudent(planId, studentId);
+    if (!plan) {
+      return res.status(404).json({ message: 'El plan de estudio no existe o no te pertenece' });
+    }
+
+    const validation = validateCertificatePayload(plan);
+    if (!validation.valid) {
+      return res.status(500).json({ message: `No se puede generar la constancia: ${validation.message}` });
+    }
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="constancia-sesion-${plan.session_id}.pdf"`);
+
+    generateCertificatePDF(plan, res);
+  } catch (error) {
+    if (res.headersSent) return;
+    return next(error);
+  }
+};
+
 module.exports = {
   createStudyPlan,
   getMyStudyPlans,
+  fetchStudyPlanByIdForStudent,
+  downloadCertificate,
 };

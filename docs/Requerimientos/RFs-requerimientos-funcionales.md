@@ -72,3 +72,53 @@ Módulos: **1** Estudiante, **2** Tutor, **3** Administrador, **4** Transversal 
 ---
 
 **Referencia cruzada con historias de usuario:** cada RF corresponde a uno o más criterios de aceptación. Los RF del Módulo 1 marcados Alta (RF-1-9 a RF-1-16) corresponden a `HU-012`; RF-1-15/RF-1-16 a `HU-016`; RF-1-17 a `HU-013`; RF-1-18/RF-1-19 a `HU-020`.
+
+---
+
+# Fase 2 — Requerimientos Funcionales Nuevos
+
+Esta sección recopila los requerimientos funcionales **introducidos por la Fase 2** del proyecto, correspondientes a las nuevas historias de usuario `HU-028` a `HU-050`. Se mantiene el formato tabular del Fase 1 (ID, Descripción, Prioridad, Actores involucrados) para consistencia.
+
+## Paquete E — Planes de estudio estructurados y constancia PDF (HU-032, HU-033, HU-034)
+
+### Formulario estructurado de atención del tutor (HU-032)
+
+| ID | Descripción | Prioridad | Actores involucrados |
+|---|---|---|---|
+| RF-F2-01 | El sistema debe permitir al tutor registrar un plan de estudio estructurado al marcar una sesión como atendida. | Alta | Tutor |
+| RF-F2-02 | El sistema debe exigir el campo "Dificultades Identificadas" como obligatorio no vacío al guardar el plan. | Alta | Tutor |
+| RF-F2-03 | El sistema debe permitir al tutor agregar uno o más recursos recomendados al plan de forma dinámica. | Alta | Tutor |
+| RF-F2-04 | El sistema debe exigir que cada recurso incluya `nombre_recurso`, `tipo_recurso` y `descripcion_uso` como campos obligatorios. | Alta | Tutor |
+| RF-F2-05 | El sistema debe limitar el valor de `tipo_recurso` únicamente a los literales: `Texto`, `Video`, `PDF`, `Enlace` (sensible a mayúsculas). | Alta | Tutor |
+| RF-F2-06 | El sistema debe permitir al tutor eliminar recursos ya agregados durante la edición del plan. | Media | Tutor |
+| RF-F2-07 | El sistema debe transicionar la sesión de `PENDING` a `ATTENDED` únicamente si el plan y sus recursos se guardaron satisfactoriamente, dentro de una misma transacción atómica. | Alta | Tutor, Sistema |
+| RF-F2-08 | El sistema debe rechazar la operación si el tutor autenticado no es el dueño de la sesión que intenta atender. | Alta | Tutor |
+| RF-F2-09 | El sistema debe rechazar la operación si la sesión no está en estado `PENDING` (ej. ya atendida o cancelada). | Alta | Tutor |
+| RF-F2-10 | El sistema debe hacer rollback de la transacción y conservar la sesión en `PENDING` si ocurre cualquier error durante la inserción del plan o sus recursos. | Alta | Sistema |
+
+### Visualización del plan de estudio por el estudiante (HU-033)
+
+| ID | Descripción | Prioridad | Actores involucrados |
+|---|---|---|---|
+| RF-F2-11 | El sistema debe permitir al estudiante autenticado consultar los planes de estudio asignados a sus sesiones atendidas. | Media | Estudiante |
+| RF-F2-12 | El sistema debe destacar el plan de estudio más reciente del estudiante como "Plan activo", y listar los demás como "Planes previos". | Media | Estudiante |
+| RF-F2-13 | El sistema debe mostrar por cada plan: fecha de la sesión, nombre completo del tutor, especialidad, número de identificación, dificultades identificadas y lista de recursos (nombre, tipo, descripción). | Media | Estudiante |
+| RF-F2-14 | El sistema debe mostrar un estado vacío amigable con llamado a la acción cuando el estudiante aún no tiene planes de estudio asignados. | Baja | Estudiante |
+| RF-F2-15 | El sistema debe garantizar que un estudiante solamente pueda visualizar los planes de sus propias sesiones (filtro por `student_id`). | Alta | Estudiante, Sistema |
+
+### Motor de generación y descarga de constancia PDF (HU-034)
+
+| ID | Descripción | Prioridad | Actores involucrados |
+|---|---|---|---|
+| RF-F2-16 | El sistema debe generar un archivo PDF de constancia oficial de tutoría descargable desde la vista "Mi Plan" del estudiante. | Media | Estudiante, Sistema |
+| RF-F2-17 | El PDF debe incluir encabezado con nombre de la plataforma ("EduConnect"), fecha de emisión y teléfono de contacto. | Media | Sistema |
+| RF-F2-18 | El PDF debe incluir una tabla de recursos recomendados con las columnas: Nombre, Tipo y Descripción de uso. | Media | Sistema |
+| RF-F2-19 | El PDF debe incluir un pie de documento con nombre completo del tutor, especialidad y número de identificación institucional. | Media | Sistema |
+| RF-F2-20 | El sistema debe permitir la descarga de la constancia únicamente al estudiante propietario del plan correspondiente, devolviendo `404` ante cualquier intento de acceso a un plan ajeno. | Alta | Estudiante, Sistema |
+| RF-F2-21 | El sistema debe validar la integridad del payload (presencia de nombre, especialidad e identificación del tutor) antes de generar el PDF, respondiendo con error descriptivo si falta algún campo. | Alta | Sistema |
+| RF-F2-22 | El sistema debe entregar el PDF con cabeceras HTTP `Content-Type: application/pdf` y `Content-Disposition: attachment; filename="constancia-sesion-{id}.pdf"` para forzar la descarga inmediata. | Media | Sistema |
+| RF-F2-23 | El sistema debe mantener la respuesta como un stream descargable sin almacenar el archivo generado en disco, evitando acumulación de PDFs huérfanos. | Baja | Sistema |
+
+---
+
+**Referencia cruzada con casos de uso:** los RF-F2 del Paquete E corresponden a los casos de uso `CU-EST-07` (HU-032), `CU-EST-08` (HU-033) y `CU-EST-09` (HU-034), documentados en `docs/Casos_de_uso/0.3-descripciones-textuales.md`.

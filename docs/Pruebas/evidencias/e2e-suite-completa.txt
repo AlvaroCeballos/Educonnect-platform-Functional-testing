@@ -1,0 +1,249 @@
+
+================================================================================
+
+  (Run Starting)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Cypress:        14.5.4                                                                         │
+  │ Browser:        Firefox 157 (headless)                                                         │
+  │ Node Version:   v22.23.1 (/usr/bin/node-22)                                                    │
+  │ Specs:          6 found (e2e-02-aprobacion-cv-tutor.cy.js, e2e-03-moderacion-sancion.cy.js, e2 │
+  │                 e-04-metricas-reportes.cy.js, e2e-05-plan-constancia.cy.js, e2e-06-feedback.cy │
+  │                 .js, student_auth_flow.cy.js)                                                  │
+  │ Searched:       cypress/e2e/**/*.cy.{js,jsx}                                                   │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  e2e-02-aprobacion-cv-tutor.cy.js                                                (1 of 6)
+
+
+  E2E-02: Flujo de Inspección y Aprobación de CV de Tutor (Xavi)
+    ✓ Permite al administrador abrir el visor PDF incrustado del CV y aprobar al tutor (1770ms)
+
+
+  1 passing (2s)
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        1                                                                                │
+  │ Passing:      1                                                                                │
+  │ Failing:      0                                                                                │
+  │ Pending:      0                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  3                                                                                │
+  │ Video:        false                                                                            │
+  │ Duration:     1 second                                                                         │
+  │ Spec Ran:     e2e-02-aprobacion-cv-tutor.cy.js                                                 │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+  (Screenshots)
+
+  -  /home/wade/U/0283_AyD/0283_Lab/PROYECTO/AYD1_2S_G4/frontend/cypress/screenshots/     (1280x719)
+     e2e-02-aprobacion-cv-tutor.cy.js/e2e-02-01-tutor-pendiente-en-lista.png                        
+  -  /home/wade/U/0283_AyD/0283_Lab/PROYECTO/AYD1_2S_G4/frontend/cypress/screenshots/     (1280x719)
+     e2e-02-aprobacion-cv-tutor.cy.js/e2e-02-02-visor-pdf-abierto.png                               
+  -  /home/wade/U/0283_AyD/0283_Lab/PROYECTO/AYD1_2S_G4/frontend/cypress/screenshots/     (1280x719)
+     e2e-02-aprobacion-cv-tutor.cy.js/e2e-02-03-tutor-aprobado.png                                  
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  e2e-03-moderacion-sancion.cy.js                                                 (2 of 6)
+
+
+  E2E-03: Flujo de Moderación y Sanción Disciplinaria de Cuenta
+    ✓ Paso 1 y 2: Administrador inicia sesión con 2FA y visualiza estudiantes activos (2312ms)
+    ✓ Paso 3: Verifica que el correo electrónico del estudiante sea estrictamente inmutable (842ms)
+    ✓ Paso 4 y 5: Localiza denuncia disciplinaria contra estudiante y aplica sanción de baja lógica (1599ms)
+    ✓ Paso 6 y 7: Cierra sesión y valida que el estudiante sancionado no puede iniciar sesión (1567ms)
+
+
+  4 passing (6s)
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        4                                                                                │
+  │ Passing:      4                                                                                │
+  │ Failing:      0                                                                                │
+  │ Pending:      0                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  0                                                                                │
+  │ Video:        false                                                                            │
+  │ Duration:     6 seconds                                                                        │
+  │ Spec Ran:     e2e-03-moderacion-sancion.cy.js                                                  │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  e2e-04-metricas-reportes.cy.js                                                  (3 of 6)
+
+
+  E2E-04: Supervisión de métricas y reportes analíticos
+    ✓ Pasos 1-3: muestra el promedio de estrellas de tutores y estudiantes activos (2910ms)
+    ✓ Paso 4: filtra la evolución de sesiones por granularidad y por mes (2070ms)
+    ✓ Paso 5: filtra el reporte F2-2 por mes y actualiza cancelaciones y horarios (1997ms)
+
+
+  3 passing (7s)
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        3                                                                                │
+  │ Passing:      3                                                                                │
+  │ Failing:      0                                                                                │
+  │ Pending:      0                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  3                                                                                │
+  │ Video:        false                                                                            │
+  │ Duration:     7 seconds                                                                        │
+  │ Spec Ran:     e2e-04-metricas-reportes.cy.js                                                   │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+  (Screenshots)
+
+  -  /home/wade/U/0283_AyD/0283_Lab/PROYECTO/AYD1_2S_G4/frontend/cypress/screenshots/    (1280x1379)
+     e2e-04-metricas-reportes.cy.js/e2e-04-01-promedios-calificaciones.png                          
+  -  /home/wade/U/0283_AyD/0283_Lab/PROYECTO/AYD1_2S_G4/frontend/cypress/screenshots/    (1280x2306)
+     e2e-04-metricas-reportes.cy.js/e2e-04-02-evolucion-sesiones.png                                
+  -  /home/wade/U/0283_AyD/0283_Lab/PROYECTO/AYD1_2S_G4/frontend/cypress/screenshots/    (1280x2306)
+     e2e-04-metricas-reportes.cy.js/e2e-04-03-reporte-f2-filtrado.png                               
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  e2e-05-plan-constancia.cy.js                                                    (4 of 6)
+
+
+  E2E-05: Creación de plan estructurado y generación de constancia PDF
+    ✓ Paso 1-5: El tutor atiende una sesión registrando un plan estructurado con 2 recursos (8892ms)
+    ✓ Paso 6-7: El estudiante consulta el plan de estudio asignado y verifica el contenido (2795ms)
+    ✓ Paso 8: El estudiante solicita la constancia PDF y la respuesta tiene Content-Type application/pdf (3211ms)
+
+
+  3 passing (15s)
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        3                                                                                │
+  │ Passing:      3                                                                                │
+  │ Failing:      0                                                                                │
+  │ Pending:      0                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  5                                                                                │
+  │ Video:        false                                                                            │
+  │ Duration:     15 seconds                                                                       │
+  │ Spec Ran:     e2e-05-plan-constancia.cy.js                                                     │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+  (Screenshots)
+
+  -  /home/wade/U/0283_AyD/0283_Lab/PROYECTO/AYD1_2S_G4/frontend/cypress/screenshots/     (1280x719)
+     e2e-05-plan-constancia.cy.js/e2e-05-paso1-modal-abierto.png                                    
+  -  /home/wade/U/0283_AyD/0283_Lab/PROYECTO/AYD1_2S_G4/frontend/cypress/screenshots/     (1280x719)
+     e2e-05-plan-constancia.cy.js/e2e-05-paso2-plan-completo.png                                    
+  -  /home/wade/U/0283_AyD/0283_Lab/PROYECTO/AYD1_2S_G4/frontend/cypress/screenshots/    (1280x3673)
+     e2e-05-plan-constancia.cy.js/e2e-05-paso3-sesion-atendida.png                                  
+  -  /home/wade/U/0283_AyD/0283_Lab/PROYECTO/AYD1_2S_G4/frontend/cypress/screenshots/    (1280x3431)
+     e2e-05-plan-constancia.cy.js/e2e-05-paso4-estudiante-ve-plan.png                               
+  -  /home/wade/U/0283_AyD/0283_Lab/PROYECTO/AYD1_2S_G4/frontend/cypress/screenshots/    (1280x3431)
+     e2e-05-plan-constancia.cy.js/e2e-05-paso5-boton-descarga-visible.png                           
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  e2e-06-feedback.cy.js                                                           (5 of 6)
+
+
+  E2E-06: Feedback de sesiones atendidas — Isai
+    ✓ HU-036: el estudiante califica y reporta al tutor desde su historial (2704ms)
+    ✓ HU-037 y HU-038: el tutor califica y reporta al estudiante desde su historial (2498ms)
+
+
+  2 passing (5s)
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        2                                                                                │
+  │ Passing:      2                                                                                │
+  │ Failing:      0                                                                                │
+  │ Pending:      0                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  2                                                                                │
+  │ Video:        false                                                                            │
+  │ Duration:     5 seconds                                                                        │
+  │ Spec Ran:     e2e-06-feedback.cy.js                                                            │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+  (Screenshots)
+
+  -  /home/wade/U/0283_AyD/0283_Lab/PROYECTO/AYD1_2S_G4/frontend/cypress/screenshots/     (1280x719)
+     e2e-06-feedback.cy.js/e2e-06-estudiante-feedback.png                                           
+  -  /home/wade/U/0283_AyD/0283_Lab/PROYECTO/AYD1_2S_G4/frontend/cypress/screenshots/     (1280x719)
+     e2e-06-feedback.cy.js/e2e-06-tutor-feedback.png                                                
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  student_auth_flow.cy.js                                                         (6 of 6)
+
+
+  E2E-01: Flujo Completo de Registro con PDF, Verificación por Token y Login
+    ✓ Debe completar el registro adjuntando foto y carnet PDF, y acceder con credenciales y token (5240ms)
+
+
+  1 passing (5s)
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        1                                                                                │
+  │ Passing:      1                                                                                │
+  │ Failing:      0                                                                                │
+  │ Pending:      0                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  0                                                                                │
+  │ Video:        false                                                                            │
+  │ Duration:     5 seconds                                                                        │
+  │ Spec Ran:     student_auth_flow.cy.js                                                          │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+================================================================================
+
+  (Run Finished)
+
+
+       Spec                                              Tests  Passing  Failing  Pending  Skipped  
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ ✔  e2e-02-aprobacion-cv-tutor.cy.js         00:01        1        1        -        -        - │
+  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ ✔  e2e-03-moderacion-sancion.cy.js          00:06        4        4        -        -        - │
+  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ ✔  e2e-04-metricas-reportes.cy.js           00:07        3        3        -        -        - │
+  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ ✔  e2e-05-plan-constancia.cy.js             00:15        3        3        -        -        - │
+  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ ✔  e2e-06-feedback.cy.js                    00:05        2        2        -        -        - │
+  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ ✔  student_auth_flow.cy.js                  00:05        1        1        -        -        - │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+    ✔  All specs passed!                        00:40       14       14        -        -        -  
+
