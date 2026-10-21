@@ -250,3 +250,17 @@ Reglas:
 | Registro de plan con recursos | Tutor | ![Plan de estudio](../Manuales/imgs/f2-tutor-03-modal-con-recursos.png) |
 | Plan de estudio asignado | Estudiante | ![Mi plan](../Manuales/imgs/f2-estudiante-02-mi-plan-activo.png) |
 
+
+### 9.7 Prototipos de la Fase 2 en Figma
+
+Las vistas de la Fase 2 se documentan en un archivo de Figma independiente del de la Fase 1 (sección 6).
+
+- [Abrir archivo de diseño de la Fase 2](https://www.figma.com/design/EN2iwgvgLWbNNp5PoZprcY/EduConnect-%E2%80%94-Prototipo-Fase-2)
+- [Abrir prototipo interactivo de la Fase 2](https://www.figma.com/proto/EN2iwgvgLWbNNp5PoZprcY/EduConnect-%E2%80%94-Prototipo-Fase-2?node-id=1-3&scaling=min-zoom)
+
+El prototipo incluye las pantallas de la tabla 9.6 organizadas en dos flujos:
+
+- **Administrador:** validación 2FA → métricas de calificaciones → evolución de sesiones → reporte F2-2 → revisión de CV en visor PDF.
+- **Tutor y estudiante:** registro del plan de estudio con recursos → consulta del plan asignado.
+
+![Prototipo de la Fase 2 en Figma](imgs/f2-figma-prototipo.png)
