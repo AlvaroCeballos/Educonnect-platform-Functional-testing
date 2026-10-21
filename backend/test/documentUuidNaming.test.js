@@ -1,3 +1,4 @@
+const { describe, test, expect, jest } = require('../test-utils/jest-compat');
 const crypto = require('crypto');
 
 describe('PU-09: Prueba de consistencia en nombres de archivo para evitar sobreescrituras', () => {

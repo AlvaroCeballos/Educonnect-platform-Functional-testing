@@ -1,3 +1,4 @@
+const { describe, test, expect, jest } = require('../test-utils/jest-compat');
 const { streamTutorCvPdf } = require('../src/controllers/documentController');
 
 const createMockRes = () => {
