@@ -181,3 +181,72 @@ Antes de considerar una vista terminada, se verifica que:
 - Sea navegable en pantallas pequeñas sin ocultar acciones importantes.
 - Tenga textos, botones y mensajes coherentes con el rol del usuario.
 - Coincida con los flujos aprobados en el prototipo interactivo de Figma.
+
+
+---
+
+## 9. Actualización de la Fase 2
+
+> **Responsable de la actualización:** Wade (202308940) — Paquete D
+
+La Fase 2 conserva la paleta, la tipografía y los componentes descritos en las secciones anteriores. Esta sección documenta los componentes nuevos y las reglas para usarlos de forma consistente.
+
+### 9.1 Visualización de datos
+
+Los reportes analíticos se construyen con **Chart.js** (`react-chartjs-2`).
+
+| Elemento | Color | Uso |
+|---|---|---|
+| Serie principal | Esmeralda `#167963` | Línea de evolución de sesiones y barra destacada de horarios. |
+| Relleno o serie secundaria | Esmeralda translúcido `rgba(22, 121, 99, 0.15–0.35)` | Área bajo la línea y barras no destacadas. |
+| Dato negativo | Rojo `#B4413C` | Barras de tasa de cancelación. |
+
+Reglas:
+
+- **Un gráfico, una pregunta:** la evolución usa línea (tendencia en el tiempo); las cancelaciones usan barra horizontal (comparación entre materias de nombre largo); los horarios usan barra vertical en orden cronológico.
+- **El dato importante se resalta y se dice en texto:** la franja de mayor demanda se pinta con el color pleno y se repite en el texto "Franja con más demanda".
+- **El color nunca es la única señal:** cada gráfico se acompaña de una tabla o de un texto con los valores.
+- **Tooltips con contexto:** muestran el valor y su base, por ejemplo "66.7% (2 de 3 sesiones)".
+- **Ejes legibles:** las cantidades empiezan en cero y no usan decimales; los porcentajes van de 0 a 100 %.
+
+### 9.2 Filtros de reportes
+
+- Cada reporte agrupa sus filtros en la esquina superior derecha de su tarjeta.
+- El periodo se elige con `input type="month"` y la agrupación con un `select` ("Mes" o "Semana").
+- Cuando hay un filtro activo, aparece el botón de texto "Limpiar filtro".
+- Al cambiar un filtro, la sección muestra "Cargando…" y se actualiza sin recargar la página.
+
+### 9.3 Tablas de calificaciones
+
+- Columnas numéricas (promedio, cantidad) alineadas a la derecha.
+- Promedio con dos decimales y estrella: `4.67 ★`.
+- Sin calificaciones: texto "Sin calificaciones" en lugar de `0.00 ★`, para no confundir "sin datos" con "calificación baja".
+- Orden descendente por promedio, de modo que el mejor y el peor desempeño queden en los extremos.
+
+### 9.4 Estados de carga, vacío y error
+
+| Estado | Tratamiento | Ejemplo |
+|---|---|---|
+| Carga | Texto gris pizarra en el lugar del contenido | "Cargando…" |
+| Vacío | Mensaje que explica la causa, en lugar del gráfico o tabla | "No hay sesiones atendidas en el período seleccionado." |
+| Error | Texto rojo dentro de la tarjeta afectada; el resto del panel sigue funcionando | "No se pudieron cargar los reportes analíticos." |
+
+### 9.5 Otros componentes nuevos
+
+- **Zona de carga de archivos:** borde punteado, icono y texto de acción ("Haz clic o arrastra el archivo aquí"). Admite arrastrar y soltar y, al cargar, muestra el nombre del archivo. Se usa en el 2FA del administrador y en el registro con carnet o CV.
+- **Visor PDF embebido:** `iframe` dentro del modal de revisión, con título accesible ("Visor de documento PDF"), para revisar carnet o CV sin descargarlos.
+- **Insignia "Plan activo":** píldora verde con texto en mayúsculas que identifica el plan de estudio vigente.
+- **Recursos dinámicos del plan:** filas que se agregan con "+ Agregar recurso"; cada una pide nombre, tipo (Texto, Video, PDF o Enlace) e instrucción.
+
+### 9.6 Pantallas de la Fase 2
+
+| Vista | Rol | Captura |
+|---|---|---|
+| Validación 2FA | Administrador | ![2FA](../Manuales/imgs/f2e-admin-03-2fa-archivo-cargado.png) |
+| Métricas: promedios de calificaciones | Administrador | ![Promedios](../Pruebas/imgs/e2e-04-01-promedios-calificaciones.png) |
+| Métricas: evolución de sesiones | Administrador | ![Evolución](../Pruebas/imgs/e2e-04-02-evolucion-sesiones.png) |
+| Reporte F2-2: cancelaciones y horarios | Administrador | ![Reporte F2-2](../Pruebas/imgs/e2e-04-03-reporte-f2-filtrado.png) |
+| Revisión de CV en visor PDF | Administrador | ![Visor PDF](../Pruebas/imgs/e2e-02-02-visor-pdf-abierto.png) |
+| Registro de plan con recursos | Tutor | ![Plan de estudio](../Manuales/imgs/f2-tutor-03-modal-con-recursos.png) |
+| Plan de estudio asignado | Estudiante | ![Mi plan](../Manuales/imgs/f2-estudiante-02-mi-plan-activo.png) |
+
