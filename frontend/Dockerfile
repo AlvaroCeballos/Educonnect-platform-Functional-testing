@@ -5,6 +5,10 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
+# Cypress es devDependency y solo se usa para pruebas E2E: no se necesita su
+# binario (cientos de MB) para compilar el frontend. Debe definirse ANTES de npm install.
+ENV CYPRESS_INSTALL_BINARY=0
+
 # Copiar configuración e instalar dependencias
 COPY package*.json ./
 RUN npm install
