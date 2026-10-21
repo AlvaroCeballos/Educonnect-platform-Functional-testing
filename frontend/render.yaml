@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: educonnect-frontend
+    runtime: docker
+    rootDir: frontend
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /healthz
+    envVars:
+      # Render inyectará esta URL en tiempo de compilación.
+      # Como el backend se simulará en GitHub Actions sin URL estática,
+      # lo dejamos apuntando a localhost o a tu dominio si tuvieras uno.
+      - key: VITE_API_URL
+        value: http://localhost:5000/api
