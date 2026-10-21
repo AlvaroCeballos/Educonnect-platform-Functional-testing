@@ -1,3 +1,4 @@
+const { describe, test, expect, jest } = require('../test-utils/jest-compat');
 const { registerTutor } = require('../src/controllers/tutorAuthController');
 
 const createMockRes = () => {

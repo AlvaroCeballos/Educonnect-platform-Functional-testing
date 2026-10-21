@@ -1,3 +1,4 @@
+const { describe, test, expect, jest } = require('../test-utils/jest-compat');
 const path = require('path');
 const { streamStaticPdf } = require('../src/controllers/documentController');
 
