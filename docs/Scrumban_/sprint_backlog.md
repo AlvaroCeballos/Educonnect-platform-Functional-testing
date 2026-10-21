@@ -145,8 +145,8 @@ Las 41 tareas técnicas planificadas y concluidas durante el Sprint 2 se estruct
 
 ## 2.1 Sprint 1 (Fase 2) — Núcleo de Validación, Planes y CI/CD
 
-- **Periodo de Ejecución:** Del 28 de septiembre de 2026 al 8 de octubre de 2026
-- **Duración:** 1 semana y media de desarrollo (1 sesión de Sprint Planning 1, 6 sesiones de Daily Scrum y 1 Sprint Retrospective 1)
+- **Periodo de Ejecución:** Del 5 de octubre de 2026 al 12 de octubre de 2026
+- **Duración:** 1 semana de desarrollo (Día 1: Sprint Planning 1 el 05/10; Días 2 al 7: Daily Scrums 1 a 6 del 06/10 al 11/10; Día 8: Sprint Retrospective 1 el 12/10)
 - **Carga de Trabajo:** 12 Historias de Usuario (100% Prioridad Alta 🟥) y 36 Tareas Técnicas (`T-028.1` a `T-049.3`)
 
 ### Sprint Goal 1 (Fase 2)
@@ -233,8 +233,8 @@ Durante el Sprint 1 de Fase 2 se implementó el conjunto crítico de historias q
 
 ## 2.2 Sprint 2 (Fase 2) — Despliegue Cloud, Constancias, Moderación y Cierre
 
-- **Periodo de Ejecución:** Del 9 de octubre de 2026 al 19 de octubre de 2026
-- **Duración:** 1 semana y media de desarrollo (1 sesión de Sprint Planning 2, 6 sesiones de Daily Scrum, 1 Retrospectiva 2 y Cierre en `main`)
+- **Periodo de Ejecución:** Del 12 de octubre de 2026 al 19 de octubre de 2026
+- **Duración:** 1 semana de desarrollo (Día 8: Sprint Planning 2 el 12/10; Días 9 al 14: Daily Scrums 7 a 12 del 13/10 al 18/10; Día 15: Sprint Retrospective 2 y Cierre en `main` el 19/10)
 - **Carga de Trabajo:** 11 Historias de Usuario (10 Media 🟨, 1 Baja 🟦), 33 Tareas Técnicas (`T-031.1` a `T-050.3`), suite de 30 Pruebas Unitarias (`PU-01` a `PU-30`) y 6 Pruebas E2E (`E2E-01` a `E2E-06`)
 
 ### Sprint Goal 2 (Fase 2)

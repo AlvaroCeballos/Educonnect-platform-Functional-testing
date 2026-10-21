@@ -167,7 +167,7 @@ En la Fase 2 del proyecto se refinó la metodología integrando principios forma
 
 ## 2.1 Sprint 1 (Fase 2) — Núcleo de Validación, Planes y CI/CD
 
-- **Periodo:** Del 28 de septiembre de 2026 al 8 de octubre de 2026.
+- **Periodo:** Del 5 de octubre de 2026 al 12 de octubre de 2026.
 - **Alcance:** 12 Historias de Usuario (100% Prioridad Alta 🟥) y 36 Tareas Técnicas (`T-028.1` a `T-039.3`).
 
 ### Dinámica del Flujo de Trabajo y Políticas WIP en Sprint 1
@@ -205,19 +205,19 @@ Una tarjeta se consideraba terminada y trasladable a `DEPLOY / DONE` únicamente
 ### Evidencias de la Evolución del Tablero (Archivos PDF de Sprint 1)
 El seguimiento formal de las sesiones de planificación y sincronización diaria del Sprint 1 se encuentra documentado en formato PDF dentro del directorio [`tableroFase2/`](tableroFase2/):
 
-- **Sprint Planning Intermedio (28/09/2026):** [`SprintPlanningIntermedio.pdf`](tableroFase2/SprintPlanningIntermedio.pdf)
-- **Daily Scrum 1 (29/09/2026):** [`Daily1.pdf`](tableroFase2/Daily1.pdf)
-- **Daily Scrum 2 (30/09/2026):** [`Daily2.pdf`](tableroFase2/Daily2.pdf)
-- **Daily Scrum 3 (01/10/2026):** [`Daily3.pdf`](tableroFase2/Daily3.pdf)
-- **Daily Scrum 4 (02/10/2026):** [`Daily4.pdf`](tableroFase2/Daily4.pdf)
-- **Daily Scrum 5 (05/10/2026):** [`Daily5.pdf`](tableroFase2/Daily5.pdf)
-- **Daily Scrum 6 y Retrospectiva 1 (08/10/2026):** [`Daily6.pdf`](tableroFase2/Daily6.pdf)
+- **Sprint Planning Intermedio (05/10/2026):** [`SprintPlanningIntermedio.pdf`](tableroFase2/SprintPlanningIntermedio.pdf)
+- **Daily Scrum 1 (06/10/2026):** [`Daily1.pdf`](tableroFase2/Daily1.pdf)
+- **Daily Scrum 2 (07/10/2026):** [`Daily2.pdf`](tableroFase2/Daily2.pdf)
+- **Daily Scrum 3 (08/10/2026):** [`Daily3.pdf`](tableroFase2/Daily3.pdf)
+- **Daily Scrum 4 (09/10/2026):** [`Daily4.pdf`](tableroFase2/Daily4.pdf)
+- **Daily Scrum 5 (10/10/2026):** [`Daily5.pdf`](tableroFase2/Daily5.pdf)
+- **Daily Scrum 6 (11/10/2026):** [`Daily6.pdf`](tableroFase2/Daily6.pdf)
 
 ---
 
 ## 2.2 Sprint 2 (Fase 2) — Despliegue Cloud, Constancias, Moderación y Cierre
 
-- **Periodo:** Del 9 de octubre de 2026 al 19 de octubre de 2026.
+- **Periodo:** Del 12 de octubre de 2026 al 19 de octubre de 2026.
 - **Alcance:** 11 Historias de Usuario (9 Prioridad Media 🟨 + 2 Prioridad Baja 🟦) y 33 Tareas Técnicas (`T-040.1` a `T-050.3`).
 
 ### Dinámica del Flujo de Trabajo y Políticas WIP en Sprint 2
@@ -256,13 +256,14 @@ Para que una historia o tarea fuese declarada en estado final **DONE** y formar 
 ### Evidencias de la Evolución del Tablero (Archivos PDF de Sprint 2)
 El avance de cada sesión del Sprint 2 y el cierre final de proyecto se encuentra respaldado en formato PDF dentro del directorio [`tableroFase2/`](tableroFase2/):
 
-- **Sprint Planning Final (09/10/2026):** [`SprintPlanningFinal.pdf`](tableroFase2/SprintPlanningFinal.pdf)
-- **Daily Scrum 7 (09/10/2026):** [`Daily7.pdf`](tableroFase2/Daily7.pdf)
-- **Daily Scrum 8 (12/10/2026):** [`Daily8.pdf`](tableroFase2/Daily8.pdf)
-- **Daily Scrum 9 (13/10/2026):** [`Daily9.pdf`](tableroFase2/Daily9.pdf)
-- **Daily Scrum 10 (14/10/2026):** [`Daily10.pdf`](tableroFase2/Daily10.pdf)
-- **Daily Scrum 11 (15/10/2026):** [`Daily11.pdf`](tableroFase2/Daily11.pdf)
-- **Daily Scrum 12 y Retrospectiva 2 (19/10/2026):** [`Daily12.pdf`](tableroFase2/Daily12.pdf)
+- **Sprint Planning Final (12/10/2026):** [`SprintPlanningFinal.pdf`](tableroFase2/SprintPlanningFinal.pdf)
+- **Daily Scrum 7 (13/10/2026):** [`Daily7.pdf`](tableroFase2/Daily7.pdf)
+- **Daily Scrum 8 (14/10/2026):** [`Daily8.pdf`](tableroFase2/Daily8.pdf)
+- **Daily Scrum 9 (15/10/2026):** [`Daily9.pdf`](tableroFase2/Daily9.pdf)
+- **Daily Scrum 10 (16/10/2026):** [`Daily10.pdf`](tableroFase2/Daily10.pdf)
+- **Daily Scrum 11 (17/10/2026):** [`Daily11.pdf`](tableroFase2/Daily11.pdf)
+- **Daily Scrum 12 (18/10/2026):** [`Daily12.pdf`](tableroFase2/Daily12.pdf)
+- **Sprint Retrospective 2 y Cierre (19/10/2026):** [`Daily12.pdf`](tableroFase2/Daily12.pdf)
 
 ---
 

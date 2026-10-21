@@ -14,8 +14,8 @@
 De conformidad con las especificaciones del enunciado del proyecto para la **Fase 2** (Sección "Entregables — Calificación del Scrum Master"), el presente documento formaliza la auditoría y evaluación del desempeño individual y colaborativo de los integrantes del equipo Scrum durante el ciclo de vida de la **Fase 2 de EduConnect**.
 
 El proyecto se ejecutó bajo la metodología híbrida **Scrumban** (Scrum con flujo visual Kanban), estructurado en **2 Sprints de desarrollo**:
-- **Sprint 1 (Días 3 al 14):** Núcleo de Validación con Tokens, Planes Estructurados y Pipeline CI/CD.
-- **Sprint 2 (Días 15 al 28):** Despliegue Cloud, Constancias PDF, Moderación Disciplinaria y Cierre Técnico.
+- **Sprint 1 (Días 1 al 8 — del 5 al 12 de octubre de 2026):** Núcleo de Validación con Tokens, Planes Estructurados y Pipeline CI/CD.
+- **Sprint 2 (Días 8 al 15 — del 12 al 19 de octubre de 2026):** Despliegue Cloud, Constancias PDF, Moderación Disciplinaria y Cierre Técnico.
 
 La evaluación se basa en el compromiso individual, la puntualidad en ceremonias, la calidad técnica del código, la cobertura de pruebas unitarias y E2E, y el cumplimiento estricto del estándar Git Flow.
 

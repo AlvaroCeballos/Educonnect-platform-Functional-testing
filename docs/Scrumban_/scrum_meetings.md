@@ -364,14 +364,14 @@
 
 ## 2.1 Sprint 1 (Fase 2) — Núcleo de Validación, Planes y CI/CD
 
-- **Periodo:** Del 28 de septiembre de 2026 al 8 de octubre de 2026
+- **Periodo:** Del 5 de octubre de 2026 al 12 de octubre de 2026
 - **Evidencias del Tablero:** Archivos PDF en el directorio [`tableroFase2/`](tableroFase2/)
 
 ---
 
 ### 2.1.1 Sprint Planning 1 (Fase 2)
 
-- **Fecha:** 28 de septiembre de 2026
+- **Fecha:** 5 de octubre de 2026
 - **Hora / Duración:** **1:09:15**
 - **Asistentes:** Alvaro Ceballos (Scrum Master), Isai Patzán (Product Owner), Yury, Xavi De León, Wade, Nicole López.
 - **Enlace a Grabación:** [Acceder a Grabación (Google Drive)](https://drive.google.com/drive/folders/1QWwwTloNce28EC7Sr9hJwT0NTGPDOz8o?usp=sharing)
@@ -390,65 +390,201 @@
 
 ### 2.1.2 Daily Scrums — Sprint 1 (Fase 2)
 
-#### Daily 1 — 29 de septiembre de 2026
-- **Fecha:** 29 de septiembre de 2026 | **Duración:** 15 min | **Evidencia:** [`Daily1.pdf`](tableroFase2/Daily1.pdf)
-- **Alvaro Ceballos:** Diseñó el esquema relacional para quejas contra tutores en `incident_reports` y la tabla administrativa de denuncias (`T-043.1`). Sin bloqueos.
-- **Wade:** Preparó las consultas analíticas agregadas `AVG(rating)` para promedios de calificación docente (`T-045.1`). Sin bloqueos.
-- **Isai Patzán:** Definió la estructura del workflow `.github/workflows/backend-ci-cd.yml` activado en eventos push a `main` (`T-049.1`). Sin bloqueos.
-- **Yury:** Adaptó el formulario de registro de estudiante incorporando carga obligatoria de foto y carnet universitario en PDF (`T-028.1`). Sin bloqueos.
-- **Nicole López:** Diseñó el modelo relacional para las tablas `study_plans` y `study_resources` en MySQL (`T-032.1`). Sin bloqueos.
-- **Xavi De León:** Construyó el formulario de registro de tutor con validación estricta de currículum vítae en formato PDF (`T-029.1`). Sin bloqueos.
+#### Daily 1 — 6 de octubre de 2026
+- **Fecha:** 6 de octubre de 2026
+- **Hora / Duración:** 15 min
+- **Evidencia del Tablero:** [`Daily1.pdf`](tableroFase2/Daily1.pdf)
 
-#### Daily 2 — 30 de septiembre de 2026
-- **Fecha:** 30 de septiembre de 2026 | **Duración:** 14 min | **Evidencia:** [`Daily2.pdf`](tableroFase2/Daily2.pdf)
-- **Alvaro Ceballos:** Construyó el modal de resolución administrativa de denuncias con opciones de sanción o desestimación (`T-043.2`). Sin bloqueos.
-- **Wade:** Desarrolló el endpoint REST `GET /api/reports/tutors-ratings` con ordenamiento numérico por calificación (`T-045.2`). Sin bloqueos.
-- **Isai Patzán:** Programó el Job de `Build` en GitHub Actions Runner para compilación de imagen Docker del backend (`T-049.2`). Sin bloqueos.
-- **Yury:** Implementó el middleware Multer con almacenamiento persistente en `/uploads/documents/carnets/` usando UUID v4 (`T-028.2`). Sin bloqueos.
-- **Nicole López:** Maquetó el formulario de atención estructurada con desglose de dificultades pedagógicas y recursos dinámicos (`T-032.2`). Sin bloqueos.
-- **Xavi De León:** Implementó el almacenamiento de CVs en `/uploads/documents/cvs/` y el endpoint `POST /api/auth/register/tutor` con estado `PENDING` (`T-029.2`, `T-029.3`). Sin bloqueos.
+1. **Alvaro Ceballos:**
+   - *¿Qué hice ayer?:* Lideré la sesión de Sprint Planning 1 de Fase 2, definí el Sprint Goal 1 y asigné las tarjetas técnicas en Trello para los paquetes A al F.
+   - *¿Qué voy a hacer hoy?:* Diseñar el esquema de base de datos relacional para el registro de quejas contra tutores en la tabla `incident_reports` y construir la vista administrativa para listar denuncias (`T-043.1`).
+   - *¿Tengo algún impedimento?:* Ninguno por el momento; revisando la tipificación de causales de denuncia según los requerimientos del enunciado.
+2. **Wade:**
+   - *¿Qué hice ayer?:* Participé en la estimación por tallas de camiseta del Sprint 1 y analicé los contratos de interfaz para visualización de métricas.
+   - *¿Qué voy a hacer hoy?:* Estructurar las consultas SQL analíticas agregadas `AVG(rating)` para el cálculo del promedio de calificación de tutores (`T-045.1`).
+   - *¿Tengo algún impedimento?:* Ninguno; verificando la compatibilidad de las funciones de agregación en MySQL 8.0.
+3. **Isai Patzán:**
+   - *¿Qué hice ayer?:* Definí los criterios de aceptación como Product Owner para las historias de feedback y CI/CD en el Sprint Backlog.
+   - *¿Qué voy a hacer hoy?:* Crear la estructura del archivo `.github/workflows/backend-ci-cd.yml` activado en eventos push a `main` para automatizar la integración continua (`T-049.1`).
+   - *¿Tengo algún impedimento?:* Ninguno; configurando las variables de entorno básicas para el runner de GitHub Actions.
+4. **Yury:**
+   - *¿Qué hice ayer?:* Revisé la especificación para la subida de documentos binarios de estudiantes en el proceso de registro (`HU-028`).
+   - *¿Qué voy a hacer hoy?:* Adaptar el formulario de registro de estudiantes en React para requerir la foto de perfil obligatoria y el carnet universitario en formato PDF (`T-028.1`).
+   - *¿Tengo algún impedimento?:* Ninguno; configurando las restricciones de tipo de archivo `application/pdf` e imágenes en el input HTML.
+5. **Nicole López:**
+   - *¿Qué hice ayer?:* Analicé el modelo de datos de planes de estudio estructurados y su relación con las sesiones atendidas (`HU-032`).
+   - *¿Qué voy a hacer hoy?:* Diseñar el esquema relacional de las tablas `study_plans` y `study_resources` en MySQL asegurando la integridad referencial (`T-032.1`).
+   - *¿Tengo algún impedimento?:* Ninguno; coordinando con Isai las llaves foráneas hacia la tabla de sesiones de tutoría.
+6. **Xavi De León:**
+   - *¿Qué hice ayer?:* Revisé los requerimientos del formulario de registro de tutores con adjunto de currículum vítae (`HU-029`).
+   - *¿Qué voy a hacer hoy?:* Modificar la vista de registro docente agregando el campo para carga obligatoria del CV en formato PDF (`T-029.1`).
+   - *¿Tengo algún impedimento?:* Ninguno; asegurando validación en cliente para rechazar extensiones que no sean `.pdf`.
 
-#### Daily 3 — 1 de octubre de 2026
-- **Fecha:** 1 de octubre de 2026 | **Duración:** 16 min | **Evidencia:** [`Daily3.pdf`](tableroFase2/Daily3.pdf)
-- **Alvaro Ceballos:** Endpoint transaccional `PATCH /api/admin/reports/tutors/:id/resolve` (transición a `RESOLVED_BANNED` y baja a `DISABLED`) (`T-043.3`). Sin bloqueos.
-- **Wade:** Diseñó la interfaz de evaluación docente con representación gráfica de estrellas (0-5) en el portal estudiantil (`T-045.3`). Sin bloqueos.
-- **Isai Patzán:** Configuró el Job de `Test` en GitHub Actions levantando MySQL 8.0 efímero y ejecutando suite con Node Test Runner (`T-049.3`). Sin bloqueos.
-- **Yury:** Creó el generador criptográfico de tokens alfanuméricos únicos de 6 caracteres con expiración de 24 horas (`T-030.1`). Sin bloqueos.
-- **Nicole López:** Endpoint transaccional `POST /api/sessions/:id/study-plan` (mutación a `ATTENDED` y guardado relacional) (`T-032.3`). Sin bloqueos.
-- **Xavi De León:** Desarrolló el endpoint seguro `GET /api/documents/carnet/:id` con streaming binario y cabeceras inline (`T-039.1`). Sin bloqueos.
+---
 
-#### Daily 4 — 2 de octubre de 2026
-- **Fecha:** 2 de octubre de 2026 | **Duración:** 15 min | **Evidencia:** [`Daily4.pdf`](tableroFase2/Daily4.pdf)
-- **Alvaro Ceballos:** Construyó la tabla de estudiantes aprobados con buscador reactivo por nombre y carnet universitario (`T-041.1`). Sin bloqueos.
-- **Wade:** Estructuró la consulta SQL analítica con `DATE_FORMAT` agrupada por semanas y meses (`T-047.1`). Sin bloqueos.
-- **Isai Patzán:** Desarrolló el modal para calificación del tutor desde el historial y validó estado `ATTENDED` (`T-035.1`, `T-035.2`). Sin bloqueos.
-- **Yury:** Integró el servicio Mailtrap para despacho automático de correos HTML con remitente EduConnect y token visible (`T-030.2`). Sin bloqueos.
-- **Nicole López:** Desarrolló el endpoint `GET /api/sessions/:id/study-plan` para consulta de diagnóstico y recursos asignados (`T-033.1`). Sin bloqueos.
-- **Xavi De León:** Integró el componente de visor PDF embebido (`<iframe>`) en el modal administrativo de aprobación de carnet (`T-039.2`). Sin bloqueos.
+#### Daily 2 — 7 de octubre de 2026
+- **Fecha:** 7 de octubre de 2026
+- **Hora / Duración:** 14 min
+- **Evidencia del Tablero:** [`Daily2.pdf`](tableroFase2/Daily2.pdf)
 
-#### Daily 5 — 5 de octubre de 2026
-- **Fecha:** 5 de octubre de 2026 | **Duración:** 18 min | **Evidencia:** [`Daily5.pdf`](tableroFase2/Daily5.pdf)
-- **Alvaro Ceballos:** Implementó modal de edición de perfil de estudiante con campo de correo strictly `readonly` y endpoints de actualización (`T-041.2`, `T-041.3`). Sin bloqueos.
-- **Wade:** Desarrolló el endpoint `GET /api/analytics/sessions-timeline` con selectores dinámicos de rango temporal (`T-047.2`). Sin bloqueos.
-- **Isai Patzán:** Concluyó la persistencia en `session_ratings` asegurando calificación única por participante (`T-035.3`). Sin bloqueos.
-- **Yury:** Diseñó la plantilla HTML corporativa de bienvenida con logotipo institucional y diseño anti-spam (`T-030.3`). Sin bloqueos.
-- **Nicole López:** Construyó la vista dedicada del plan de estudio en el portal del estudiante con badges de recursos (`T-033.2`). Sin bloqueos.
-- **Xavi De León:** Implementó controladores administrativos para aprobación (`APPROVED`) y rechazo (`REJECTED`) de estudiantes con carnet (`T-039.3`). Sin bloqueos.
+1. **Alvaro Ceballos:**
+   - *¿Qué hice ayer?:* Completé el DDL de `incident_reports` y la tabla frontend de quejas formales (`T-043.1`).
+   - *¿Qué voy a hacer hoy?:* Desarrollar el modal administrativo interactivo para resolver quejas contra tutores con opciones de sanción inmediata o desestimación justificada (`T-043.2`).
+   - *¿Tengo algún impedimento?:* Ninguno; probando el flujo de confirmación antes de aplicar la resolución.
+2. **Wade:**
+   - *¿Qué hice ayer?:* Escribí las consultas de agregación para el promedio docente (`T-045.1`).
+   - *¿Qué voy a hacer hoy?:* Implementar el endpoint REST `GET /api/reports/tutors-ratings` con soporte de ordenamiento numérico por calificación (`T-045.2`).
+   - *¿Tengo algún impedimento?:* Ninguno; verificando el formato de respuesta JSON con redondeo a un decimal.
+3. **Isai Patzán:**
+   - *¿Qué hice ayer?:* Configuré el archivo base de workflow en GitHub Actions (`T-049.1`).
+   - *¿Qué voy a hacer hoy?:* Programar el job de `Build` en el pipeline para construir y validar la imagen Docker del backend a partir del Dockerfile (`T-049.2`).
+   - *¿Tengo algún impedimento?:* Ninguno; validando el cacheo de dependencias de pnpm para reducir los tiempos de compilación.
+4. **Yury:**
+   - *¿Qué hice ayer?:* Construí el formulario con selector de archivos PDF y foto (`T-028.1`).
+   - *¿Qué voy a hacer hoy?:* Implementar el middleware `Multer` en Node.js con almacenamiento persistente en `/uploads/documents/carnets/` usando nombres generados por UUID v4 (`T-028.2`).
+   - *¿Tengo algún impedimento?:* Ninguno; verificando la creación automática de directorios si no existen en el servidor.
+5. **Nicole López:**
+   - *¿Qué hice ayer?:* Creé las migraciones relacionales para `study_plans` y `study_resources` (`T-032.1`).
+   - *¿Qué voy a hacer hoy?:* Maquetar el formulario estructurado en el frontend para que el tutor capture dificultades detectadas y agregue recursos pedagógicos dinámicos (`T-032.2`).
+   - *¿Tengo algún impedimento?:* Ninguno; diseñando la interfaz dinámica que permite agregar múltiples enlaces y títulos de recursos.
+6. **Xavi De León:**
+   - *¿Qué hice ayer?:* Completé el formulario de registro de tutor con soporte de PDF (`T-029.1`).
+   - *¿Qué voy a hacer hoy?:* Configurar el almacenamiento seguro de CVs en `/uploads/documents/cvs/` y crear el endpoint `POST /api/auth/register/tutor` con estado `PENDING` (`T-029.2`, `T-029.3`).
+   - *¿Tengo algún impedimento?:* Ninguno; coordinando con Yury el estándar común de nomenclatura de archivos UUID.
 
-#### Daily 6 — 8 de octubre de 2026
-- **Fecha:** 8 de octubre de 2026 | **Duración:** 20 min | **Evidencia:** [`Daily6.pdf`](tableroFase2/Daily6.pdf)
-- **Alvaro Ceballos:** Ejecutó pruebas unitarias `PU-11` a `PU-15` en verde, verificó DoD del Sprint 1 y preparó la Retrospectiva 1.
-- **Wade:** Completó gráfica interactiva responsiva de sesiones atendidas vs canceladas (`T-047.3`) y pruebas `PU-16` a `PU-20`.
-- **Isai Patzán:** Verificó ejecución limpia del pipeline de GitHub Actions y suite de pruebas `PU-26` a `PU-30`.
-- **Yury:** Verificó suite `PU-01` a `PU-05` (validación de tokens y uploads de estudiantes) pasando al 100%.
-- **Nicole López:** Implementó control de autorización para asegurar confidencialidad del plan (`T-033.3`) y pruebas `PU-21` a `PU-25`.
-- **Xavi De León:** Verificó suite `PU-06` a `PU-10` (streaming y validación de PDF de CV) y trasladó tarjetas a `DONE`.
+---
+
+#### Daily 3 — 8 de octubre de 2026
+- **Fecha:** 8 de octubre de 2026
+- **Hora / Duración:** 16 min
+- **Evidencia del Tablero:** [`Daily3.pdf`](tableroFase2/Daily3.pdf)
+
+1. **Alvaro Ceballos:**
+   - *¿Qué hice ayer?:* Terminé el modal de resolución administrativa de denuncias a tutores (`T-043.2`).
+   - *¿Qué voy a hacer hoy?:* Implementar el endpoint transaccional `PATCH /api/admin/reports/tutors/:id/resolve` que actualiza el estado a `RESOLVED_BANNED` y cambia el tutor a `DISABLED` (`T-043.3`).
+   - *¿Tengo algún impedimento?:* Ninguno; verificando que la transacción de base de datos sea atómica y revierta en caso de error.
+2. **Wade:**
+   - *¿Qué hice ayer?:* Desplegué el endpoint de ranking de tutores por calificación (`T-045.2`).
+   - *¿Qué voy a hacer hoy?:* Diseñar el componente visual de evaluación docente con representación gráfica de estrellas (0 a 5) en el portal estudiantil (`T-045.3`).
+   - *¿Tengo algún impedimento?:* Ninguno; implementando la visualización con iconos vectoriales responsivos.
+3. **Isai Patzán:**
+   - *¿Qué hice ayer?:* Configuré el job de Build en GitHub Actions (`T-049.2`).
+   - *¿Qué voy a hacer hoy?:* Configurar el job de `Test` en el pipeline de GitHub Actions levantando MySQL 8.0 en memoria y ejecutando `npm test` con Node Test Runner (`T-049.3`).
+   - *¿Tengo algún impedimento?:* Ninguno; probando los healthchecks del servicio MySQL dentro del runner `ubuntu-latest`.
+4. **Yury:**
+   - *¿Qué hice ayer?:* Configuré el middleware Multer de carnets estudiantiles (`T-028.2`).
+   - *¿Qué voy a hacer hoy?:* Desarrollar el módulo utilitario de tokens criptográficos alfanuméricos de 6 caracteres con expiración de 24 horas (`T-030.1`).
+   - *¿Tengo algún impedimento?:* Ninguno; utilizando `crypto.randomBytes` para generar tokens seguros contra colisiones.
+5. **Nicole López:**
+   - *¿Qué hice ayer?:* Terminé el formulario de planes de estudio estructurados (`T-032.2`).
+   - *¿Qué voy a hacer hoy?:* Desarrollar el endpoint transaccional `POST /api/sessions/:id/study-plan` que valida la sesión, cambia el estado a `ATTENDED` y persiste el diagnóstico y recursos (`T-032.3`).
+   - *¿Tengo algún impedimento?:* Ninguno; probando la inserción relacional de múltiples recursos vinculados al plan.
+6. **Xavi De León:**
+   - *¿Qué hice ayer?:* Implementé la persistencia y carga de CVs docentes (`T-029.2`, `T-029.3`).
+   - *¿Qué voy a hacer hoy?:* Desarrollar el endpoint seguro `GET /api/documents/carnet/:id` con streaming binario y cabeceras `Content-Disposition: inline` (`T-039.1`).
+   - *¿Tengo algún impedimento?:* Ninguno; asegurando que las cabeceras permitan la previsualización directa en navegador.
+
+---
+
+#### Daily 4 — 9 de octubre de 2026
+- **Fecha:** 9 de octubre de 2026
+- **Hora / Duración:** 15 min
+- **Evidencia del Tablero:** [`Daily4.pdf`](tableroFase2/Daily4.pdf)
+
+1. **Alvaro Ceballos:**
+   - *¿Qué hice ayer?:* Concluí el endpoint de resolución de quejas y baja automática de tutores (`T-043.3`).
+   - *¿Qué voy a hacer hoy?:* Construir la vista de estudiantes aprobados con buscador reactivo por nombre y número de carnet universitario (`T-041.1`).
+   - *¿Tengo algún impedimento?:* Ninguno; aplicando debounce a la barra de búsqueda para optimizar peticiones al backend.
+2. **Wade:**
+   - *¿Qué hice ayer?:* Terminé el componente visual de estrellas para tutores (`T-045.3`).
+   - *¿Qué voy a hacer hoy?:* Estructurar la consulta SQL analítica temporal con `DATE_FORMAT` agrupada por semanas y meses para el reporte de sesiones (`T-047.1`).
+   - *¿Tengo algún impedimento?:* Ninguno; probando agregaciones por rangos de fecha en MySQL.
+3. **Isai Patzán:**
+   - *¿Qué hice ayer?:* Concluí el pipeline CI/CD en GitHub Actions ejecutando build y test en el runner (`T-049.3`).
+   - *¿Qué voy a hacer hoy?:* Construir el modal de calificación del tutor desde el historial y validar que la sesión se encuentre en estado `ATTENDED` (`T-035.1`, `T-035.2`).
+   - *¿Tengo algún impedimento?:* Ninguno; verificando que no se permita calificar sesiones canceladas o futuras.
+4. **Yury:**
+   - *¿Qué hice ayer?:* Implementé el generador de tokens criptográficos (`T-030.1`).
+   - *¿Qué voy a hacer hoy?:* Configurar el servicio de integración con Mailtrap para el despacho automático de correos de bienvenida con el token visible (`T-030.2`).
+   - *¿Tengo algún impedimento?:* Ninguno; validando la entrega en el Sandbox de Mailtrap mediante SMTP autenticado.
+5. **Nicole López:**
+   - *¿Qué hice ayer?:* Implementé el endpoint transaccional del plan estructurado (`T-032.3`).
+   - *¿Qué voy a hacer hoy?:* Desarrollar el endpoint `GET /api/sessions/:id/study-plan` para que el estudiante pueda consultar el diagnóstico y recursos de su sesión (`T-033.1`).
+   - *¿Tengo algún impedimento?:* Ninguno; verificando la autorización para que solo el estudiante asignado pueda leer su plan.
+6. **Xavi De León:**
+   - *¿Qué hice ayer?:* Creé el endpoint de streaming de carnet universitario (`T-039.1`).
+   - *¿Qué voy a hacer hoy?:* Integrar el visor PDF interactivo embebido (`<iframe>` / PDF.js) en el modal administrativo de aprobación de carnet (`T-039.2`).
+   - *¿Tengo algún impedimento?:* Ninguno; asegurando que el visor renderice correctamente tanto en pantallas de escritorio como móviles.
+
+---
+
+#### Daily 5 — 10 de octubre de 2026
+- **Fecha:** 10 de octubre de 2026
+- **Hora / Duración:** 18 min
+- **Evidencia del Tablero:** [`Daily5.pdf`](tableroFase2/Daily5.pdf)
+
+1. **Alvaro Ceballos:**
+   - *¿Qué hice ayer?:* Completé la tabla con buscador de estudiantes aprobados (`T-041.1`).
+   - *¿Qué voy a hacer hoy?:* Implementar el modal de edición de perfil de estudiante con campo de correo strictly `readonly` y endpoints de actualización (`T-041.2`, `T-041.3`).
+   - *¿Tengo algún impedimento?:* Ninguno; asegurando que el backend rechace cualquier intento de mutar el email con código 400.
+2. **Wade:**
+   - *¿Qué hice ayer?:* Diseñé la consulta analítica temporal de sesiones (`T-047.1`).
+   - *¿Qué voy a hacer hoy?:* Desarrollar el endpoint `GET /api/analytics/sessions-timeline` con selectores dinámicos de rango temporal (`T-047.2`).
+   - *¿Tengo algún impedimento?:* Ninguno; validando la conversión de fechas UTC a hora local de Guatemala.
+3. **Isai Patzán:**
+   - *¿Qué hice ayer?:* Implementé la validación de negocio para ratings (`T-035.2`).
+   - *¿Qué voy a hacer hoy?:* Persistir las calificaciones en la tabla `session_ratings` garantizando calificación única por estudiante y cita (`T-035.3`).
+   - *¿Tengo algún impedimento?:* Ninguno; creando índice único compuesto sobre `session_id` y `student_id`.
+4. **Yury:**
+   - *¿Qué hice ayer?:* Conecté el servicio de despacho por Mailtrap (`T-030.2`).
+   - *¿Qué voy a hacer hoy?:* Diseñar la plantilla HTML corporativa de bienvenida con logotipo institucional y diseño anti-spam (`T-030.3`).
+   - *¿Tengo algún impedimento?:* Ninguno; probando responsividad del HTML en clientes de correo móvil y web.
+5. **Nicole López:**
+   - *¿Qué hice ayer?:* Implementé el endpoint de consulta de plan de estudio (`T-033.1`).
+   - *¿Qué voy a hacer hoy?:* Construir la vista dedicada del plan de estudio en el portal del estudiante con badges de recursos (`T-033.2`).
+   - *¿Tengo algún impedimento?:* Ninguno; maquetando badges específicos para PDFs, enlaces de video y ejercicios prácticos.
+6. **Xavi De León:**
+   - *¿Qué hice ayer?:* Integré el visor interactivo de carnet en el modal admin (`T-039.2`).
+   - *¿Qué voy a hacer hoy?:* Programar los controladores administrativos para aprobación (`APPROVED`) y rechazo (`REJECTED`) de estudiantes con carnet (`T-039.3`).
+   - *¿Tengo algún impedimento?:* Ninguno; probando la actualización de estado y habilitación de login.
+
+---
+
+#### Daily 6 — 11 de octubre de 2026
+- **Fecha:** 11 de octubre de 2026
+- **Hora / Duración:** 20 min
+- **Evidencia del Tablero:** [`Daily6.pdf`](tableroFase2/Daily6.pdf)
+
+1. **Alvaro Ceballos:**
+   - *¿Qué hice ayer?:* Completé la edición segura de perfiles estudiantiles y la auditoría de correo bloqueado (`T-041.2`, `T-041.3`).
+   - *¿Qué voy a hacer hoy?:* Ejecutar y verificar las pruebas unitarias `PU-11` a `PU-15` (baja lógica, edición segura y resolución de denuncias), verificar el cumplimiento de la DoD del Sprint 1 y preparar la Retrospectiva 1.
+   - *¿Tengo algún impedimento?:* Ninguno; las 36 tareas técnicas del Sprint 1 se encuentran en condiciones de cierre.
+2. **Wade:**
+   - *¿Qué hice ayer?:* Implementé el endpoint de evolución temporal (`T-047.2`).
+   - *¿Qué voy a hacer hoy?:* Integrar la gráfica interactiva responsiva (citas atendidas vs canceladas) (`T-047.3`), validar la suite `PU-16` a `PU-20` y mover las tareas a `DONE`.
+   - *¿Tengo algún impedimento?:* Ninguno; gráficos funcionando con filtros en tiempo real.
+3. **Isai Patzán:**
+   - *¿Qué hice ayer?:* Terminé la persistencia de calificaciones y ratings (`T-035.3`).
+   - *¿Qué voy a hacer hoy?:* Validar que el pipeline de GitHub Actions se ejecute en verde sobre la rama `develop`, verificar las pruebas `PU-26` a `PU-30` y mover tarjetas a `DONE`.
+   - *¿Tengo algún impedimento?:* Ninguno; pipeline pasando satisfactoriamente.
+4. **Yury:**
+   - *¿Qué hice ayer?:* Concluí la plantilla HTML corporativa con token en Mailtrap (`T-030.3`).
+   - *¿Qué voy a hacer hoy?:* Ejecutar la suite de pruebas unitarias `PU-01` a `PU-05` (hashing, expiración de tokens y subida de carnets), mover mis tickets a `DONE` y participar en la Retrospectiva.
+   - *¿Tengo algún impedimento?:* Ninguno; flujo de autenticación y tokenización 100% probado.
+5. **Nicole López:**
+   - *¿Qué hice ayer?:* Terminé la vista del plan de estudio en el portal estudiantil (`T-033.2`).
+   - *¿Qué voy a hacer hoy?:* Implementar el control de autorización para asegurar confidencialidad del plan (`T-033.3`), validar pruebas `PU-21` a `PU-25` y trasladar tickets a `DONE`.
+   - *¿Tengo algún impedimento?:* Ninguno; criterios de aceptación de HU-032 y HU-033 completados.
+6. **Xavi De León:**
+   - *¿Qué hice ayer?:* Concluí los controladores de aprobación con visor embebido (`T-039.3`).
+   - *¿Qué voy a hacer hoy?:* Validar la suite `PU-06` a `PU-10` (validación de CVs, streaming y gestión de documentos), mover las tareas técnicas a `DONE` y preparar el entorno para el Sprint 2.
+   - *¿Tengo algún impedimento?:* Ninguno; módulo de documentos verificado y documentado.
 
 ---
 
 ### 2.1.3 Sprint Retrospective 1 (Fase 2)
 
-- **Fecha:** 8 de octubre de 2026
+- **Fecha:** 12 de octubre de 2026
 - **Hora / Duración:** **12:11**
 - **Asistentes:** Alvaro Ceballos, Wade, Isai Patzán, Yury, Nicole López, Xavi De León.
 - **Enlace a Grabación:** [Acceder a Grabación (Google Drive)](https://drive.google.com/drive/folders/1QWwwTloNce28EC7Sr9hJwT0NTGPDOz8o?usp=sharing)
@@ -471,14 +607,14 @@
 
 ## 2.2 Sprint 2 (Fase 2) — Despliegue Cloud, Constancias, Moderación y Cierre
 
-- **Periodo:** Del 9 de octubre de 2026 al 19 de octubre de 2026
+- **Periodo:** Del 12 de octubre de 2026 al 19 de octubre de 2026
 - **Evidencias del Tablero:** Archivos PDF en el directorio [`tableroFase2/`](tableroFase2/)
 
 ---
 
 ### 2.2.1 Sprint Planning 2 (Fase 2)
 
-- **Fecha:** 9 de octubre de 2026
+- **Fecha:** 12 de octubre de 2026
 - **Hora / Duración:** **11:14**
 - **Asistentes:** Alvaro Ceballos (Scrum Master), Isai Patzán (Product Owner), Yury, Xavi De León, Wade, Nicole López.
 - **Enlace a Grabación:** [Acceder a Grabación (Google Drive)](https://drive.google.com/drive/folders/1QWwwTloNce28EC7Sr9hJwT0NTGPDOz8o?usp=sharing)
@@ -494,59 +630,195 @@
 
 ### 2.2.2 Daily Scrums — Sprint 2 (Fase 2)
 
-#### Daily 7 — 9 de octubre de 2026
-- **Fecha:** 9 de octubre de 2026 | **Duración:** 15 min | **Evidencia:** [`Daily7.pdf`](tableroFase2/Daily7.pdf)
-- **Alvaro Ceballos:** Diseñó la vista administrativa para gestión de tutores con buscador y filtros por especialidad (`T-042.1`). Sin bloqueos.
-- **Wade:** Preparó la consulta agregada para cálculo de promedios de calificación recibidos por estudiantes (`T-046.1`). Sin bloqueos.
-- **Isai Patzán:** Construyó la interfaz modal para reporte disciplinario contra tutores con 4 categorías tipificadas (`T-036.1`). Sin bloqueos.
-- **Yury:** Maquetó la vista interactiva de primer inicio de sesión solicitando credenciales y token alfanumérico (`T-031.1`). Sin bloqueos.
-- **Nicole López:** Instaló e integró la librería de generación de PDFs en backend para constancias académicas (`T-034.1`). Sin bloqueos.
-- **Xavi De León:** Implementó el endpoint de streaming seguro para CVs de tutores `GET /api/documents/cv/:id` (`T-040.1`). Sin bloqueos.
+#### Daily 7 — 13 de octubre de 2026
+- **Fecha:** 13 de octubre de 2026
+- **Hora / Duración:** 15 min
+- **Evidencia del Tablero:** [`Daily7.pdf`](tableroFase2/Daily7.pdf)
 
-#### Daily 8 — 12 de octubre de 2026
-- **Fecha:** 12 de octubre de 2026 | **Duración:** 14 min | **Evidencia:** [`Daily8.pdf`](tableroFase2/Daily8.pdf)
-- **Alvaro Ceballos:** Modal de edición de tutor con correo protegido y baja lógica a `DISABLED` (`T-042.2`, `T-042.3`). Sin bloqueos.
-- **Wade:** Desarrolló el endpoint `GET /api/reports/students-ratings` y badges de estrellas en perfil del estudiante (`T-046.2`, `T-046.3`). Sin bloqueos.
-- **Isai Patzán:** Validaciones de negocio: reporte admitido solo sobre citas atendidas y persistencia en `incident_reports` (`T-036.2`, `T-036.3`). Sin bloqueos.
-- **Yury:** Endpoint transaccional `POST /api/auth/verify-token-login` con validación trifásica de cuenta (`T-031.2`). Sin bloqueos.
-- **Nicole López:** Diseñó la plantilla vectorial institucional de la constancia de tutoría con firma, membrete y código de verificación (`T-034.2`). Sin bloqueos.
-- **Xavi De León:** Integró el componente interactivo de visor embebido para CVs en el modal de aprobación de tutores (`T-040.2`). Sin bloqueos.
+1. **Alvaro Ceballos:**
+   - *¿Qué hice ayer?:* Lideré la sesión de Sprint Retrospective 1 y el Sprint Planning 2 de Fase 2, comprometiendo las 11 historias de cierre y las 33 tareas técnicas.
+   - *¿Qué voy a hacer hoy?:* Diseñar la vista de administración de tutores aprobados con buscador reactivo por nombre y especialidad (`T-042.1`).
+   - *¿Tengo algún impedimento?:* Ninguno; reutilizando los patrones de debounce de la tabla de estudiantes.
+2. **Wade:**
+   - *¿Qué hice ayer?:* Participé en la planificación del Sprint 2 y analicé los algoritmos de satisfacción docente.
+   - *¿Qué voy a hacer hoy?:* Construir la consulta SQL agregada para el cálculo de promedios de calificación otorgados por estudiantes (`T-046.1`).
+   - *¿Tengo algún impedimento?:* Ninguno; probando fórmulas de ponderación en base de datos.
+3. **Isai Patzán:**
+   - *¿Qué hice ayer?:* Definí los criterios de aceptación de los reportes disciplinarios de 4 categorías para tutores y estudiantes.
+   - *¿Qué voy a hacer hoy?:* Construir la interfaz modal para el reporte de incidencias contra tutores con las 4 categorías tipificadas del enunciado (`T-036.1`).
+   - *¿Tengo algún impedimento?:* Ninguno; configurando los selectores con las causales obligatorias (inasistencia, conducta, contenido, puntualidad).
+4. **Yury:**
+   - *¿Qué hice ayer?:* Analicé el flujo de validación trifásica de cuenta exigido para el primer inicio de sesión (`HU-031`).
+   - *¿Qué voy a hacer hoy?:* Maquetar la vista interactiva de primer login solicitando credenciales de acceso más el token alfanumérico enviado por correo (`T-031.1`).
+   - *¿Tengo algún impedimento?:* Ninguno; integrando input de 6 dígitos con formateo automático.
+5. **Nicole López:**
+   - *¿Qué hice ayer?:* Investigué la librería para renderizado vectorial de documentos PDF en backend (`HU-034`).
+   - *¿Qué voy a hacer hoy?:* Instalar e integrar la librería de generación de PDFs en Node.js para maquetar la constancia oficial de tutoría (`T-034.1`).
+   - *¿Tengo algún impedimento?:* Ninguno; configurando las fuentes tipográficas y márgenes del documento.
+6. **Xavi De León:**
+   - *¿Qué hice ayer?:* Planifiqué las tareas de dockerización multi-stage y visores embebidos de currículums.
+   - *¿Qué voy a hacer hoy?:* Implementar el endpoint seguro de streaming `GET /api/documents/cv/:id` con cabeceras inline para CVs de tutores (`T-040.1`).
+   - *¿Tengo algún impedimento?:* Ninguno; aplicando el mismo mecanismo de streaming seguro del carnet.
 
-#### Daily 9 — 13 de octubre de 2026
-- **Fecha:** 13 de octubre de 2026 | **Duración:** 16 min | **Evidencia:** [`Daily9.pdf`](tableroFase2/Daily9.pdf)
-- **Alvaro Ceballos:** Construyó el panel administrativo de quejas formales contra estudiantes con desglose de motivos (`T-044.1`). Sin bloqueos.
-- **Wade:** Implementó consulta SQL correlacionando materias con mayor índice de cancelaciones y franjas horarias críticas (`T-048.1`). Sin bloqueos.
-- **Isai Patzán:** Desarrolló el formulario para calificación del estudiante por el tutor al concluir la tutoría (`T-037.1`, `T-037.2`). Sin bloqueos.
-- **Yury:** Implementó actualización inmediata de bandera `email_verified = TRUE` tras validar token exitosamente (`T-031.3`). Sin bloqueos.
-- **Nicole López:** Endpoint `GET /api/sessions/:id/certificate` con despacho de constancia en streaming PDF (`T-034.3`). Sin bloqueos.
-- **Xavi De León:** Controladores de aprobación (`APPROVED`) y rechazo (`REJECTED`) de tutores verificando CV en visor (`T-040.3`). Sin bloqueos.
+---
 
-#### Daily 10 — 14 de octubre de 2026
-- **Fecha:** 14 de octubre de 2026 | **Duración:** 15 min | **Evidencia:** [`Daily10.pdf`](tableroFase2/Daily10.pdf)
-- **Alvaro Ceballos:** Desarrolló el modal administrativo para sanción de estudiantes infractores con suspensión inmediata (`T-044.2`). Sin bloqueos.
-- **Wade:** Desarrolló el endpoint `GET /api/analytics/critical-hours` con selectores de fechas y granularidad (`T-048.2`). Sin bloqueos.
-- **Isai Patzán:** Construyó el modal para reportes disciplinarios contra estudiantes infractores (`T-038.1`, `T-038.2`). Sin bloqueos.
-- **Yury:** Programó la prueba automatizada `E2E-01` en Cypress (Registro con carnet -> Token Mailtrap -> Login trifásico). Sin bloqueos.
-- **Nicole López:** Agregó botón interactivo de descarga de constancia en el historial y preparó prueba `E2E-05` en Cypress. Sin bloqueos.
-- **Xavi De León:** Construyó el Dockerfile multi-stage del frontend con etapa de build React y servidor de producción `nginx:alpine` (`T-050.1`). Sin bloqueos.
+#### Daily 8 — 14 de octubre de 2026
+- **Fecha:** 14 de octubre de 2026
+- **Hora / Duración:** 14 min
+- **Evidencia del Tablero:** [`Daily8.pdf`](tableroFase2/Daily8.pdf)
 
-#### Daily 11 — 15 de octubre de 2026
-- **Fecha:** 15 de octubre de 2026 | **Duración:** 18 min | **Evidencia:** [`Daily11.pdf`](tableroFase2/Daily11.pdf)
-- **Alvaro Ceballos:** Endpoint transaccional `PATCH /api/admin/reports/students/:id/resolve` (suspensión a `DISABLED`) y prueba `E2E-03` en Cypress. Sin bloqueos.
-- **Wade:** Gráfico analítico de barras y mapas de calor de cancelaciones críticas (`T-048.3`) y prueba `E2E-04` en Cypress. Sin bloqueos.
-- **Isai Patzán:** Notificación transaccional al tutor tras recibir nueva reseña (`T-038.3`) y prueba `E2E-06` en Cypress. Sin bloqueos.
-- **Yury:** Verificación de expiración de token de 24 horas y rechazo de tokens inválidos. Sin bloqueos.
-- **Nicole López:** Verificación de descarga y fidelidad tipográfica de constancias PDF en navegadores de escritorio y móviles. Sin bloqueos.
-- **Xavi De León:** Despliegue en la nube del frontend mediante contenedor multi-stage con URL pública y prueba `E2E-02` en Cypress (`T-050.2`, `T-050.3`). Sin bloqueos.
+1. **Alvaro Ceballos:**
+   - *¿Qué hice ayer?:* Terminé la vista y buscador de tutores activos (`T-042.1`).
+   - *¿Qué voy a hacer hoy?:* Desarrollar el modal de edición de perfil de tutor con campo de correo estrictamente bloqueado y el endpoint para dar de baja lógica a `DISABLED` (`T-042.2`, `T-042.3`).
+   - *¿Tengo algún impedimento?:* Ninguno; validando que el correo original se preserve inmutable tanto en frontend como en el controlador backend.
+2. **Wade:**
+   - *¿Qué hice ayer?:* Desarrollé la consulta de promedios de calificación estudiantil (`T-046.1`).
+   - *¿Qué voy a hacer hoy?:* Implementar el endpoint `GET /api/reports/students-ratings` y badges de estrellas en el perfil del estudiante (`T-046.2`, `T-046.3`).
+   - *¿Tengo algún impedimento?:* Ninguno; probando la renderización de estrellas fraccionarias.
+3. **Isai Patzán:**
+   - *¿Qué hice ayer?:* Construí el modal de reporte contra tutores (`T-036.1`).
+   - *¿Qué voy a hacer hoy?:* Implementar validaciones de negocio: aceptar reportes únicamente sobre sesiones concluidas (`ATTENDED`) y persistir en `incident_reports` (`T-036.2`, `T-036.3`).
+   - *¿Tengo algún impedimento?:* Ninguno; validando rechazo de reportes duplicados para la misma sesión.
+4. **Yury:**
+   - *¿Qué hice ayer?:* Maqueté la interfaz de login trifásico (`T-031.1`).
+   - *¿Qué voy a hacer hoy?:* Desarrollar el endpoint transaccional `POST /api/auth/verify-token-login` con validación trifásica: credenciales, token válido y estado `APPROVED` (`T-031.2`).
+   - *¿Tengo algún impedimento?:* Ninguno; verificando mensajes descriptivos cuando el token ha expirado.
+5. **Nicole López:**
+   - *¿Qué hice ayer?:* Integré la biblioteca de PDFs en el backend (`T-034.1`).
+   - *¿Qué voy a hacer hoy?:* Diseñar la plantilla vectorial institucional de la constancia de tutoría con membrete, logotipo, firmas y datos del estudiante y tutor (`T-034.2`).
+   - *¿Tengo algún impedimento?:* Ninguno; maquetando los elementos visuales respetando el formato formal de la universidad.
+6. **Xavi De León:**
+   - *¿Qué hice ayer?:* Implementé el endpoint de streaming de CVs (`T-040.1`).
+   - *¿Qué voy a hacer hoy?:* Integrar el visor PDF embebido (`<iframe>`) en el modal administrativo de aprobación de tutores para inspeccionar el currículum vítae (`T-040.2`).
+   - *¿Tengo algún impedimento?:* Ninguno; validando renderizado continuo sin forzar descargas locales.
 
-#### Daily 12 — 19 de octubre de 2026
-- **Fecha:** 19 de octubre de 2026 | **Duración:** 20 min | **Evidencia:** [`Daily12.pdf`](tableroFase2/Daily12.pdf)
-- **Alvaro Ceballos:** Confirmó el paso de las 69 tareas técnicas de Fase 2 a `DONE` en Trello, ejecutó el merge final en `main`, generó el tag semántico `v2.0.0` y lideró la Retrospectiva final.
-- **Wade:** Consolidó el reporte de ejecución de las 6 pruebas End-to-End en Cypress para `docs/Pruebas/pruebas_e2e.md`.
-- **Isai Patzán:** Verificó la ejecución satisfactoria del pipeline de GitHub Actions (`Build`, `Test`, `Deploy`) con 30 pruebas unitarias en verde.
-- **Yury:** Ejecutó la verificación de integridad de las 30 pruebas unitarias con `pnpm --prefix backend test`.
-- **Nicole López:** Revisó el manual de usuario ilustrado con las nuevas funcionalidades de Fase 2 en `docs/Manuales/manual_usuario.md`.
-- **Xavi De León:** Verificó la disponibilidad pública del contenedor frontend en la nube y la integridad del script de datos semilla en `backend/init.sql`.
+---
+
+#### Daily 9 — 15 de octubre de 2026
+- **Fecha:** 15 de octubre de 2026
+- **Hora / Duración:** 16 min
+- **Evidencia del Tablero:** [`Daily9.pdf`](tableroFase2/Daily9.pdf)
+
+1. **Alvaro Ceballos:**
+   - *¿Qué hice ayer?:* Completé la edición protegida y baja lógica de tutores (`T-042.2`, `T-042.3`).
+   - *¿Qué voy a hacer hoy?:* Construir el panel administrativo de quejas formales contra estudiantes con desglose de motivos (`T-044.1`).
+   - *¿Tengo algún impedimento?:* Ninguno; estructurando la tabla con filtros por fecha y estado de resolución.
+2. **Wade:**
+   - *¿Qué hice ayer?:* Terminé el endpoint de calificaciones de estudiantes (`T-046.2`, `T-046.3`).
+   - *¿Qué voy a hacer hoy?:* Estructurar la consulta SQL analítica que correlaciona materias con cancelaciones recurrentes y franjas horarias críticas (`T-048.1`).
+   - *¿Tengo algún impedimento?:* Ninguno; probando agrupaciones por bloques de horario matutino y vespertino.
+3. **Isai Patzán:**
+   - *¿Qué hice ayer?:* Implementé las validaciones y persistencia de reportes disciplinarios contra tutores (`T-036.2`, `T-036.3`).
+   - *¿Qué voy a hacer hoy?:* Desarrollar el formulario interactivo para calificación del estudiante por parte del tutor al concluir la sesión de tutoría (`T-037.1`, `T-037.2`).
+   - *¿Tengo algún impedimento?:* Ninguno; validando que solo el tutor asignado pueda emitir feedback.
+4. **Yury:**
+   - *¿Qué hice ayer?:* Desarrollé el endpoint de login trifásico (`T-031.2`).
+   - *¿Qué voy a hacer hoy?:* Programar la actualización inmediata de la bandera `email_verified = TRUE` en la base de datos tras la validación exitosa del token (`T-031.3`).
+   - *¿Tengo algún impedimento?:* Ninguno; verificando que en accesos posteriores ya no se exija token alfanumérico.
+5. **Nicole López:**
+   - *¿Qué hice ayer?:* Diseñé la plantilla vectorial de la constancia académica (`T-034.2`).
+   - *¿Qué voy a hacer hoy?:* Desarrollar el endpoint `GET /api/sessions/:id/certificate` con despacho del PDF generado en streaming binario (`T-034.3`).
+   - *¿Tengo algún impedimento?:* Ninguno; probando la descarga directa del archivo con nombre representativo.
+6. **Xavi De León:**
+   - *¿Qué hice ayer?:* Integré el visor de CV en el panel administrativo (`T-040.2`).
+   - *¿Qué voy a hacer hoy?:* Programar los controladores de aprobación (`APPROVED`) y rechazo (`REJECTED`) de tutores verificando el CV en visor (`T-040.3`).
+   - *¿Tengo algún impedimento?:* Ninguno; asegurando que el estado cambie en la base de datos en tiempo real.
+
+---
+
+#### Daily 10 — 16 de octubre de 2026
+- **Fecha:** 16 de octubre de 2026
+- **Hora / Duración:** 15 min
+- **Evidencia del Tablero:** [`Daily10.pdf`](tableroFase2/Daily10.pdf)
+
+1. **Alvaro Ceballos:**
+   - *¿Qué hice ayer?:* Construí el panel de quejas contra estudiantes (`T-044.1`).
+   - *¿Qué voy a hacer hoy?:* Desarrollar el modal administrativo para sanción de estudiantes infractores con suspensión inmediata a estado `DISABLED` (`T-044.2`).
+   - *¿Tengo algún impedimento?:* Ninguno; probando la revocación inmediata de tokens de sesión para usuarios dados de baja.
+2. **Wade:**
+   - *¿Qué hice ayer?:* Escribí la consulta SQL de materias críticas y cancelaciones (`T-048.1`).
+   - *¿Qué voy a hacer hoy?:* Desarrollar el endpoint `GET /api/analytics/critical-hours` con selectores de fechas y granularidad (`T-048.2`).
+   - *¿Tengo algún impedimento?:* Ninguno; formateando los datos para alimentar gráficos de mapas de calor.
+3. **Isai Patzán:**
+   - *¿Qué hice ayer?:* Concluí la calificación de estudiantes por tutores (`T-037.1`, `T-037.2`).
+   - *¿Qué voy a hacer hoy?:* Construir el modal y endpoint para reportes disciplinarios contra estudiantes infractores por inasistencia o mala conducta (`T-038.1`, `T-038.2`).
+   - *¿Tengo algún impedimento?:* Ninguno; tipificando causales en la tabla de incidencias.
+4. **Yury:**
+   - *¿Qué hice ayer?:* Concluí el circuito de login trifásico y bandera de verificación (`T-031.3`).
+   - *¿Qué voy a hacer hoy?:* Programar la prueba automatizada `E2E-01` en Cypress (Registro Estudiante con Carnet -> Recepción de Token Mailtrap -> Login Trifásico).
+   - *¿Tengo algún impedimento?:* Ninguno; probando la intercepción de peticiones de red en Cypress.
+5. **Nicole López:**
+   - *¿Qué hice ayer?:* Desplegué el endpoint de descarga de constancias en PDF (`T-034.3`).
+   - *¿Qué voy a hacer hoy?:* Agregar botón interactivo de descarga de constancia en el historial de sesiones atendidas y estructurar la prueba `E2E-05` en Cypress.
+   - *¿Tengo algún impedimento?:* Ninguno; validando que el botón solo aparezca en citas con estado `ATTENDED`.
+6. **Xavi De León:**
+   - *¿Qué hice ayer?:* Finalicé la aprobación de tutores con visor de CV (`T-040.3`).
+   - *¿Qué voy a hacer hoy?:* Construir el Dockerfile multi-stage para el frontend con etapa de build React y servidor de producción `nginx:alpine` (`T-050.1`).
+   - *¿Tengo algún impedimento?:* Ninguno; configurando las directivas `try_files $uri /index.html;` en el bloque de Nginx.
+
+---
+
+#### Daily 11 — 17 de octubre de 2026
+- **Fecha:** 17 de octubre de 2026
+- **Hora / Duración:** 18 min
+- **Evidencia del Tablero:** [`Daily11.pdf`](tableroFase2/Daily11.pdf)
+
+1. **Alvaro Ceballos:**
+   - *¿Qué hice ayer?:* Terminé el modal de sanción y baja a estudiantes infractores (`T-044.2`).
+   - *¿Qué voy a hacer hoy?:* Implementar el endpoint transaccional `PATCH /api/admin/reports/students/:id/resolve` y programar la prueba automatizada `E2E-03` en Cypress (Moderación y baja por denuncia).
+   - *¿Tengo algún impedimento?:* Ninguno; automatizando la simulación de login de administrador y resolución de denuncia en Cypress.
+2. **Wade:**
+   - *¿Qué hice ayer?:* Implementé el endpoint de franjas horarias críticas (`T-048.2`).
+   - *¿Qué voy a hacer hoy?:* Construir la visualización gráfica de barras y mapa de calor de cancelaciones críticas (`T-048.3`) y programar la prueba `E2E-04` en Cypress.
+   - *¿Tengo algún impedimento?:* Ninguno; probando responsividad del chart en el dashboard analítico.
+3. **Isai Patzán:**
+   - *¿Qué hice ayer?:* Implementé el reporte disciplinario contra estudiantes (`T-038.1`, `T-038.2`).
+   - *¿Qué voy a hacer hoy?:* Implementar la notificación transaccional al tutor tras recibir una nueva reseña (`T-038.3`) y programar la prueba `E2E-06` en Cypress.
+   - *¿Tengo algún impedimento?:* Ninguno; integrando la plantilla de correo de reseña con Mailtrap.
+4. **Yury:**
+   - *¿Qué hice ayer?:* Completé y ejecuté en verde la prueba `E2E-01` en Cypress.
+   - *¿Qué voy a hacer hoy?:* Realizar pruebas de estrés sobre la expiración de tokens (rechazo a 24 horas y códigos inválidos) y consolidar la suite de pruebas unitarias.
+   - *¿Tengo algún impedimento?:* Ninguno; verificando que los mensajes de error sean claros y amigables.
+5. **Nicole López:**
+   - *¿Qué hice ayer?:* Integré el botón de descarga en el portal estudiantil y estructuré `E2E-05`.
+   - *¿Qué voy a hacer hoy?:* Ejecutar la prueba `E2E-05` en Cypress (Plan estructurado -> Generación de constancia PDF) y comprobar fidelidad tipográfica en navegadores móviles.
+   - *¿Tengo algún impedimento?:* Ninguno; constancias generándose con márgenes exactos y sin desbordes.
+6. **Xavi De León:**
+   - *¿Qué hice ayer?:* Construí el Dockerfile multi-stage con Nginx (`T-050.1`).
+   - *¿Qué voy a hacer hoy?:* Desplegar el frontend en la nube con URL pública accesible (`T-050.2`, `T-050.3`) y programar la prueba automatizada `E2E-02` en Cypress (Registro tutor con CV -> Visor admin -> Aprobación).
+   - *¿Tengo algún impedimento?:* Ninguno; verificando la resolución de nombres y variables de entorno `VITE_API_URL`.
+
+---
+
+#### Daily 12 — 18 de octubre de 2026
+- **Fecha:** 18 de octubre de 2026
+- **Hora / Duración:** 20 min
+- **Evidencia del Tablero:** [`Daily12.pdf`](tableroFase2/Daily12.pdf)
+
+1. **Alvaro Ceballos:**
+   - *¿Qué hice ayer?:* Completé y aprobé en verde la prueba `E2E-03` en Cypress, resolviendo la sesión de admin y 2FA con archivo.
+   - *¿Qué voy a hacer hoy?:* Auditar el paso de las 69 tareas técnicas a `DONE` en Trello, ejecutar el merge final de `develop` a `main`, generar el tag semántico de producción `v2.0.0` y moderar la Retrospectiva 2 final del proyecto.
+   - *¿Tengo algún impedimento?:* Ninguno; checklist de entregables cubierto al 100%.
+2. **Wade:**
+   - *¿Qué hice ayer?:* Ejecuté con éxito la prueba `E2E-04` en Cypress sobre el dashboard de métricas.
+   - *¿Qué voy a hacer hoy?:* Consolidar el compendio de evidencias de las 6 pruebas End-to-End para el documento oficial `docs/Pruebas/pruebas_e2e.md` y mover mis tarjetas a `DONE`.
+   - *¿Tengo algún impedimento?:* Ninguno; capturas y videos de Cypress compilados.
+3. **Isai Patzán:**
+   - *¿Qué hice ayer?:* Ejecuté en verde la prueba `E2E-06` en Cypress sobre el flujo de feedback disciplinario.
+   - *¿Qué voy a hacer hoy?:* Verificar que los jobs de `Build`, `Test` y `Deploy` en GitHub Actions pasen al 100% en la rama `main`, consolidar el reporte de las 30 pruebas unitarias y mover tarjetas a `DONE`.
+   - *¿Tengo algún impedimento?:* Ninguno; pipeline en verde sin errores de integración.
+4. **Yury:**
+   - *¿Qué hice ayer?:* Realicé la verificación cruzada de la suite de 30 pruebas unitarias en el backend con `pnpm --prefix backend test`.
+   - *¿Qué voy a hacer hoy?:* Validar que todos los commits sigan la convención Conventional Commits, revisar la documentación de requerimientos y participar en la Retrospectiva final.
+   - *¿Tengo algún impedimento?:* Ninguno; repositorio limpio y consistente.
+5. **Nicole López:**
+   - *¿Qué hice ayer?:* Validé la ejecución de `E2E-05` y la descarga de constancias en PDF en múltiples navegadores.
+   - *¿Qué voy a hacer hoy?:* Realizar la revisión final del Manual de Usuario ilustrado (`docs/Manuales/manual_usuario.md`) con las nuevas vistas de Fase 2 y mover tareas a `DONE`.
+   - *¿Tengo algún impedimento?:* Ninguno; manual completamente documentado.
+6. **Xavi De León:**
+   - *¿Qué hice ayer?:* Validé la prueba `E2E-02` en Cypress y el despliegue del frontend en la nube con URL pública.
+   - *¿Qué voy a hacer hoy?:* Comprobar la disponibilidad de la base de datos con los datos semilla de `backend/init.sql`, consolidar evidencias en PDF y participar en la Retrospectiva 2.
+   - *¿Tengo algún impedimento?:* Ninguno; entorno de producción operativo y listo para calificación.
 
 ---
 
