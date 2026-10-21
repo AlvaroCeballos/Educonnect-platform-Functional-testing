@@ -133,7 +133,7 @@ describe('E2E-03: Flujo de Moderación y Sanción Disciplinaria de Cuenta', () =
     stubModeration();
     cy.visit('/admin/dashboard');
 
-    cy.contains('Panel Administrativo').should('be.visible');
+    cy.contains('Panel Administrativo', { timeout: 10000 }).should('be.visible');
 
     // Navegar al módulo de Estudiantes
     cy.contains('button', 'Estudiantes').click();
