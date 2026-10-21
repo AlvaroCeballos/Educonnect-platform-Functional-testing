@@ -1,7 +1,8 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
+
 const {
-  average, weightedAverage, groupSessionsByPeriod, cancellationRateBySubject,
+  average, weightedAverage, groupSessionsByPeriod, cancellationRateBySubject, demandBySchedule,
 } = require('../src/utils/metrics');
 
 test('PU-16: promedio exacto de varias calificaciones 0-5', () => {
@@ -49,4 +50,15 @@ test('PU-20: tasa de cancelación por materia, ignorando pendientes', () => {
   ]);
   assert.deepEqual(rows[0], { materia: 'Matemática', canceladas: 2, total: 3, tasa: 66.7 });
   assert.equal(rows[1].tasa, 0);
+});
+
+
+test('HU-048: horarios más demandados agrupados por franja de 1 hora', () => {
+  assert.deepEqual(demandBySchedule([
+    { start_time: '08:00:00' }, { start_time: '08:30:00' },
+    { start_time: '14:00:00' }, { start_time: null },
+  ]), [
+    { franja: '08:00 - 09:00', total: 2 },
+    { franja: '14:00 - 15:00', total: 1 },
+  ]);
 });

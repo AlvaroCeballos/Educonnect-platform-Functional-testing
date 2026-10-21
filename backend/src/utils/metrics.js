@@ -67,4 +67,27 @@ const cancellationRateBySubject = (sessions = []) => {
     .sort((a, b) => b.tasa - a.tasa || b.total - a.total);
 };
 
-module.exports = { average, weightedAverage, groupSessionsByPeriod, cancellationRateBySubject };
+// HU-048: horarios más demandados (franja de 1 hora según start_time).
+// Cuenta todas las sesiones solicitadas, incluso canceladas: reflejan demanda.
+const demandBySchedule = (sessions = []) => {
+  const map = new Map();
+  for (const s of sessions) {
+    const match = /^(\d{1,2}):\d{2}/.exec(String(s.start_time ?? ''));
+    if (!match) continue;
+    const hour = Number(match[1]);
+    if (hour > 23) continue;
+    const pad = (h) => String(h).padStart(2, '0');
+    const franja = `${pad(hour)}:00 - ${pad((hour + 1) % 24)}:00`;
+    map.set(franja, (map.get(franja) || 0) + 1);
+  }
+  return [...map.entries()]
+    .map(([franja, total]) => ({ franja, total }))
+    .sort((a, b) => b.total - a.total || a.franja.localeCompare(b.franja));
+};
+
+module.exports = {
+  average, weightedAverage, groupSessionsByPeriod, cancellationRateBySubject, demandBySchedule,
+};
+
+
+

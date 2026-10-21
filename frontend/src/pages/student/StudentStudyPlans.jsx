@@ -2,6 +2,56 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../utils/api';
 
+function DownloadCertificateButton({ planId, sessionId }) {
+  const [downloading, setDownloading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleDownload = async () => {
+    setDownloading(true);
+    setError('');
+    try {
+      const res = await api.get(`/study-plans/${planId}/certificate`, { responseType: 'blob' });
+      const url = URL.createObjectURL(res.data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `constancia-sesion-${sessionId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setError('No se pudo descargar la constancia. Intentá de nuevo.');
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+      <button
+        type="button"
+        onClick={handleDownload}
+        disabled={downloading}
+        style={{
+          alignSelf: 'flex-start',
+          padding: '9px 18px',
+          background: downloading ? '#94a3b8' : '#0f766e',
+          color: 'white',
+          border: 'none',
+          borderRadius: '8px',
+          fontSize: '13px',
+          fontWeight: 600,
+          cursor: downloading ? 'wait' : 'pointer',
+          boxShadow: '0 1px 3px rgba(15, 118, 110, 0.2)',
+        }}
+      >
+        {downloading ? 'Generando PDF…' : '⬇ Descargar constancia PDF'}
+      </button>
+      {error && <span style={{ fontSize: '12px', color: '#991b1b' }}>{error}</span>}
+    </div>
+  );
+}
+
 const formatDate = (value) => {
   if (!value) return '';
   const str = String(value);
@@ -203,14 +253,7 @@ function PlanCard({ plan, activo = false }) {
       </div>
 
       <div style={{ marginTop: '18px', paddingTop: '14px', borderTop: '1px solid rgba(100,116,139,0.15)' }}>
-        <button
-          type="button"
-          disabled
-          title="Disponible al cerrar HU-034 (Sprint 2)"
-          style={{ padding: '8px 16px', background: '#e2e8f0', color: '#94a3b8', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'not-allowed' }}
-        >
-          Descargar constancia PDF
-        </button>
+        <DownloadCertificateButton planId={plan.id} sessionId={plan.session_id} />
       </div>
     </article>
   );

@@ -27,4 +27,16 @@ const canRateSession = (session, studentId) => Boolean(
   && session.status === 'ATTENDED',
 );
 
-module.exports = { MIN_RATING, MAX_RATING, validateRatingPayload, canRateSession };
+const canRateStudentSession = (session, tutorId) => Boolean(
+  session
+  && Number(session.tutorId) === Number(tutorId)
+  && session.status === 'ATTENDED',
+);
+
+module.exports = {
+  MIN_RATING,
+  MAX_RATING,
+  validateRatingPayload,
+  canRateSession,
+  canRateStudentSession,
+};

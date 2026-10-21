@@ -170,12 +170,13 @@ CREATE TABLE IF NOT EXISTS reviews (
   session_id INT UNSIGNED NOT NULL,
   student_id INT UNSIGNED NOT NULL,
   tutor_id   INT UNSIGNED NOT NULL,
+  reviewer_role ENUM('student', 'tutor') NOT NULL DEFAULT 'student',
   rating     TINYINT UNSIGNED NOT NULL,
   comment    TEXT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
              ON UPDATE CURRENT_TIMESTAMP,
-  CONSTRAINT uq_reviews_session UNIQUE (session_id),
+  CONSTRAINT uq_reviews_session_reviewer UNIQUE (session_id, reviewer_role),
   CONSTRAINT chk_reviews_rating CHECK (rating BETWEEN 0 AND 5),
   CONSTRAINT fk_reviews_session
     FOREIGN KEY (session_id) REFERENCES sessions(id)

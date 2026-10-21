@@ -159,3 +159,14 @@ De acuerdo con las especificaciones del **Enunciado de Fase 2**:
     * `users.status = 'DISABLED'` para el `reported_user_id` (Baja lógica inmediata)
   * Si `action == 'DISMISS'`:
     * `incident_reports.status = 'DISMISSED'`
+
+### 3.6. Consulta de reportes propios (HU-036 / HU-038)
+
+Para evitar duplicar formularios en el historial de sesiones, el frontend consulta los reportes creados por el participante:
+
+* **Estudiante:** `GET /api/incidents/me`
+* **Tutor:** `GET /api/incidents/tutor/me`
+
+La creación se implementa mediante `POST /api/sessions/:sessionId/report-tutor` para estudiantes y
+`POST /api/sessions/:sessionId/report-student` para tutores. Ambos endpoints exigen JWT con el rol correcto,
+validan que la sesión sea propia y `ATTENDED`, y responden `409` si ya existe un reporte del mismo participante.

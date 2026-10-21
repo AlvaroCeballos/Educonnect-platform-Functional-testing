@@ -1,5 +1,5 @@
 const router = require('express').Router();
-const { createStudyPlan, getMyStudyPlans } = require('../controllers/studyPlanController');
+const { createStudyPlan, getMyStudyPlans, downloadCertificate } = require('../controllers/studyPlanController');
 const { authenticate, mockTutor, mockStudent } = require('../middlewares/auth');
 
 const tutorAuth = (req, res, next) => {
@@ -26,5 +26,6 @@ const studentAuth = (req, res, next) => {
 
 router.post('/', tutorAuth, createStudyPlan);
 router.get('/me', studentAuth, getMyStudyPlans);
+router.get('/:planId/certificate', studentAuth, downloadCertificate);
 
 module.exports = router;

@@ -29,6 +29,9 @@ export default function AdminDashboard() {
   const [tutorIncidents, setTutorIncidents] = useState([]);
   const [incidentSearchTerm, setIncidentSearchTerm] = useState('');
   const [incidentStatusFilter, setIncidentStatusFilter] = useState('all'); // 'all' | 'PENDING' | 'RESOLVED_BANNED' | 'DISMISSED'
+  const [studentIncidents, setStudentIncidents] = useState([]);
+  const [studentIncidentSearchTerm, setStudentIncidentSearchTerm] = useState('');
+  const [studentIncidentStatusFilter, setStudentIncidentStatusFilter] = useState('all'); // 'all' | 'PENDING' | 'RESOLVED_BANNED' | 'DISMISSED'
   const [editStudentForm, setEditStudentForm] = useState({
     nombre: '',
     apellido: '',
@@ -40,21 +43,38 @@ export default function AdminDashboard() {
     fotografia_url: '',
   });
   const [savingEdit, setSavingEdit] = useState(false);
+  const [editingTutor, setEditingTutor] = useState(null);
+  const [editTutorForm, setEditTutorForm] = useState({
+    nombre: '',
+    apellido: '',
+    carnet: '',
+    identificacion: '',
+    especialidad: '',
+    universidad: '',
+    direccion_tutoria: '',
+    anio_inicio_experiencia: '',
+    genero: 'UNSPECIFIED',
+    fecha_nacimiento: '',
+    fotografia_url: '',
+  });
+  const [savingTutorEdit, setSavingTutorEdit] = useState(false);
 
   const loadUsers = useCallback(async () => {
     try {
-      const [pendingRes, approvedRes, reportRes, subjectsReportRes, incidentsRes] = await Promise.all([
+      const [pendingRes, approvedRes, reportRes, subjectsReportRes, incidentsRes, studentIncidentsRes] = await Promise.all([
         api.get('/admin/users', { params: { status: 'PENDING' } }),
         api.get('/admin/users', { params: { status: 'APPROVED' } }),
         api.get('/reports/top-tutors').catch((err) => { console.warn('Reporte tutores:', err); return { data: { topTutors: [] } }; }),
         api.get('/reports/top-subjects').catch((err) => { console.warn('Reporte materias:', err); return { data: { subjectsReport: [] } }; }),
         api.get('/admin/reports/tutors').catch((err) => { console.error('Error cargando denuncias tutores:', err); return { data: { reports: [] } }; }),
+        api.get('/admin/reports/students').catch((err) => { console.error('Error cargando denuncias estudiantes:', err); return { data: { reports: [] } }; }),
       ]);
       setPendingUsers(pendingRes.data.users || []);
       setApprovedUsers(approvedRes.data.users || []);
       setReportTutors(reportRes.data?.topTutors || []);
       setReportSubjects(subjectsReportRes.data?.subjectsReport || []);
       setTutorIncidents(incidentsRes.data?.reports || []);
+      setStudentIncidents(studentIncidentsRes.data?.reports || []);
     } catch (err) {
       console.error('Error cargando usuarios o reportes:', err);
     }
@@ -175,9 +195,9 @@ export default function AdminDashboard() {
         </div>
       `,
       showCancelButton: true,
-      showConfirmButton: tutor.status !== 'APPROVED',
+      showConfirmButton: true,
       showDenyButton: tutor.status !== 'APPROVED',
-      confirmButtonText: 'Aceptar Tutor',
+      confirmButtonText: tutor.status === 'APPROVED' ? 'Editar Perfil' : 'Aceptar Tutor',
       denyButtonText: 'Rechazar Tutor',
       cancelButtonText: 'Cerrar',
       confirmButtonColor: '#167963',
@@ -189,6 +209,10 @@ export default function AdminDashboard() {
           handleApprove(tutor);
         } else if (result.isDenied) {
           handleReject(tutor);
+        }
+      } else {
+        if (result.isConfirmed) {
+          handleOpenEditTutor(tutor);
         }
       }
     });
@@ -327,6 +351,49 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleOpenEditTutor = (tutor) => {
+    setEditingTutor(tutor);
+    setEditTutorForm({
+      nombre: tutor.nombre || '',
+      apellido: tutor.apellido || '',
+      carnet: tutor.carnet || '',
+      identificacion: tutor.identificacion || '',
+      especialidad: tutor.especialidad || '',
+      universidad: tutor.universidad || '',
+      direccion_tutoria: tutor.direccion_tutoria || '',
+      anio_inicio_experiencia: tutor.anio_inicio_experiencia || '',
+      genero: tutor.genero || 'UNSPECIFIED',
+      fecha_nacimiento: tutor.fecha_nacimiento ? String(tutor.fecha_nacimiento).substring(0, 10) : '',
+      fotografia_url: tutor.fotografia_url || '',
+    });
+  };
+
+  const handleSaveEditTutor = async (e) => {
+    e.preventDefault();
+    if (!editingTutor) return;
+    setSavingTutorEdit(true);
+    try {
+      const res = await api.put(`/admin/users/${editingTutor.id}/tutor-profile`, editTutorForm);
+      await Swal.fire({
+        icon: 'success',
+        title: 'Tutor actualizado',
+        text: res.data.message || 'Los datos del tutor han sido actualizados exitosamente.',
+        confirmButtonColor: '#167963',
+      });
+      setEditingTutor(null);
+      await loadUsers();
+    } catch (err) {
+      await Swal.fire({
+        icon: 'error',
+        title: 'Error al actualizar',
+        text: err.response?.data?.message || 'No fue posible guardar los cambios.',
+        confirmButtonColor: '#167963',
+      });
+    } finally {
+      setSavingTutorEdit(false);
+    }
+  };
+
   const handleDisableTutor = async (tutor) => {
     const nombre = [tutor.nombre, tutor.apellido].filter(Boolean).join(' ') || 'el tutor';
 
@@ -376,24 +443,28 @@ export default function AdminDashboard() {
 
   const handleResolveIncident = async (incident, action) => {
     const isBan = action === 'BAN';
-    const roleTitle = isBan ? '¿Dar de baja al tutor por denuncia?' : '¿Rechazar / Desestimar denuncia?';
+    const isStudentReport = Boolean(incident.reportedCarrera) || incident.reporterRole === 'tutor';
+    const reportedRoleLabel = isStudentReport ? 'al estudiante' : 'al tutor';
+    const roleTitle = isBan ? `¿Dar de baja ${reportedRoleLabel} por denuncia?` : '¿Rechazar / Desestimar denuncia?';
     const confirmBtnText = isBan ? 'Sí, dar de baja' : 'Sí, rechazar denuncia';
     const confirmBtnColor = isBan ? '#a42e3a' : '#475569';
+    const reportedPersonTitle = isStudentReport ? 'Estudiante reportado' : 'Tutor reportado';
+    const reporterPersonTitle = isStudentReport ? 'Tutor denunciante' : 'Estudiante denunciante';
 
     const { value: notes, isConfirmed } = await Swal.fire({
       icon: isBan ? 'warning' : 'question',
       title: roleTitle,
       html: `
         <div style="text-align: left; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 16px; margin: 12px 0; font-size: 13px; color: #334155; line-height: 1.6;">
-          <p style="margin: 0 0 4px;"><strong>Tutor reportado:</strong> ${incident.reportedNombreCompleto} (${incident.reportedCarnet || '—'})</p>
-          <p style="margin: 0 0 4px;"><strong>Estudiante denunciante:</strong> ${incident.reporterNombreCompleto} (${incident.reporterCarnet || '—'})</p>
+          <p style="margin: 0 0 4px;"><strong>${reportedPersonTitle}:</strong> ${incident.reportedNombreCompleto} (${incident.reportedCarnet || '—'})</p>
+          <p style="margin: 0 0 4px;"><strong>${reporterPersonTitle}:</strong> ${incident.reporterNombreCompleto} (${incident.reporterCarnet || '—'})</p>
           <p style="margin: 0 0 4px;"><strong>Falta:</strong> <span style="background: #fee2e2; color: #991b1b; padding: 2px 6px; border-radius: 4px; font-weight: 700;">${incident.category}</span></p>
           <p style="margin: 0;"><strong>Motivo:</strong> ${incident.reason}</p>
         </div>
         <p style="font-size: 13px; color: ${isBan ? '#991b1b' : '#64748b'}; font-weight: 600;">
           ${isBan 
-            ? 'Esta acción inhabilitará de inmediato la cuenta del tutor (status = DISABLED) y se enviará la notificación por correo.' 
-            : 'La denuncia quedará marcada como desestimada y no afectará el estado del tutor.'}
+            ? `Esta acción inhabilitará de inmediato la cuenta ${reportedRoleLabel} (status = DISABLED) y se enviará la notificación por correo.` 
+            : `La denuncia quedará marcada como desestimada y no afectará el estado ${reportedRoleLabel}.`}
         </p>
         <label style="display:block; text-align:left; font-size:12px; font-weight:600; color:#475569; margin-top:10px; margin-bottom:4px;">
           Motivo o notas de la resolución administrativa (opcional):
@@ -420,7 +491,7 @@ export default function AdminDashboard() {
       });
       await Swal.fire({
         icon: 'success',
-        title: isBan ? 'Tutor dado de baja' : 'Denuncia desestimada',
+        title: isBan ? `${isStudentReport ? 'Estudiante' : 'Tutor'} dado de baja` : 'Denuncia desestimada',
         text: res.data.message || 'La resolución ha sido procesada exitosamente.',
         confirmButtonColor: '#167963',
       });
@@ -460,6 +531,30 @@ export default function AdminDashboard() {
     return (
       tutorName.includes(term) ||
       studentName.includes(term) ||
+      category.includes(term) ||
+      reason.includes(term) ||
+      carnet.includes(term)
+    );
+  });
+
+  const pendingStudentIncidentsCount = studentIncidents.filter((i) => i.status === 'PENDING').length;
+  const bannedStudentIncidentsCount = studentIncidents.filter((i) => i.status === 'RESOLVED_BANNED').length;
+  const dismissedStudentIncidentsCount = studentIncidents.filter((i) => i.status === 'DISMISSED').length;
+
+  const filteredStudentIncidents = studentIncidents.filter((inc) => {
+    if (studentIncidentStatusFilter !== 'all' && inc.status !== studentIncidentStatusFilter) {
+      return false;
+    }
+    if (!studentIncidentSearchTerm.trim()) return true;
+    const term = studentIncidentSearchTerm.toLowerCase();
+    const studentName = (inc.reportedNombreCompleto || '').toLowerCase();
+    const tutorName = (inc.reporterNombreCompleto || '').toLowerCase();
+    const category = (inc.category || '').toLowerCase();
+    const reason = (inc.reason || '').toLowerCase();
+    const carnet = String(inc.reportedCarnet || '').toLowerCase();
+    return (
+      studentName.includes(term) ||
+      tutorName.includes(term) ||
       category.includes(term) ||
       reason.includes(term) ||
       carnet.includes(term)
@@ -768,6 +863,26 @@ export default function AdminDashboard() {
                 Estudiantes Aprobados / Activos (HU-024)
                 <span className="badge-sub">{approvedStudents.length}</span>
               </button>
+              <button
+                type="button"
+                className={`admin-subtab ${studentView === 'incidents' ? 'active' : ''}`}
+                onClick={() => {
+                  setStudentView('incidents');
+                  loadUsers();
+                }}
+              >
+                Denuncias Recibidas (HU-044)
+                <span
+                  className="badge-sub"
+                  style={
+                    pendingStudentIncidentsCount > 0
+                      ? { background: '#fee2e2', color: '#991b1b', fontWeight: 800 }
+                      : undefined
+                  }
+                >
+                  {studentIncidents.length}
+                </span>
+              </button>
             </div>
 
             {studentView === 'pending' && (
@@ -885,6 +1000,182 @@ export default function AdminDashboard() {
                                   {actionId === student.id ? 'Procesando...' : 'Dar de baja'}
                                 </button>
                               </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </section>
+            )}
+
+            {/* SECCIÓN HU-044: PANEL DE DENUNCIAS CONTRA ESTUDIANTES */}
+            {studentView === 'incidents' && (
+              <section className="admin-table-card">
+                <div className="admin-tab-header">
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+                    <div>
+                      <h3>Moderación de Denuncias contra Estudiantes (HU-044)</h3>
+                      <p>
+                        Supervisa las faltas disciplinarias reportadas por tutores en tutorías atendidas.
+                        Puedes dar de baja al estudiante si la falta amerita sanción o desestimar el reporte.
+                      </p>
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      <button
+                        type="button"
+                        className={`report-filter-toggle ${studentIncidentStatusFilter === 'all' ? 'active' : ''}`}
+                        onClick={() => setStudentIncidentStatusFilter('all')}
+                      >
+                        Todas ({studentIncidents.length})
+                      </button>
+                      <button
+                        type="button"
+                        className={`report-filter-toggle ${studentIncidentStatusFilter === 'PENDING' ? 'active' : ''}`}
+                        onClick={() => setStudentIncidentStatusFilter('PENDING')}
+                      >
+                        Pendientes ({pendingStudentIncidentsCount})
+                      </button>
+                      <button
+                        type="button"
+                        className={`report-filter-toggle ${studentIncidentStatusFilter === 'RESOLVED_BANNED' ? 'active' : ''}`}
+                        onClick={() => setStudentIncidentStatusFilter('RESOLVED_BANNED')}
+                      >
+                        Sancionados ({bannedStudentIncidentsCount})
+                      </button>
+                      <button
+                        type="button"
+                        className={`report-filter-toggle ${studentIncidentStatusFilter === 'DISMISSED' ? 'active' : ''}`}
+                        onClick={() => setStudentIncidentStatusFilter('DISMISSED')}
+                      >
+                        Desestimadas ({dismissedStudentIncidentsCount})
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="admin-search-bar">
+                  <input
+                    type="text"
+                    className="admin-search-input"
+                    placeholder="Buscar por estudiante, tutor, carnet, falta o motivo..."
+                    value={studentIncidentSearchTerm}
+                    onChange={(e) => setStudentIncidentSearchTerm(e.target.value)}
+                  />
+                  {studentIncidentSearchTerm && (
+                    <button
+                      type="button"
+                      className="admin-clear-search"
+                      onClick={() => setStudentIncidentSearchTerm('')}
+                    >
+                      Limpiar
+                    </button>
+                  )}
+                  <span style={{ fontSize: '13px', color: '#64748b', marginLeft: 'auto' }}>
+                    {filteredStudentIncidents.length} de {studentIncidents.length} denuncias
+                  </span>
+                </div>
+
+                {studentIncidents.length === 0 ? (
+                  <div className="admin-empty">No hay denuncias disciplinarias registradas contra estudiantes.</div>
+                ) : filteredStudentIncidents.length === 0 ? (
+                  <div className="admin-empty">No se encontraron denuncias con el criterio seleccionado.</div>
+                ) : (
+                  <div className="admin-table-wrap">
+                    <table className="admin-table">
+                      <thead>
+                        <tr>
+                          <th>Fecha Reporte</th>
+                          <th>Estudiante Denunciado</th>
+                          <th>Tutor Denunciante</th>
+                          <th>Falta Disciplinaria</th>
+                          <th>Motivo y Explicación</th>
+                          <th>Estado</th>
+                          <th>Acciones</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredStudentIncidents.map((incident) => (
+                          <tr key={incident.id}>
+                            <td style={{ whiteSpace: 'nowrap' }}>
+                              <strong style={{ fontSize: '13px', color: '#0f172a' }}>
+                                {formatDate(incident.createdAt)}
+                              </strong>
+                              <span style={{ fontSize: '11px', color: '#64748b', display: 'block' }}>
+                                Sesión: {formatDate(incident.sessionDate)} ({incident.materia})
+                              </span>
+                            </td>
+                            <td>
+                              <div className="admin-user-info">
+                                <div>
+                                  <strong>{incident.reportedNombreCompleto}</strong>
+                                  <span>{incident.reportedEmail}</span>
+                                  <span style={{ fontSize: '11px', color: '#0f766e' }}>
+                                    Carnet: {incident.reportedCarnet} · {incident.reportedCarrera}
+                                  </span>
+                                </div>
+                              </div>
+                            </td>
+                            <td>
+                              <div>
+                                <strong style={{ fontSize: '13px', color: '#334155' }}>
+                                  {incident.reporterNombreCompleto}
+                                </strong>
+                                <span style={{ fontSize: '12px', color: '#64748b', display: 'block' }}>
+                                  Carnet: {incident.reporterCarnet} · {incident.reporterEspecialidad}
+                                </span>
+                              </div>
+                            </td>
+                            <td>
+                              <span className="badge-category">{incident.category}</span>
+                            </td>
+                            <td style={{ maxWidth: '280px' }}>
+                              <p style={{ margin: 0, fontSize: '13px', color: '#334155', lineHeight: '1.4' }}>
+                                {incident.reason}
+                              </p>
+                              {incident.adminNotes && (
+                                <p style={{ margin: '6px 0 0', fontSize: '11px', color: '#0f766e', fontStyle: 'italic' }}>
+                                  Resolución: {incident.adminNotes}
+                                </p>
+                              )}
+                            </td>
+                            <td>
+                              {incident.status === 'PENDING' ? (
+                                <span className="badge-incident-pending">PENDIENTE</span>
+                              ) : incident.status === 'RESOLVED_BANNED' ? (
+                                <span className="badge-incident-banned">SANCIONADO</span>
+                              ) : (
+                                <span className="badge-incident-dismissed">DESESTIMADA</span>
+                              )}
+                            </td>
+                            <td>
+                              {incident.status === 'PENDING' ? (
+                                <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                                  <button
+                                    type="button"
+                                    className="ban-button"
+                                    disabled={actionId === incident.id}
+                                    title="Dar de baja definitiva al estudiante infractor"
+                                    onClick={() => handleResolveIncident(incident, 'BAN')}
+                                  >
+                                    Dar de baja
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="dismiss-button"
+                                    disabled={actionId === incident.id}
+                                    title="Desestimar denuncia por falta de mérito"
+                                    onClick={() => handleResolveIncident(incident, 'DISMISS')}
+                                  >
+                                    Rechazar
+                                  </button>
+                                </div>
+                              ) : (
+                                <span style={{ fontSize: '12px', color: '#64748b' }}>
+                                  {incident.resolvedAt ? formatDate(incident.resolvedAt) : 'Resuelto'}
+                                </span>
+                              )}
                             </td>
                           </tr>
                         ))}
@@ -1065,6 +1356,14 @@ export default function AdminDashboard() {
                                   onClick={() => handleViewTutorDetails(tutor)}
                                 >
                                   Detalle
+                                </button>
+                                <button
+                                  type="button"
+                                  className="edit-button"
+                                  title="Editar perfil del tutor (HU-042)"
+                                  onClick={() => handleOpenEditTutor(tutor)}
+                                >
+                                  Editar
                                 </button>
                                 <button
                                   type="button"
@@ -1789,6 +2088,186 @@ export default function AdminDashboard() {
                     className="admin-button-primary"
                   >
                     {savingEdit ? 'Guardando...' : 'Guardar Cambios'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL HU-042: Edición de perfil de tutor (correo inmutable) */}
+        {editingTutor && (
+          <div className="admin-modal-overlay" onClick={() => setEditingTutor(null)}>
+            <div className="admin-modal-card" onClick={(e) => e.stopPropagation()}>
+              <div className="admin-modal-header">
+                <div>
+                  <h3>Editar Perfil de Tutor (HU-042)</h3>
+                  <p>Modifica la información profesional y académica. El correo electrónico institucional es inmutable.</p>
+                </div>
+                <button
+                  type="button"
+                  className="admin-modal-close"
+                  onClick={() => setEditingTutor(null)}
+                  title="Cerrar modal"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveEditTutor} className="admin-modal-form">
+                <div className="admin-form-group">
+                  <label>
+                    Correo Electrónico
+                    <span className="badge-immutable">Inmutable</span>
+                  </label>
+                  <input
+                    type="email"
+                    value={editingTutor.email}
+                    disabled
+                    className="admin-input-disabled"
+                  />
+                  <small className="admin-input-hint">
+                    Por normativas de seguridad e identidad docente, el correo no puede ser modificado.
+                  </small>
+                </div>
+
+                <div className="admin-form-row">
+                  <div className="admin-form-group">
+                    <label>Nombre *</label>
+                    <input
+                      type="text"
+                      required
+                      value={editTutorForm.nombre}
+                      onChange={(e) => setEditTutorForm({ ...editTutorForm, nombre: e.target.value })}
+                      className="admin-input"
+                    />
+                  </div>
+                  <div className="admin-form-group">
+                    <label>Apellido *</label>
+                    <input
+                      type="text"
+                      required
+                      value={editTutorForm.apellido}
+                      onChange={(e) => setEditTutorForm({ ...editTutorForm, apellido: e.target.value })}
+                      className="admin-input"
+                    />
+                  </div>
+                </div>
+
+                <div className="admin-form-row">
+                  <div className="admin-form-group">
+                    <label>Carnet Universitario *</label>
+                    <input
+                      type="text"
+                      required
+                      value={editTutorForm.carnet}
+                      onChange={(e) => setEditTutorForm({ ...editTutorForm, carnet: e.target.value })}
+                      className="admin-input"
+                      style={{ fontFamily: 'monospace', fontWeight: 'bold' }}
+                    />
+                  </div>
+                  <div className="admin-form-group">
+                    <label>Identificación (DPI) *</label>
+                    <input
+                      type="text"
+                      required
+                      value={editTutorForm.identificacion}
+                      onChange={(e) => setEditTutorForm({ ...editTutorForm, identificacion: e.target.value })}
+                      className="admin-input"
+                      style={{ fontFamily: 'monospace' }}
+                      placeholder="CUI / DPI"
+                    />
+                  </div>
+                </div>
+
+                <div className="admin-form-row">
+                  <div className="admin-form-group">
+                    <label>Especialidad Principal *</label>
+                    <input
+                      type="text"
+                      required
+                      value={editTutorForm.especialidad}
+                      onChange={(e) => setEditTutorForm({ ...editTutorForm, especialidad: e.target.value })}
+                      className="admin-input"
+                      placeholder="Ej. Física Fundamental, Cálculo..."
+                    />
+                  </div>
+                  <div className="admin-form-group">
+                    <label>Año Inicio Experiencia</label>
+                    <input
+                      type="number"
+                      min="1980"
+                      max={new Date().getFullYear()}
+                      value={editTutorForm.anio_inicio_experiencia}
+                      onChange={(e) => setEditTutorForm({ ...editTutorForm, anio_inicio_experiencia: e.target.value })}
+                      className="admin-input"
+                      placeholder={`Ej. ${new Date().getFullYear() - 3}`}
+                    />
+                  </div>
+                </div>
+
+                <div className="admin-form-row">
+                  <div className="admin-form-group">
+                    <label>Universidad / Institución</label>
+                    <input
+                      type="text"
+                      value={editTutorForm.universidad}
+                      onChange={(e) => setEditTutorForm({ ...editTutorForm, universidad: e.target.value })}
+                      className="admin-input"
+                      placeholder="Ej. Universidad de San Carlos de Guatemala"
+                    />
+                  </div>
+                  <div className="admin-form-group">
+                    <label>Modalidad / Dirección de Atención</label>
+                    <input
+                      type="text"
+                      value={editTutorForm.direccion_tutoria}
+                      onChange={(e) => setEditTutorForm({ ...editTutorForm, direccion_tutoria: e.target.value })}
+                      className="admin-input"
+                      placeholder="Ej. Edificio T-3 USAC / En línea"
+                    />
+                  </div>
+                </div>
+
+                <div className="admin-form-row">
+                  <div className="admin-form-group">
+                    <label>Género</label>
+                    <select
+                      value={editTutorForm.genero}
+                      onChange={(e) => setEditTutorForm({ ...editTutorForm, genero: e.target.value })}
+                      className="admin-select"
+                    >
+                      <option value="UNSPECIFIED">No especificado</option>
+                      <option value="M">Masculino</option>
+                      <option value="F">Femenino</option>
+                      <option value="OTHER">Otro</option>
+                    </select>
+                  </div>
+                  <div className="admin-form-group">
+                    <label>Fecha de Nacimiento</label>
+                    <input
+                      type="date"
+                      value={editTutorForm.fecha_nacimiento}
+                      onChange={(e) => setEditTutorForm({ ...editTutorForm, fecha_nacimiento: e.target.value })}
+                      className="admin-input"
+                    />
+                  </div>
+                </div>
+
+                <div className="admin-modal-footer">
+                  <button
+                    type="button"
+                    className="admin-button-secondary"
+                    onClick={() => setEditingTutor(null)}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={savingTutorEdit}
+                    className="admin-button-primary"
+                  >
+                    {savingTutorEdit ? 'Guardando...' : 'Guardar Cambios'}
                   </button>
                 </div>
               </form>
