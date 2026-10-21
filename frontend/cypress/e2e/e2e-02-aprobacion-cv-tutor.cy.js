@@ -84,6 +84,7 @@ describe('E2E-02: Flujo de Inspección y Aprobación de CV de Tutor (Xavi)', () 
     // El tutor aparece en la tabla con su documento disponible
     cy.contains('Carlos Méndez').should('be.visible');
     cy.contains('PDF disponible').should('be.visible');
+    cy.screenshot('e2e-02-01-tutor-pendiente-en-lista', { capture: 'viewport' });
 
     // Abrir el modal de revisión con visor PDF incrustado
     cy.contains('button', 'Revisar').click();
@@ -93,6 +94,7 @@ describe('E2E-02: Flujo de Inspección y Aprobación de CV de Tutor (Xavi)', () 
       .should('be.visible')
       .and('have.attr', 'src')
       .and('include', '/api/documents/cvs/cv-demo-uuid.pdf');
+    cy.screenshot('e2e-02-02-visor-pdf-abierto', { capture: 'viewport' });
 
     // Aprobar la solicitud del tutor
     cy.get('[role="dialog"]').contains('button', 'Aceptar').click();
@@ -102,5 +104,6 @@ describe('E2E-02: Flujo de Inspección y Aprobación de CV de Tutor (Xavi)', () 
     cy.get('[role="dialog"]').should('not.exist');
     cy.contains('Carlos Méndez').should('not.exist');
     cy.contains('No hay tutores pendientes de aprobación.').should('be.visible');
+    cy.screenshot('e2e-02-03-tutor-aprobado', { capture: 'viewport' });
   });
 });
