@@ -129,9 +129,9 @@ flowchart LR
 
 1. **`build`:** instala dependencias del backend, construye la imagen Docker y compila el frontend.
 2. **`test`:** depende de `build`, instala las dependencias y ejecuta `npm test`. Si alguna prueba falla, el pipeline se detiene y se bloquea el despliegue.
-3. **`deploy`:** depende de `build` y `test`, y se ejecuta únicamente después de un `push` a `main`. Usa el entorno protegido `production` y `appleboy/ssh-action` para actualizar el checkout remoto y levantar Docker Compose.
+3. **`deploy`:** depende de `build` y `test`, y se ejecuta únicamente después de un `push` a `main`, en el entorno `production`. Despliega el backend **dentro del runner de GitHub Actions**: genera el archivo `.env` a partir de `.env.example`, levanta los contenedores `db` (MySQL 8.0 con `init.sql`) y `backend` con `docker compose up -d --build`, y verifica la disponibilidad consultando `GET /api/health` hasta 36 veces cada 5 segundos. Si el backend no responde, el job muestra los logs de los contenedores y falla.
 
-La etapa `deploy` requiere configurar en GitHub los secretos `DEPLOY_HOST`, `DEPLOY_USERNAME`, `DEPLOY_SSH_KEY`, `DEPLOY_PORT` y `DEPLOY_PATH`. Las credenciales y variables sensibles se gestionan como GitHub Secrets, nunca dentro del YAML o del código fuente. La primera ejecución real queda pendiente de disponer del servidor y de esos secretos.
+Esta estrategia, definida en el plan de arquitectura de la Fase 2, no requiere servidores externos y tiene costo de infraestructura $0.00. La base de datos es temporal y se destruye al terminar el job. Si el repositorio define los GitHub Secrets `JWT_SECRET`, `SMTP_USER` y `SMTP_PASS`, el job los usa en lugar de los valores de ejemplo; las credenciales sensibles nunca se escriben en el YAML ni en el código fuente.
 
 ---
 
@@ -152,6 +152,7 @@ docker compose up --build -d
 ```
 
 La ejecución realizada para el Sprint 1 produjo 32 pruebas unitarias exitosas y un build de producción del frontend completado.
+Al cierre del Sprint 2, `npm test` ejecuta 90 pruebas unitarias exitosas (incluidas PU-01 a PU-30), y la suite E2E con Cypress suma 14 pruebas aprobadas (ver `docs/Pruebas/`).
 
 ---
 
