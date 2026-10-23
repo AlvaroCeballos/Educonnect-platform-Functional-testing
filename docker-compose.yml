@@ -47,6 +47,7 @@ services:
       SMTP_USER: ${SMTP_USER}
       SMTP_PASS: ${SMTP_PASS}
       SMTP_FROM: ${SMTP_FROM}
+      CORS_ORIGIN: ${CORS_ORIGIN:-*}
     ports:
       - "5000:5000"
     depends_on:
@@ -82,7 +83,7 @@ services:
     depends_on:
       - backend
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:80/healthz"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:80/healthz"]
       interval: 15s
       timeout: 5s
       retries: 3
