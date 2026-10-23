@@ -10,6 +10,7 @@ node_modules/
 
 # Archivo de autenticación 2FA del admin 
 auth2-ayd1.txt
+*.pem
 
 #  Build / dist
 dist/
