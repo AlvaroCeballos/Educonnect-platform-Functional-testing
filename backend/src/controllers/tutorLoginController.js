@@ -34,8 +34,8 @@ const loginTutor = async (req, res) => {
       return res.status(401).json({ message: 'Correo o contraseña incorrectos' });
     }
 
-    // FLUJO HU-031: PRIMER INICIO DE SESIÓN DEL TUTOR
-    if (!tutor.email_verified) {
+    // FLUJO HU-031: PRIMER INICIO DE SESIÓN CON TOKEN (si tiene token asignado)
+    if (!tutor.email_verified && tutor.verification_token) {
       if (!inputToken) {
         return res.status(403).json({
           requiresToken: true,
@@ -74,7 +74,7 @@ const loginTutor = async (req, res) => {
         [tutor.user_id]
       );
     } else {
-      // INICIOS POSTERIORES
+      // INICIOS SIN TOKEN O POSTERIORES
       if (tutor.status !== 'APPROVED') {
         const messages = {
           PENDING: 'Tu cuenta está pendiente de aprobación por el administrador',
@@ -84,6 +84,13 @@ const loginTutor = async (req, res) => {
         return res.status(403).json({
           message: messages[tutor.status] || 'Tu cuenta no está habilitada',
         });
+      }
+
+      if (!tutor.email_verified) {
+        await pool.execute(
+          `UPDATE users SET email_verified = TRUE WHERE id = ?`,
+          [tutor.user_id]
+        );
       }
     }
 

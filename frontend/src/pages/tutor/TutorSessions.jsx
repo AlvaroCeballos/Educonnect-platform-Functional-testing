@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import Swal from 'sweetalert2';
 import api from '../../utils/api';
 import IncidentReportForm from '../../components/IncidentReportForm';
 import StudentRatingForm from '../../components/StudentRatingForm';
@@ -75,6 +76,11 @@ export default function TutorSessions() {
       setSubmitError('Agregá al menos un recurso recomendado antes de guardar el plan.');
       return;
     }
+    const invalidRecurso = recursos.find((r) => !r.nombre_recurso?.trim() || !r.descripcion_uso?.trim());
+    if (invalidRecurso) {
+      setSubmitError('Todos los recursos recomendados deben tener nombre y descripción de uso.');
+      return;
+    }
 
     setSubmitting(true);
     setSubmitError('');
@@ -87,7 +93,13 @@ export default function TutorSessions() {
       });
       setIsModalOpen(false);
       setActiveTab('HISTORY');
-      fetchSessions();
+      await fetchSessions();
+      await Swal.fire({
+        icon: 'success',
+        title: '¡Sesión atendida con éxito!',
+        text: 'El plan de estudio y recursos han sido guardados. Ahora puedes calificar al estudiante.',
+        confirmButtonColor: '#059669',
+      });
     } catch (err) {
       setSubmitError(err.response?.data?.message || 'Error al procesar la solicitud.');
     } finally {
@@ -213,6 +225,33 @@ export default function TutorSessions() {
                   sessionId={session.id}
                   onSubmitted={(rating) => setRatings((current) => ({ ...current, [session.id]: rating }))}
                 />
+              )}
+              {session.status === 'ATTENDED' && ratings[session.id] && (
+                <div className="mt-4 p-4 bg-emerald-50/70 border border-emerald-200 rounded-xl">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold uppercase tracking-wider text-emerald-800">
+                      Calificación asignada al estudiante
+                    </span>
+                    <span className="text-xs font-semibold text-emerald-700 bg-emerald-100 px-2.5 py-0.5 rounded-full">
+                      Calificado ✓
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1 text-amber-500 text-lg mt-1">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <span key={star} className={ratings[session.id].rating >= star ? 'text-amber-500' : 'text-slate-300'}>
+                        ★
+                      </span>
+                    ))}
+                    <span className="text-sm font-bold text-slate-700 ml-2">
+                      ({ratings[session.id].rating} / 5 estrellas)
+                    </span>
+                  </div>
+                  {ratings[session.id].comment && (
+                    <p className="text-sm text-slate-600 mt-1 italic">
+                      "{ratings[session.id].comment}"
+                    </p>
+                  )}
+                </div>
               )}
               {session.status === 'ATTENDED' && !incidents[session.id] && (
                 <IncidentReportForm
@@ -368,12 +407,7 @@ export default function TutorSessions() {
                 </button>
                 <button
                   type="submit"
-                  disabled={
-                    submitting
-                    || recursos.length === 0
-                    || !dificultadesDetectadas.trim()
-                    || recursos.some((r) => !r.nombre_recurso.trim() || !r.descripcion_uso.trim())
-                  }
+                  disabled={submitting}
                   className="px-5 py-2 bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700 transition-colors shadow-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {submitting ? 'Guardando...' : 'Guardar y Atender'}

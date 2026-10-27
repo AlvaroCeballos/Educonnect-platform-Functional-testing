@@ -15,8 +15,8 @@ export default function StudentRatingForm({ sessionId, onSubmitted }) {
         rating,
         comment: comment.trim() || null,
       });
-      onSubmitted?.(data.rating);
       await Swal.fire({ icon: 'success', title: 'Calificación registrada', confirmButtonColor: '#167963' });
+      onSubmitted?.(data.rating);
     } catch (error) {
       await Swal.fire({
         icon: 'error',

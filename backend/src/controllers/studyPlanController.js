@@ -2,7 +2,7 @@ const pool = require('../config/db');
 const { validateStudyPlanPayload, canAttendSession } = require('../utils/studyPlan');
 const { generateCertificatePDF, validateCertificatePayload } = require('../utils/certificatePdf');
 
-const resolveTutorProfileId = (req) => Number(req.user?.tutorId || req.user?.id);
+const { resolveTutorProfileId } = require('./sessionController');
 
 const resolveStudentProfileId = async (req) => {
   if (req.user?.studentId) return Number(req.user.studentId);
@@ -15,7 +15,7 @@ const createStudyPlan = async (req, res, next) => {
   if (!validation.valid) return res.status(400).json({ message: validation.message });
 
   const { sessionId, dificultadesDetectadas, recursos } = validation.plan;
-  const tutorId = resolveTutorProfileId(req);
+  const tutorId = await resolveTutorProfileId(req);
   if (!Number.isInteger(tutorId) || tutorId < 1) {
     return res.status(401).json({ message: 'La sesión no identifica al tutor' });
   }
